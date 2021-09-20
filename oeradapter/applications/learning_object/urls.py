@@ -1,7 +1,9 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 from . import views
-app_name = 'learning_object_app'
 
-urlpatterns = [
-    path('api/upload/', views.UploadLearningObject.as_view(), name='upload')
-]
+router = DefaultRouter()
+
+router.register(r'learning_objects', views.UploadFileViewSet, basename='learning_objects')
+
+urlpatterns = router.urls
