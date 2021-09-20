@@ -1,4 +1,7 @@
 from django.db import models
+from datetime import datetime
+from datetime import timedelta
+
 from .manager import LearningObjectManager
 import shortuuid
 import os
@@ -13,23 +16,19 @@ def directory_path(instance, filename):
 
 # Create your models here.
 class LearningObject(models.Model):
-    path_origin = models.CharField(max_length=100, blank=True, null=True)
-    path_adapted = models.CharField(max_length=100, blank=True, null=True)
-    user_ref = models.CharField(max_length=100, blank=True, null=True)
+    class Meta:
+        db_table = 'learning_objects'
+    title = models.CharField(max_length=100, null=True)
+    path_origin = models.CharField(max_length=100)
+    path_adapted = models.CharField(max_length=100)
+    user_ref = models.CharField(max_length=100)
     file = models.FileField(upload_to=directory_path)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField(default= datetime.now() + timedelta(days=1))
 
     objects = LearningObjectManager()
 
-    def __str__(self):
-        return str(self.file)
-
-    def save_path(self):
-        #self.path_origin = self.file.path
-        print("path file " + str(self.file.path))
-
-    def save(self, *args, **kwargs):
-        self.save_path()
-        super(LearningObject, self).save(*args, **kwargs)
 
 
 

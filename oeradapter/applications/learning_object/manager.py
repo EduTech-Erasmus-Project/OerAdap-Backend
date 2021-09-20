@@ -2,5 +2,5 @@ from django.db import models
 
 class LearningObjectManager(models.Manager):
 
-    def post_upload_file(self):
+    def upload_file(self, request):
         pass
