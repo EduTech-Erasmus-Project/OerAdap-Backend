@@ -69,6 +69,10 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
         # serializer.validated_data["user_ref"] = "user ref"
 
+        """Descomprecion de los archivos """
+
+        """Eliminar  zip"""
+
         serializer.save(title=file._name.split('.')[0], path_origin="uploads", path_adapted="uploads",
                         user_ref=user_token)
 
