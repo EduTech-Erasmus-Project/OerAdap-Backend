@@ -7,6 +7,11 @@ from . import serializers
 import shortuuid
 import json
 
+from zipfile import ZipFile
+from os import listdir, rmdir
+
+import shutil
+import os
 # Create your views here.
 from .models import LearningObject
 
@@ -69,12 +74,28 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
         # serializer.validated_data["user_ref"] = "user ref"
 
+
+        """change Edwin """
+
+        #serializer.save(title=file._name.split('.')[0], path_origin="uploads", path_adapted="uploads-Ad",
+         #               user_ref=user_token)
+        path_Origin = "uploads"
+        path_Adapted = "uploads_Adapated"
+        new_title = file._name.split('.')[0]
+        #serializer.save(title=new_title, path_origin=path_Origin,user_ref=user_token)
+
         """Descomprecion de los archivos """
+        print("Este es el serializador", serializer.validated_data.get('file'))
 
-        """Eliminar  zip"""
+        #learning_object_data = serializer.validated_data.get('file')
 
-        serializer.save(title=file._name.split('.')[0], path_origin="uploads", path_adapted="uploads",
-                        user_ref=user_token)
+
+
+        self.extract_zip_file(path_Origin+"/",new_title)
+
+        #print("Titulo-Drect", listdir("uploads/" + "OA_BOOLE_46s8TvmH/OA_BOOLE_46s8TvmH_des")[0])
+
+
 
         # learning_object = serializer.validated_data
         # print("learning_object " + str(serializer.validated_data["file"]))
@@ -87,3 +108,23 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         response.status_code = 201
         #return Response(serializer.data, status=status.HTTP_201_CREATED)
         return response
+
+    def extract_zip_file( self, test_file_name, file_name):
+        #print("Este es el directorio", test_file_name)
+        # Descomprimir archivos Zip
+        var_name = test_file_name+file_name+"/"+file_name+".zip"
+        if (var_name.find('.zip.zip') >= 0):
+            test_file_aux = file_name
+            test_file_aux = test_file_aux.rstrip(".zip")
+        else:
+            test_file_aux = file_name
+
+        directory_name = test_file_name + "/"+file_name+"/"+test_file_aux+"_des"
+
+        with ZipFile(var_name, 'r') as zip:
+            zip.printdir()
+            zip.extractall(directory_name)
+
+    
+
+
