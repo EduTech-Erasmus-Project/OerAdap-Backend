@@ -82,19 +82,16 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         path_Origin = "uploads"
         path_Adapted = "uploads_Adapated"
         new_title = file._name.split('.')[0]
-        #serializer.save(title=new_title, path_origin=path_Origin,user_ref=user_token)
+        serializer.save(title=new_title, path_origin=path_Origin,user_ref=user_token)
 
         """Descomprecion de los archivos """
         print("Este es el serializador", serializer.validated_data.get('file'))
 
         #learning_object_data = serializer.validated_data.get('file')
 
-
-
         self.extract_zip_file(path_Origin+"/",new_title)
 
         #print("Titulo-Drect", listdir("uploads/" + "OA_BOOLE_46s8TvmH/OA_BOOLE_46s8TvmH_des")[0])
-
 
 
         # learning_object = serializer.validated_data
@@ -108,6 +105,8 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         response.status_code = 201
         #return Response(serializer.data, status=status.HTTP_201_CREATED)
         return response
+
+
 
     def extract_zip_file( self, test_file_name, file_name):
         #print("Este es el directorio", test_file_name)
@@ -125,6 +124,20 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             zip.printdir()
             zip.extractall(directory_name)
 
-    
+        if(self.check_files(directory_name) == 0 ):
+            aux_path_o=directory_name+"/"+listdir(directory_name)[0]
+            source = aux_path_o
+            destination = directory_name
+            files = os.listdir(source)
+            for file in files:
+                new_path = shutil.move(f"{source}/{file}", destination)
+                print(new_path)
+            rmdir(aux_path_o)
+
+    def check_files(self,directory_name):
+        if (len(listdir(directory_name)) > 1):
+            return 1
+        elif(len(listdir(directory_name)) == 1):
+            return 0
 
 

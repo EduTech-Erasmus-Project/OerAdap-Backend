@@ -30,5 +30,20 @@ class LearningObject(models.Model):
     objects = LearningObjectManager()
 
 
+class PageOA(models.Model):
+    class Meta:
+        db_table = 'page_oa'
+    path = models.CharField(max_length=100)
+    oa_id = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
+
+class data_tag(models.Model):
+    class Meta:
+        db_table = 'data_tag'
+    tag = models.CharField(max_length=20)
+    text = models.TextField(null=True)
+    html_text = models.TextField(null=True)
+    page_oa_id = models.ForeignKey(PageOA, on_delete=models.CASCADE)
+
+
 
 
