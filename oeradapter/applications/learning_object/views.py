@@ -13,7 +13,7 @@ from os import listdir, rmdir
 import shutil
 import os
 # Create your views here.
-from .models import LearningObject, LearningObjectAdaptation
+from .models import LearningObject, AdaptationLearningObject
 
 
 class UploadFileViewSet(viewsets.GenericViewSet):
@@ -102,7 +102,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
 
 class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
-    model = LearningObjectAdaptation
+    model = AdaptationLearningObject
     serializer_class = serializers.LearningObjectAdaptationSettingsSerializer
 
     def create(self, request, *args, **kwargs):
