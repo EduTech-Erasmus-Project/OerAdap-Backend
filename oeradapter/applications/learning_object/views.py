@@ -87,16 +87,12 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         """Descomprecion de los archivos """
         print("Este es el serializador", serializer.validated_data.get('file'))
 
-        #learning_object_data = serializer.validated_data.get('file')
-
         self.extract_zip_file(path_Origin+"/",new_title)
-
-        #print("Titulo-Drect", listdir("uploads/" + "OA_BOOLE_46s8TvmH/OA_BOOLE_46s8TvmH_des")[0])
-
 
         # learning_object = serializer.validated_data
         # print("learning_object " + str(serializer.validated_data["file"]))
         # headers = self.get_success_headers(serializer.data)
+
         print(serializer.data['expires_at'])
         data = json.dumps(serializer.data, indent=4, sort_keys=True, default=str)
         response = HttpResponse(data, content_type='application/json')
