@@ -35,7 +35,22 @@ class LearningObject(models.Model):
 class LearningObjectAdaptation(models.Model):
     class Meta:
         db_table = 'learning_objects_adaptations'
-
     method = models.CharField(max_length=10)
     areas = ArrayField(models.CharField(max_length=10, blank=True), size=6)
     learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
+
+class PageOA(models.Model):
+    class Meta:
+        db_table = 'page_oa'
+    path = models.CharField(max_length=100)
+    oa_id = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
+
+class data_tag(models.Model):
+    class Meta:
+        db_table = 'data_tag'
+    tag = models.CharField(max_length=20)
+    text = models.TextField(null=True)
+    html_text = models.TextField(null=True)
+    page_oa_id = models.ForeignKey(PageOA, on_delete=models.CASCADE)
+
+    
