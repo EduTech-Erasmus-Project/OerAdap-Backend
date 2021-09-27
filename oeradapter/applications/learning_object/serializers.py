@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import LearningObject
+from .models import LearningObject, LearningObjectAdaptation
 
 
 class LearningObjectSerializer(serializers.ModelSerializer):
@@ -15,3 +15,10 @@ class LearningObjectSerializer(serializers.ModelSerializer):
             "created_at": instance.created_at,
             "expires_at": instance.expires_at
         }
+
+
+class LearningObjectAdaptationSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LearningObjectAdaptation
+        fields = "__all__"
+        #exclude = ("areas",)
