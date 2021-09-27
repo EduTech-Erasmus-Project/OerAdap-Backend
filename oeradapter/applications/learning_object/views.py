@@ -8,7 +8,7 @@ import shortuuid
 import json
 
 # Create your views here.
-from .models import LearningObject
+from .models import LearningObject, LearningObjectAdaptation
 
 
 class UploadFileViewSet(viewsets.GenericViewSet):
@@ -32,8 +32,6 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             data = self.get_queryset(user_token)
             data = self.get_serializer(data, many=True)
             return Response(data.data, status=status.HTTP_200_OK)
-
-
 
     def create(self, request, *args, **kwargs):
         """
@@ -81,5 +79,34 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         response.delete_cookie(key='user_ref')
         response.set_cookie('user_ref', value=user_token, expires=serializer.data['expires_at'])
         response.status_code = 201
-        #return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
         return response
+
+
+class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
+    model = LearningObjectAdaptation
+    serializer_class = serializers.LearningObjectAdaptationSettingsSerializer
+
+    def create(self, request, *args, **kwargs):
+        # print(request.data)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        #serializer.save()
+
+        try:
+            if request.data['areas'].index('image') >= 0:
+                print("image in list")
+            if request.data['areas'].index('video') >= 0:
+                print("video in list")
+            if request.data['areas'].index('audio') >= 0:
+                print("audio in list")
+            if request.data['areas'].index('button') >= 0:
+                print("button in list")
+            if request.data['areas'].index('paragraph') >= 0:
+                print("paragraph in list")
+        except:
+            pass
+
+
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
