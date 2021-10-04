@@ -10,6 +10,7 @@ from os import listdir, rmdir
 import shutil
 import os
 from unipath import Path
+from bs4 import BeautifulSoup
 from .models import LearningObject, AdaptationLearningObject
 
 BASE_DIR = Path(__file__).ancestor(3)
@@ -22,21 +23,14 @@ class UploadFileViewSet(viewsets.GenericViewSet):
     model = LearningObject
     serializer_class = serializers.LearningObjectSerializer
 
-    def get_queryset(self):
-        user_token = None
-        try:
-            user_token = self.request.COOKIES['user_ref']
-        except:
-            return []
-        if user_token is not None:
-            return self.get_serializer().Meta.model.objects.filter(user_ref=user_token)
-
-    def list(self, request):
-        data = self.get_queryset()
-        data = self.get_serializer(data, many=True)
-        return Response(data.data, status=status.HTTP_200_OK)
-
     def extract_zip_file(self, path, file_name, file):
+        """
+        Extrae un archivo zip en una ruta determinada
+        :param path:
+        :param file_name:
+        :param file:
+        :return:
+        """
         var_name = os.path.join(path, file_name)
         if var_name.find('.zip.zip') >= 0:
             test_file_aux = file_name.split('.')[0]
@@ -67,10 +61,41 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         return directory_origin, directory_adapted
 
     def check_files(self, directory_name):
+        """
+        Chequea si un directorio
+        :param directory_name:
+        :return:
+        """
         if len(listdir(directory_name)) > 1:
             return 1
         elif len(listdir(directory_name)) == 1:
             return 0
+
+    def generateBeautifulSoupFile(self, html_doc):
+        """
+        Genera un objeto de BeautifulSoup para realizar web scraping
+        :param html_doc:
+        :return BeautifulSoup Data:
+        """
+        soup_data = None
+        with open(html_doc) as file:
+            soup_data = BeautifulSoup(file, "html.parser")
+            file.close()
+            return soup_data
+
+    def get_queryset(self):
+        user_token = None
+        try:
+            user_token = self.request.COOKIES['user_ref']
+        except:
+            return []
+        if user_token is not None:
+            return self.get_serializer().Meta.model.objects.filter(user_ref=user_token)
+
+    def list(self, request):
+        data = self.get_queryset()
+        data = self.get_serializer(data, many=True)
+        return Response(data.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         """
@@ -104,8 +129,10 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
         preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
 
+        soup_data = self.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
+
         serializer.save(
-            title="title",
+            title=soup_data.find('title').text,
             path_origin=directory_origin,
             path_adapted=directory_adapted,
             user_ref=user_token,
