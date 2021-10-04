@@ -1,19 +1,18 @@
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView, GenericAPIView
 from rest_framework import viewsets
 from . import serializers
 import shortuuid
 import json
-
 from zipfile import ZipFile
 from os import listdir, rmdir
-
 import shutil
 import os
-# Create your views here.
+from unipath import Path
 from .models import LearningObject, AdaptationLearningObject
+
+BASE_DIR = Path(__file__).ancestor(3)
 
 
 class UploadFileViewSet(viewsets.GenericViewSet):
@@ -23,26 +22,60 @@ class UploadFileViewSet(viewsets.GenericViewSet):
     model = LearningObject
     serializer_class = serializers.LearningObjectSerializer
 
-    def get_queryset(self, user_token):
-        return self.get_serializer().Meta.model.objects.filter(user_ref=user_token)
-
-    def list(self, request):
+    def get_queryset(self):
         user_token = None
         try:
-            user_token = request.COOKIES['user_ref']
+            user_token = self.request.COOKIES['user_ref']
         except:
-            return Response([], status=status.HTTP_200_OK)
-
+            return []
         if user_token is not None:
-            data = self.get_queryset(user_token)
-            data = self.get_serializer(data, many=True)
-            return Response(data.data, status=status.HTTP_200_OK)
+            return self.get_serializer().Meta.model.objects.filter(user_ref=user_token)
+
+    def list(self, request):
+        data = self.get_queryset()
+        data = self.get_serializer(data, many=True)
+        return Response(data.data, status=status.HTTP_200_OK)
+
+    def extract_zip_file(self, path, file_name, file):
+        var_name = os.path.join(path, file_name)
+        if var_name.find('.zip.zip') >= 0:
+            test_file_aux = file_name.split('.')[0]
+            test_file_aux = test_file_aux.rstrip(".zip")
+        else:
+            test_file_aux = file_name.split('.')[0]
+
+        directory_origin = os.path.join(path, file_name.split('.')[0], test_file_aux + "_origin")
+
+        with ZipFile(file, 'r') as zip_file:
+            # zip.printdir()
+            zip_file.extractall(directory_origin)
+
+        if self.check_files(directory_origin) == 0:
+            aux_path_o = os.path.join(directory_origin, listdir(directory_origin)[0])
+            source = aux_path_o
+            destination = directory_origin
+            files = os.listdir(source)
+            for file in files:
+                new_path = shutil.move(f"{source}/{file}", destination)
+                print(new_path)
+            rmdir(aux_path_o)
+            print("directory_name", str(directory_origin))
+
+        directory_adapted = os.path.join(path, file_name.split('.')[0], test_file_aux + "_adapted")
+        shutil.copytree(directory_origin, directory_adapted)
+        return directory_origin, directory_adapted
+
+    def check_files(self, directory_name):
+        if len(listdir(directory_name)) > 1:
+            return 1
+        elif len(listdir(directory_name)) == 1:
+            return 0
 
     def create(self, request, *args, **kwargs):
         """
             Upload file attribute required file
             file > type file
-            Retun
+            Return
             "id"
             "title"
             "user_ref"
@@ -58,40 +91,33 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         uuid = str(shortuuid.ShortUUID().random(length=8))
         file = request.FILES['file']
         file._name = file._name.split('.')[0] + "_" + uuid + "." + file._name.split('.')[1]
-
-        # request.data['user_ref'] = "user ref"
-        # request.data['path_origin'] = "user ref"
-        # request.data['path_adapted'] = "user ref"
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # self.perform_create(serializer)
-        # print(str(file._name.split('.')[0]))
-        # print(serializer.model.objects)
+        # Extract file
+        path = "uploads"
+        file_name = file._name
+        directory_origin, directory_adapted = self.extract_zip_file(path, file_name, file)
 
-        # serializer.validated_data["user_ref"] = "user ref"
+        # save the learning object preview path
+        preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
+        preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
 
+        serializer.save(
+            title="title",
+            path_origin=directory_origin,
+            path_adapted=directory_adapted,
+            user_ref=user_token,
+            preview_origin=preview_origin,
+            preview_adapted=preview_adapted,
+            file_folder=os.path.join(path, file_name.split('.')[0])
+        )
 
-        """change Edwin """
+        # remove file zip
+        # path_file = os.path.join(path, file_name.split('.')[0], file_name)
+        # os.remove(os.path.join(BASE_DIR, path_file))
 
-        #serializer.save(title=file._name.split('.')[0], path_origin="uploads", path_adapted="uploads-Ad",
-         #               user_ref=user_token)
-        path_Origin = "uploads"
-        path_Adapted = "uploads_Adapated"
-        new_title = file._name.split('.')[0]
-        serializer.save(title=new_title, path_origin=path_Origin,user_ref=user_token)
-
-        """Descomprecion de los archivos """
-        print("Este es el serializador", serializer.validated_data.get('file'))
-
-        self.extract_zip_file(path_Origin+"/",new_title)
-
-        # learning_object = serializer.validated_data
-        # print("learning_object " + str(serializer.validated_data["file"]))
-        # headers = self.get_success_headers(serializer.data)
-
-        print(serializer.data['expires_at'])
+        # Response data
         data = json.dumps(serializer.data, indent=4, sort_keys=True, default=str)
         response = HttpResponse(data, content_type='application/json')
         response.delete_cookie(key='user_ref')
@@ -109,7 +135,7 @@ class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
         # print(request.data)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        #serializer.save()
+        # serializer.save()
 
         try:
             if request.data['areas'].index('image') >= 0:
@@ -126,39 +152,3 @@ class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
             pass
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-    def extract_zip_file( self, test_file_name, file_name):
-        #print("Este es el directorio", test_file_name)
-        # Descomprimir archivos Zip
-        var_name = test_file_name+file_name+"/"+file_name+".zip"
-        if (var_name.find('.zip.zip') >= 0):
-            test_file_aux = file_name
-            test_file_aux = test_file_aux.rstrip(".zip")
-        else:
-            test_file_aux = file_name
-
-        directory_name = test_file_name + "/"+file_name+"/"+test_file_aux+"_des"
-
-        with ZipFile(var_name, 'r') as zip:
-            zip.printdir()
-            zip.extractall(directory_name)
-
-        if(self.check_files(directory_name) == 0 ):
-            aux_path_o=directory_name+"/"+listdir(directory_name)[0]
-            source = aux_path_o
-            destination = directory_name
-            files = os.listdir(source)
-            for file in files:
-                new_path = shutil.move(f"{source}/{file}", destination)
-                print(new_path)
-            rmdir(aux_path_o)
-
-    def check_files(self,directory_name):
-        if (len(listdir(directory_name)) > 1):
-            return 1
-        elif(len(listdir(directory_name)) == 1):
-            return 0
-
-
-

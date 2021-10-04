@@ -6,11 +6,9 @@ from datetime import timedelta
 from .manager import LearningObjectManager
 import shortuuid
 import os
-import random
 
 
 def directory_path(instance, filename):
-    uuid = str(shortuuid.ShortUUID().random(length=8))
     path = "uploads/" + filename.split('.')[0]
     return os.path.join(path, filename)
 
@@ -24,10 +22,14 @@ class LearningObject(models.Model):
     path_origin = models.CharField(max_length=100)
     path_adapted = models.CharField(max_length=100)
     user_ref = models.CharField(max_length=100)
-    file = models.FileField(upload_to=directory_path)
+    # file = models.FileField(upload_to=directory_path)
+    file_folder = models.CharField(max_length=100, null=True)
+    preview_origin = models.URLField(null=True)
+    preview_adapted = models.URLField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     expires_at = models.DateTimeField(default=datetime.now() + timedelta(days=1))
+    file_adapted = models.FileField(upload_to=directory_path, null=True, blank=True)
 
     objects = LearningObjectManager()
 
