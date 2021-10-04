@@ -63,6 +63,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
         directory_adapted = os.path.join(path, file_name.split('.')[0], test_file_aux + "_adapted")
         shutil.copytree(directory_origin, directory_adapted)
+        
         return directory_origin, directory_adapted
 
     def check_files(self, directory_name):
