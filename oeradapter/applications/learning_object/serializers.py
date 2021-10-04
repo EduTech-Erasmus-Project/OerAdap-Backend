@@ -13,7 +13,9 @@ class LearningObjectSerializer(serializers.ModelSerializer):
             "title": instance.title,
             "user_ref": instance.user_ref,
             "created_at": instance.created_at,
-            "expires_at": instance.expires_at
+            "expires_at": instance.expires_at,
+            "preview_origin": instance.preview_origin,
+            "preview_adapted": instance.preview_adapted,
         }
 
 
@@ -21,4 +23,4 @@ class LearningObjectAdaptationSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdaptationLearningObject
         fields = "__all__"
-        #exclude = ("areas",)
+        # exclude = ("areas",)

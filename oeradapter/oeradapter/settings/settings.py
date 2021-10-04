@@ -104,6 +104,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+STATIC_URL = '/uploads/'
+STATICFILES_DIRS = [BASE_DIR.child('uploads')]
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
