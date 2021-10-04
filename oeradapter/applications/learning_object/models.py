@@ -37,7 +37,6 @@ class LearningObject(models.Model):
 class AdaptationLearningObject(models.Model):
     class Meta:
         db_table = 'adaptations_learning_objects'
-
     method = models.CharField(max_length=10)
     areas = ArrayField(models.CharField(max_length=10, blank=True), size=6)
     learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
@@ -46,7 +45,6 @@ class AdaptationLearningObject(models.Model):
 class PageLearningObject(models.Model):
     class Meta:
         db_table = 'pages_learning_objects'
-
     path = models.CharField(max_length=100)
     learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
 

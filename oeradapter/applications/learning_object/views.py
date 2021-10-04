@@ -11,7 +11,7 @@ import shutil
 import os
 from unipath import Path
 from bs4 import BeautifulSoup
-from .models import LearningObject, AdaptationLearningObject
+from .models import LearningObject, AdaptationLearningObject, PageLearningObject
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -57,6 +57,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
         directory_adapted = os.path.join(path, file_name.split('.')[0], test_file_aux + "_adapted")
         shutil.copytree(directory_origin, directory_adapted)
+        
         return directory_origin, directory_adapted
 
     def check_files(self, directory_name):
@@ -81,6 +82,23 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             soup_data = BeautifulSoup(file, "html.parser")
             file.close()
             return soup_data
+
+    def read_html_files(self, file):
+        files = []
+        for entry in os.scandir(file):
+            if entry.path.endswith(".html"):
+                # print(entry.path)
+                files.append(entry.path)
+        return files
+
+    def webScraping_metadata(self, directory, learningObject):
+
+        files = self.read_html_files(os.path.join(BASE_DIR, directory))
+        for file in files:
+            Page = PageLearningObject(path="file",learning_object=learningObject)
+            Page.save()
+        print("Datos guardados")
+
 
     def get_queryset(self):
         user_token = None
@@ -127,11 +145,12 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         # save the learning object preview path
         preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
         preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
-
+       #print('path'+os.path.join(BASE_DIR, directory_origin))
         soup_data = self.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
+
         serializer.save(
-            title=soup_data.find('title').text,
+          #  title=soup_data.find('title').text,
             path_origin=directory_origin,
             path_adapted=directory_adapted,
             user_ref=user_token,
@@ -140,6 +159,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             file_folder=os.path.join(path, file_name.split('.')[0])
         )
 
+        self.webScraping_metadata(directory_adapted,serializer)
         # remove file zip
         # path_file = os.path.join(path, file_name.split('.')[0], file_name)
         # os.remove(os.path.join(BASE_DIR, path_file))
