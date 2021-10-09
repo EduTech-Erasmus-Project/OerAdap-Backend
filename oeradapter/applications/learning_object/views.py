@@ -11,7 +11,7 @@ import shutil
 import os
 from unipath import Path
 from bs4 import BeautifulSoup
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
+from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, directory_path
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -94,7 +94,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
                 files.append(entry.path)
         return files
 
-    def save_filesHTML(self, files, learningObject,directory):
+    def save_filesHTML_db(self, files, learningObject,directory):
         """Lectura de archivos html,
         guardamos cada directorio
         de cada archivo en la base
@@ -103,15 +103,18 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         pages_convert = []
 
         for file in files:
-            #print("archivo"+file)
             Page = PageLearningObject(path=file,learning_object=learningObject)
             Page.save()
 
             page_object = PageLearningObject.objects.get(pk=Page.id)
             #print("Objeto"+str(Page_object))
-            soup_data = self.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory, file))
+            directory_file= os.path.join(BASE_DIR, directory, file)
+            soup_data = self.generateBeautifulSoupFile(directory_file)
             pages_convert.append(soup_data)
-            self.webScraping_P(soup_data, page_object)
+            newPage_html_generate = self.webScraping_P(soup_data, page_object)
+
+            self.generate_new_htmlFile(newPage_html_generate,file )
+
 
     def webScraping_P(self, aux_text, page_id):
         """ Exatraccion de los parrafos de cada pagina html,
@@ -119,28 +122,45 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         """
         # print(aux_text)
         tag_identify = "p"
+        class_name = " "
         for p_text in aux_text.find_all(tag_identify):
             # var_length_paragraph = len(p_text.string)
             if (p_text.string):
                 print("long ", len(p_text.string))
                 if (len(p_text.string) >= 20):
-                    uuid = str(shortuuid.ShortUUID().random(length=8))
-                    p_text['class'] = 'p-' + uuid
 
-                    print("p", p_text.string)
-                    print(p_text)
-                    print(p_text['class'])
-                    print("Objeto : "+ str(page_id))
+                    if (p_text.get('class', [])):
+                        print("A ", p_text.get('class', []))
+                        class_name = p_text['class']
+                    else:
+                        uuid = str(shortuuid.ShortUUID().random(length=8))
+                        var_uuid = 'p-' + uuid
+                        p_text['class'] = var_uuid
+                        class_name = var_uuid
 
-                    Paragraph =  TagPageLearningObject(tag=tag_identify, text = p_text.string,
-                                 html_text=p_text,page_oa_id= page_id, id_class_ref=p_text['class'])
+                    #print("p", p_text.string)
+                    #print(p_text)
+                    #print(p_text['class'])
+                    #print("Objeto : "+ str(page_id))
+                    Paragraph =  TagPageLearningObject(tag=tag_identify, text = str(p_text.string),
+                                 html_text=str(p_text),page_oa_id= page_id, id_class_ref = class_name)
                     Paragraph.save()
-
-
-
             elif not p_text.string:
                 print("Parrafo vacio")
 
+        return aux_text
+
+    def generate_new_htmlFile(self,aux_text, directorio_Raiz):
+        html = aux_text.prettify('utf-8')
+        print("utf:", html)
+        new_direction = directorio_Raiz
+        if os.path.exists(new_direction):
+            with open(new_direction , "wb") as file:
+                file.write(html)
+        else:
+            os.mkdir(new_direction)
+            with open(new_direction, "wb") as file:
+                file.write(html)
 
     def get_queryset(self):
         user_token = None
@@ -202,11 +222,9 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         )
 
         learning_object = LearningObject.objects.get(pk=serializer.data['id'])
-        print("El objeto", learning_object)
         files = self.read_html_files(os.path.join(BASE_DIR, directory_adapted))
 
-
-        id_page = self.save_filesHTML(files,learning_object, directory_adapted)
+        self.save_filesHTML_db(files,learning_object, directory_adapted)
 
 
 
