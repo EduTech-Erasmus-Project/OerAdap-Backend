@@ -11,7 +11,7 @@ import shutil
 import os
 from unipath import Path
 from bs4 import BeautifulSoup
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject
+from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -78,12 +78,15 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         :return BeautifulSoup Data:
         """
         soup_data = None
-        with open(html_doc) as file:
+        with open(html_doc,encoding='utf8') as file:
             soup_data = BeautifulSoup(file, "html.parser")
             file.close()
             return soup_data
 
     def read_html_files(self, file):
+        """Lectura de archivos html
+        return :
+        """
         files = []
         for entry in os.scandir(file):
             if entry.path.endswith(".html"):
@@ -91,13 +94,52 @@ class UploadFileViewSet(viewsets.GenericViewSet):
                 files.append(entry.path)
         return files
 
-    def webScraping_metadata(self, directory, learningObject):
+    def save_filesHTML(self, files, learningObject,directory):
+        """Lectura de archivos html,
+        guardamos cada directorio
+        de cada archivo en la base
+        de datos
+        """
+        pages_convert = []
 
-        files = self.read_html_files(os.path.join(BASE_DIR, directory))
         for file in files:
-            Page = PageLearningObject(path="file",learning_object=learningObject)
+            #print("archivo"+file)
+            Page = PageLearningObject(path=file,learning_object=learningObject)
             Page.save()
-        print("Datos guardados")
+
+            page_object = PageLearningObject.objects.get(pk=Page.id)
+            #print("Objeto"+str(Page_object))
+            soup_data = self.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory, file))
+            pages_convert.append(soup_data)
+            self.webScraping_P(soup_data, page_object)
+
+    def webScraping_P(self, aux_text, page_id):
+        """ Exatraccion de los parrafos de cada pagina html,
+        se crea un ID unico, para identificar cada elemento
+        """
+        # print(aux_text)
+        tag_identify = "p"
+        for p_text in aux_text.find_all(tag_identify):
+            # var_length_paragraph = len(p_text.string)
+            if (p_text.string):
+                print("long ", len(p_text.string))
+                if (len(p_text.string) >= 20):
+                    uuid = str(shortuuid.ShortUUID().random(length=8))
+                    p_text['class'] = 'p-' + uuid
+
+                    print("p", p_text.string)
+                    print(p_text)
+                    print(p_text['class'])
+                    print("Objeto : "+ str(page_id))
+
+                    Paragraph =  TagPageLearningObject(tag=tag_identify, text = p_text.string,
+                                 html_text=p_text,page_oa_id= page_id, id_class_ref=p_text['class'])
+                    Paragraph.save()
+
+
+
+            elif not p_text.string:
+                print("Parrafo vacio")
 
 
     def get_queryset(self):
@@ -150,7 +192,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
 
         serializer.save(
-          #  title=soup_data.find('title').text,
+            title=soup_data.find('title').text,
             path_origin=directory_origin,
             path_adapted=directory_adapted,
             user_ref=user_token,
@@ -159,7 +201,15 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             file_folder=os.path.join(path, file_name.split('.')[0])
         )
 
-        self.webScraping_metadata(directory_adapted,serializer)
+        learning_object = LearningObject.objects.get(pk=serializer.data['id'])
+        print("El objeto", learning_object)
+        files = self.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+
+
+        id_page = self.save_filesHTML(files,learning_object, directory_adapted)
+
+
+
         # remove file zip
         # path_file = os.path.join(path, file_name.split('.')[0], file_name)
         # os.remove(os.path.join(BASE_DIR, path_file))

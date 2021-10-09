@@ -44,16 +44,24 @@ class AdaptationLearningObject(models.Model):
 
 class PageLearningObject(models.Model):
     class Meta:
-        db_table = 'pages_learning_objects'
-    path = models.CharField(max_length=100)
+        db_table = 'pages_oa'
+    path = models.TextField()
     learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
 
 
 class TagPageLearningObject(models.Model):
     class Meta:
-        db_table = 'tags_page_learning_objects'
+        db_table = 'data_tag'
 
     tag = models.CharField(max_length=20)
     text = models.TextField(null=True)
     html_text = models.TextField(null=True)
     page_oa_id = models.ForeignKey(PageLearningObject, on_delete=models.CASCADE)
+    id_class_ref = models.CharField(max_length=20)
+
+class DataAtribute(models.Model):
+    class Meta:
+        db_table = 'data_atribute'
+    atribute = models.CharField(max_length=100)
+    data_atribute = models.CharField(max_length=100)
+    data_tag = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)
