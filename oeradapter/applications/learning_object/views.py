@@ -12,6 +12,7 @@ import os
 from unipath import Path
 from bs4 import BeautifulSoup
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, directory_path
+from .serializers import PageLearningObjectSerializaer, TagPageLearningObjectSerializer
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -267,3 +268,13 @@ class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
             pass
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PageLearningObject.objects.all()
+    serializer_class = PageLearningObjectSerializaer
+    model = PageLearningObject
+
+class TagPageViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TagPageLearningObject.objects.all()
+    serializer_class = TagPageLearningObjectSerializer
+    model = TagPageLearningObject
