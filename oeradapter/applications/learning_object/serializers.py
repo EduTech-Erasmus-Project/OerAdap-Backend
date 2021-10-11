@@ -1,3 +1,4 @@
+import self as self
 from pip._internal.utils.subprocess import call_subprocess
 from rest_framework import serializers
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject , TagPageLearningObject
@@ -27,14 +28,6 @@ class LearningObjectAdaptationSettingsSerializer(serializers.ModelSerializer):
         # exclude = ("areas",)
 
 
-class PageLearningObjectSerializaer(serializers.ModelSerializer):
-    class Meta:
-        model = PageLearningObject
-        fields = (
-            'id',
-            'path',
-            'learning_object'
-        )
 class TagPageLearningObjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = TagPageLearningObject
@@ -45,4 +38,15 @@ class TagPageLearningObjectSerializer(serializers.ModelSerializer):
             'html_text',
             'page_oa_id',
             'id_class_ref'
+        )
+
+class PageLearningObjectSerializaer(serializers.ModelSerializer):
+    tags = TagPageLearningObjectSerializer(many=True)
+    class Meta:
+        model = PageLearningObject
+        fields = (
+            'id',
+            'path',
+            'learning_object',
+            'tags'
         )

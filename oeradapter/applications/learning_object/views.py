@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.response import Response
@@ -115,7 +116,6 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             newPage_html_generate = self.webScraping_P(soup_data, page_object)
 
             self.generate_new_htmlFile(newPage_html_generate,file )
-
 
     def webScraping_P(self, aux_text, page_id):
         """ Exatraccion de los parrafos de cada pagina html,
@@ -272,7 +272,12 @@ class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
 class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PageLearningObject.objects.all()
     serializer_class = PageLearningObjectSerializaer
-    model = PageLearningObject
+    def get_queryset(self):
+        queryset= super().get_queryset()
+        queryset = queryset.prefetch_related(
+            Prefetch('tags')
+        )
+        return queryset
 
 class TagPageViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TagPageLearningObject.objects.all()
