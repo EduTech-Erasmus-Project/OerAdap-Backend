@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.response import Response
@@ -11,10 +12,11 @@ import shutil
 import os
 from unipath import Path
 from bs4 import BeautifulSoup
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject
+from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, DataAtribute,directory_path
+from .serializers import PageLearningObjectSerializaer, TagPageLearningObjectSerializer
+
 
 BASE_DIR = Path(__file__).ancestor(3)
-
 
 class UploadFileViewSet(viewsets.GenericViewSet):
     """
@@ -78,12 +80,15 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         :return BeautifulSoup Data:
         """
         soup_data = None
-        with open(html_doc) as file:
+        with open(html_doc,encoding='utf8') as file:
             soup_data = BeautifulSoup(file, "html.parser")
             file.close()
             return soup_data
 
     def read_html_files(self, file):
+        """Lectura de archivos html
+        return :
+        """
         files = []
         for entry in os.scandir(file):
             if entry.path.endswith(".html"):
@@ -91,14 +96,105 @@ class UploadFileViewSet(viewsets.GenericViewSet):
                 files.append(entry.path)
         return files
 
-    def webScraping_metadata(self, directory, learningObject):
+    def save_filesHTML_db(self, files, learningObject,directory):
+        """Lectura de archivos html,
+        guardamos cada directorio
+        de cada archivo en la base
+        de datos
+        """
+        pages_convert = []
 
-        files = self.read_html_files(os.path.join(BASE_DIR, directory))
         for file in files:
-            Page = PageLearningObject(path="file",learning_object=learningObject)
+            Page = PageLearningObject(path=file,learning_object=learningObject)
             Page.save()
-        print("Datos guardados")
 
+            page_object = PageLearningObject.objects.get(pk=Page.id)
+            #print("Objeto"+str(Page_object))
+            directory_file= os.path.join(BASE_DIR, directory, file)
+            soup_data = self.generateBeautifulSoupFile(directory_file)
+            pages_convert.append(soup_data)
+            newPage_html_generate = self.webScraping_P(soup_data, page_object)
+
+            self.generate_new_htmlFile(newPage_html_generate,file )
+
+    def webScraping_P(self, aux_text, page_id):
+        """ Exatraccion de los parrafos de cada pagina html,
+        se crea un ID unico, para identificar cada elemento
+        """
+        # print(aux_text)
+        tag_identify = "p"
+        class_name = " "
+        for p_text in aux_text.find_all(tag_identify):
+            if (p_text.string):
+                if (len(p_text.string) >= 20):
+
+                    if (p_text.get('class', [])):
+                        class_name = p_text['class']
+                    else:
+                        uuid = str(shortuuid.ShortUUID().random(length=8))
+                        var_uuid = tag_identify+'-' + uuid
+                        p_text['class'] = var_uuid
+                        class_name = var_uuid
+                    Paragraph =  TagPageLearningObject(tag=tag_identify, text = str(p_text.string),
+                                 html_text=str(p_text),page_oa_id= page_id, id_class_ref = class_name)
+                    Paragraph.save()
+            elif not p_text.string:
+                print("Parrafo vacio")
+
+        """Vamos a extraer el alt de las imagenes y crear clases en las imagenes"""
+        tag_identify_img = "img"
+        class_name_img = " "
+        atribute_img = "src"
+        text_alt = " "
+        for img_text in aux_text.find_all(tag_identify_img):
+            # print(  p_text['alt'] )
+            # print(p_text.get('alt', []).isspace(),"\n")
+            if (img_text.get('class', [])):
+                class_name_img = img_text['class']
+            else:
+                uuid = str(shortuuid.ShortUUID().random(length=8))
+                class_name_img= tag_identify_img+'-' + uuid
+                img_text['class'] = class_name_img
+
+            if (img_text.get('alt', [])):
+                if (img_text.get('alt', []).isspace() == False):
+                    text_alt = img_text.get('alt', [])
+                else:
+                    #print("No tiene texto", "\n")
+                    text_alt = None
+            else:
+                # p_text['class'] = 'p-'+uuid
+                #print("No tiene alt", "\n")
+                text_alt = None
+
+            Image_details = TagPageLearningObject(
+                tag=tag_identify_img, text=str(text_alt),
+                html_text=str(img_text), page_oa_id=page_id, id_class_ref=class_name_img
+            )
+            Image_details.save()
+
+            Tag_page_object = TagPageLearningObject.objects.get(pk=Image_details.id)
+
+            Image_directory = DataAtribute(
+                atribute=atribute_img,
+                data_atribute=str(img_text.get('src', [])),
+                data_tag_id=Tag_page_object
+            )
+            Image_directory.save()
+
+        return aux_text
+
+    def generate_new_htmlFile(self,aux_text, directorio_Raiz):
+        html = aux_text.prettify('utf-8')
+        print("utf:", html)
+        new_direction = directorio_Raiz
+        if os.path.exists(new_direction):
+            with open(new_direction , "wb") as file:
+                file.write(html)
+        else:
+            os.mkdir(new_direction)
+            with open(new_direction, "wb") as file:
+                file.write(html)
 
     def get_queryset(self):
         user_token = None
@@ -159,10 +255,20 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             file_folder=os.path.join(path, file_name.split('.')[0])
         )
 
+<<<<<<< HEAD
         learning_object = self.model.objects.get(pk=serializer.data['id'])
         #print(self.model.objects.get(pk=serializer.data['id']))
 
         self.webScraping_metadata(directory_adapted, learning_object)
+=======
+        learning_object = LearningObject.objects.get(pk=serializer.data['id'])
+        files = self.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+
+        self.save_filesHTML_db(files,learning_object, directory_adapted)
+
+
+
+>>>>>>> dev
         # remove file zip
         # path_file = os.path.join(path, file_name.split('.')[0], file_name)
         # os.remove(os.path.join(BASE_DIR, path_file))
@@ -175,7 +281,6 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         response.status_code = 201
         # return Response(serializer.data, status=status.HTTP_201_CREATED)
         return response
-
 
 class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
     model = AdaptationLearningObject
@@ -202,3 +307,18 @@ class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
             pass
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PageLearningObject.objects.all()
+    serializer_class = PageLearningObjectSerializaer
+    def get_queryset(self):
+        queryset= super().get_queryset()
+        queryset = queryset.prefetch_related(
+            Prefetch('tags')
+        )
+        return queryset
+
+class TagPageViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TagPageLearningObject.objects.all()
+    serializer_class = TagPageLearningObjectSerializer
+    model = TagPageLearningObject
