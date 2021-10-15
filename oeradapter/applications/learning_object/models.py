@@ -64,4 +64,4 @@ class DataAtribute(models.Model):
         db_table = 'data_atribute'
     atribute = models.CharField(max_length=100)
     data_atribute = models.CharField(max_length=100)
-    data_tag = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)
+    data_tag_id = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)

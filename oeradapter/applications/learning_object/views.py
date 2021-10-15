@@ -12,11 +12,11 @@ import shutil
 import os
 from unipath import Path
 from bs4 import BeautifulSoup
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, directory_path
+from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, DataAtribute,directory_path
 from .serializers import PageLearningObjectSerializaer, TagPageLearningObjectSerializer
 
-BASE_DIR = Path(__file__).ancestor(3)
 
+BASE_DIR = Path(__file__).ancestor(3)
 
 class UploadFileViewSet(viewsets.GenericViewSet):
     """
@@ -125,29 +125,58 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         tag_identify = "p"
         class_name = " "
         for p_text in aux_text.find_all(tag_identify):
-            # var_length_paragraph = len(p_text.string)
             if (p_text.string):
-                print("long ", len(p_text.string))
                 if (len(p_text.string) >= 20):
 
                     if (p_text.get('class', [])):
-                        print("A ", p_text.get('class', []))
                         class_name = p_text['class']
                     else:
                         uuid = str(shortuuid.ShortUUID().random(length=8))
-                        var_uuid = 'p-' + uuid
+                        var_uuid = tag_identify+'-' + uuid
                         p_text['class'] = var_uuid
                         class_name = var_uuid
-
-                    #print("p", p_text.string)
-                    #print(p_text)
-                    #print(p_text['class'])
-                    #print("Objeto : "+ str(page_id))
                     Paragraph =  TagPageLearningObject(tag=tag_identify, text = str(p_text.string),
                                  html_text=str(p_text),page_oa_id= page_id, id_class_ref = class_name)
                     Paragraph.save()
             elif not p_text.string:
                 print("Parrafo vacio")
+
+        tag_identify_img = "img"
+        class_name_img = " "
+        atribute_img = "src"
+        for img_text in aux_text.find_all(tag_identify_img):
+            # print(  p_text['alt'] )
+            # print(p_text.get('alt', []).isspace(),"\n")
+            if (img_text.get('class', [])):
+                class_name_img = img_text['class']
+            else:
+                uuid = str(shortuuid.ShortUUID().random(length=8))
+                class_name_img= tag_identify_img+'-' + uuid
+                img_text['class'] = class_name_img
+
+            if (img_text.get('alt', [])):
+                if (img_text.get('alt', []).isspace() == False):
+
+                    Image_details = TagPageLearningObject(
+                        tag=tag_identify_img, text=str(img_text.get('alt', [])),
+                        html_text=str(img_text), page_oa_id=page_id, id_class_ref=class_name_img
+                    )
+                    Image_details.save()
+
+                    Tag_page_object = TagPageLearningObject.objects.get(pk=Image_details.id)
+
+                    Image_directory = DataAtribute(
+                        atribute= atribute_img,
+                        data_atribute = str(img_text.get('src', [])),
+                        data_tag_id = Tag_page_object
+                    )
+                    Image_directory.save()
+
+                else:
+                    print("No tiene texto", "\n")
+            else:
+                # p_text['class'] = 'p-'+uuid
+                print("No tiene alt", "\n")
 
         return aux_text
 
@@ -241,7 +270,6 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         response.status_code = 201
         # return Response(serializer.data, status=status.HTTP_201_CREATED)
         return response
-
 
 class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
     model = AdaptationLearningObject
