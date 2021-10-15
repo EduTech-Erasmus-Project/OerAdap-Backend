@@ -141,9 +141,11 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             elif not p_text.string:
                 print("Parrafo vacio")
 
+        """Vamos a extraer el alt de las imagenes y crear clases en las imagenes"""
         tag_identify_img = "img"
         class_name_img = " "
         atribute_img = "src"
+        text_alt = " "
         for img_text in aux_text.find_all(tag_identify_img):
             # print(  p_text['alt'] )
             # print(p_text.get('alt', []).isspace(),"\n")
@@ -156,27 +158,29 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
             if (img_text.get('alt', [])):
                 if (img_text.get('alt', []).isspace() == False):
-
-                    Image_details = TagPageLearningObject(
-                        tag=tag_identify_img, text=str(img_text.get('alt', [])),
-                        html_text=str(img_text), page_oa_id=page_id, id_class_ref=class_name_img
-                    )
-                    Image_details.save()
-
-                    Tag_page_object = TagPageLearningObject.objects.get(pk=Image_details.id)
-
-                    Image_directory = DataAtribute(
-                        atribute= atribute_img,
-                        data_atribute = str(img_text.get('src', [])),
-                        data_tag_id = Tag_page_object
-                    )
-                    Image_directory.save()
-
+                    text_alt = img_text.get('alt', [])
                 else:
-                    print("No tiene texto", "\n")
+                    #print("No tiene texto", "\n")
+                    text_alt = None
             else:
                 # p_text['class'] = 'p-'+uuid
-                print("No tiene alt", "\n")
+                #print("No tiene alt", "\n")
+                text_alt = None
+
+            Image_details = TagPageLearningObject(
+                tag=tag_identify_img, text=str(text_alt),
+                html_text=str(img_text), page_oa_id=page_id, id_class_ref=class_name_img
+            )
+            Image_details.save()
+
+            Tag_page_object = TagPageLearningObject.objects.get(pk=Image_details.id)
+
+            Image_directory = DataAtribute(
+                atribute=atribute_img,
+                data_atribute=str(img_text.get('src', [])),
+                data_tag_id=Tag_page_object
+            )
+            Image_directory.save()
 
         return aux_text
 
