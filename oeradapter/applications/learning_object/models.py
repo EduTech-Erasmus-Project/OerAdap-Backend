@@ -56,7 +56,7 @@ class TagPageLearningObject(models.Model):
     tag = models.CharField(max_length=20)
     text = models.TextField(null=True)
     html_text = models.TextField(null=True)
-    page_oa_id = models.ForeignKey(PageLearningObject, on_delete=models.CASCADE)
+    page_oa_id = models.ForeignKey(PageLearningObject,related_name='tags', on_delete=models.CASCADE)
     id_class_ref = models.CharField(max_length=20)
 
 class DataAtribute(models.Model):
@@ -64,4 +64,4 @@ class DataAtribute(models.Model):
         db_table = 'data_atribute'
     atribute = models.CharField(max_length=100)
     data_atribute = models.CharField(max_length=100)
-    data_tag = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)
+    data_tag_id = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)

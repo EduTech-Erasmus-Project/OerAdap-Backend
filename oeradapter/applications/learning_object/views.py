@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.response import Response
@@ -11,10 +12,11 @@ import shutil
 import os
 from unipath import Path
 from bs4 import BeautifulSoup
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, directory_path
+from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, DataAtribute,directory_path
+from .serializers import PageLearningObjectSerializaer, TagPageLearningObjectSerializer
+
 
 BASE_DIR = Path(__file__).ancestor(3)
-
 
 class UploadFileViewSet(viewsets.GenericViewSet):
     """
@@ -115,7 +117,6 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
             self.generate_new_htmlFile(newPage_html_generate,file )
 
-
     def webScraping_P(self, aux_text, page_id):
         """ Exatraccion de los parrafos de cada pagina html,
         se crea un ID unico, para identificar cada elemento
@@ -124,29 +125,62 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         tag_identify = "p"
         class_name = " "
         for p_text in aux_text.find_all(tag_identify):
-            # var_length_paragraph = len(p_text.string)
             if (p_text.string):
-                print("long ", len(p_text.string))
                 if (len(p_text.string) >= 20):
 
                     if (p_text.get('class', [])):
-                        print("A ", p_text.get('class', []))
                         class_name = p_text['class']
                     else:
                         uuid = str(shortuuid.ShortUUID().random(length=8))
-                        var_uuid = 'p-' + uuid
+                        var_uuid = tag_identify+'-' + uuid
                         p_text['class'] = var_uuid
                         class_name = var_uuid
-
-                    #print("p", p_text.string)
-                    #print(p_text)
-                    #print(p_text['class'])
-                    #print("Objeto : "+ str(page_id))
                     Paragraph =  TagPageLearningObject(tag=tag_identify, text = str(p_text.string),
                                  html_text=str(p_text),page_oa_id= page_id, id_class_ref = class_name)
                     Paragraph.save()
             elif not p_text.string:
                 print("Parrafo vacio")
+
+        """Vamos a extraer el alt de las imagenes y crear clases en las imagenes"""
+        tag_identify_img = "img"
+        class_name_img = " "
+        atribute_img = "src"
+        text_alt = " "
+        for img_text in aux_text.find_all(tag_identify_img):
+            # print(  p_text['alt'] )
+            # print(p_text.get('alt', []).isspace(),"\n")
+            if (img_text.get('class', [])):
+                class_name_img = img_text['class']
+            else:
+                uuid = str(shortuuid.ShortUUID().random(length=8))
+                class_name_img= tag_identify_img+'-' + uuid
+                img_text['class'] = class_name_img
+
+            if (img_text.get('alt', [])):
+                if (img_text.get('alt', []).isspace() == False):
+                    text_alt = img_text.get('alt', [])
+                else:
+                    #print("No tiene texto", "\n")
+                    text_alt = None
+            else:
+                # p_text['class'] = 'p-'+uuid
+                #print("No tiene alt", "\n")
+                text_alt = None
+
+            Image_details = TagPageLearningObject(
+                tag=tag_identify_img, text=str(text_alt),
+                html_text=str(img_text), page_oa_id=page_id, id_class_ref=class_name_img
+            )
+            Image_details.save()
+
+            Tag_page_object = TagPageLearningObject.objects.get(pk=Image_details.id)
+
+            Image_directory = DataAtribute(
+                atribute=atribute_img,
+                data_atribute=str(img_text.get('src', [])),
+                data_tag_id=Tag_page_object
+            )
+            Image_directory.save()
 
         return aux_text
 
@@ -241,7 +275,6 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         # return Response(serializer.data, status=status.HTTP_201_CREATED)
         return response
 
-
 class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
     model = AdaptationLearningObject
     serializer_class = serializers.LearningObjectAdaptationSettingsSerializer
@@ -267,3 +300,18 @@ class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
             pass
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PageLearningObject.objects.all()
+    serializer_class = PageLearningObjectSerializaer
+    def get_queryset(self):
+        queryset= super().get_queryset()
+        queryset = queryset.prefetch_related(
+            Prefetch('tags')
+        )
+        return queryset
+
+class TagPageViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TagPageLearningObject.objects.all()
+    serializer_class = TagPageLearningObjectSerializer
+    model = TagPageLearningObject
