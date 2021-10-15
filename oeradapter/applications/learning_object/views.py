@@ -150,7 +150,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
 
 
         serializer.save(
-          #  title=soup_data.find('title').text,
+            title=soup_data.find('title').text,
             path_origin=directory_origin,
             path_adapted=directory_adapted,
             user_ref=user_token,
@@ -159,7 +159,10 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             file_folder=os.path.join(path, file_name.split('.')[0])
         )
 
-        self.webScraping_metadata(directory_adapted,serializer)
+        learning_object = self.model.objects.get(pk=serializer.data['id'])
+        #print(self.model.objects.get(pk=serializer.data['id']))
+
+        self.webScraping_metadata(directory_adapted, learning_object)
         # remove file zip
         # path_file = os.path.join(path, file_name.split('.')[0], file_name)
         # os.remove(os.path.join(BASE_DIR, path_file))
