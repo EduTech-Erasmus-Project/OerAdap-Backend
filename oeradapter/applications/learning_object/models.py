@@ -18,12 +18,12 @@ class LearningObject(models.Model):
     class Meta:
         db_table = 'learning_objects'
 
-    title = models.CharField(max_length=100, null=True)
-    path_origin = models.CharField(max_length=100)
-    path_adapted = models.CharField(max_length=100)
+    title = models.CharField(max_length=200, null=True)
+    path_origin = models.TextField()
+    path_adapted = models.TextField()
     user_ref = models.CharField(max_length=100)
     # file = models.FileField(upload_to=directory_path)
-    file_folder = models.CharField(max_length=100, null=True)
+    file_folder = models.TextField()
     preview_origin = models.URLField(null=True)
     preview_adapted = models.URLField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,6 +37,7 @@ class LearningObject(models.Model):
 class AdaptationLearningObject(models.Model):
     class Meta:
         db_table = 'adaptations_learning_objects'
+
     method = models.CharField(max_length=10)
     areas = ArrayField(models.CharField(max_length=10, blank=True), size=6)
     learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
@@ -45,6 +46,7 @@ class AdaptationLearningObject(models.Model):
 class PageLearningObject(models.Model):
     class Meta:
         db_table = 'pages_oa'
+
     path = models.TextField()
     learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
 
@@ -54,14 +56,17 @@ class TagPageLearningObject(models.Model):
         db_table = 'data_tag'
 
     tag = models.CharField(max_length=20)
-    text = models.TextField(null=True)
-    html_text = models.TextField(null=True)
-    page_oa_id = models.ForeignKey(PageLearningObject,related_name='tags', on_delete=models.CASCADE)
+    text = models.TextField(null=True, blank=True)
+    html_text = models.TextField(null=True, blank=True)
+    page_learning_object = models.ForeignKey(PageLearningObject, related_name='tags', on_delete=models.CASCADE)
     id_class_ref = models.CharField(max_length=20)
 
-class DataAtribute(models.Model):
+
+class DataAttribute(models.Model):
     class Meta:
         db_table = 'data_atribute'
+
     atribute = models.CharField(max_length=100)
-    data_atribute = models.CharField(max_length=100)
-    data_tag_id = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)
+    data_atribute = models.TextField()
+    type = models.CharField(max_length=50, null=True, blank=True)
+    tag_page_learning_object = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)
