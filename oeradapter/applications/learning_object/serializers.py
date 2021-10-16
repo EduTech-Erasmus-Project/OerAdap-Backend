@@ -1,13 +1,13 @@
-import self as self
-from pip._internal.utils.subprocess import call_subprocess
 from rest_framework import serializers
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject , TagPageLearningObject
+from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
 
 
 class LearningObjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearningObject
-        exclude = ('title', 'path_origin', 'path_adapted', 'user_ref', 'expires_at', 'created_at', 'updated_at')
+        exclude = (
+            'title', 'path_origin', 'path_adapted', 'user_ref', 'expires_at', 'created_at', 'updated_at',
+            'file_folder',)
 
     def to_representation(self, instance):
         return {
@@ -31,7 +31,7 @@ class LearningObjectAdaptationSettingsSerializer(serializers.ModelSerializer):
 class TagPageLearningObjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = TagPageLearningObject
-        fields=(
+        fields = (
             'id',
             'tag',
             'text',
@@ -40,8 +40,10 @@ class TagPageLearningObjectSerializer(serializers.ModelSerializer):
             'id_class_ref'
         )
 
-class PageLearningObjectSerializaer(serializers.ModelSerializer):
+
+class PageLearningObjectSerializer(serializers.ModelSerializer):
     tags = TagPageLearningObjectSerializer(many=True)
+
     class Meta:
         model = PageLearningObject
         fields = (
