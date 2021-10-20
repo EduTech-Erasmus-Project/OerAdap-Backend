@@ -45,21 +45,36 @@ class AdaptationLearningObject(models.Model):
 
 class PageLearningObject(models.Model):
     class Meta:
-        db_table = 'pages_oa'
+        db_table = 'page_learning_object'
 
     path = models.TextField()
+    title = models.CharField(max_length=200, null=True)
+    preview_path = models.URLField(null=True)
     learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
 
 
 class TagPageLearningObject(models.Model):
     class Meta:
-        db_table = 'data_tag'
+        db_table = 'tag_page_learning_object'
 
     tag = models.CharField(max_length=20)
     text = models.TextField(null=True, blank=True)
     html_text = models.TextField(null=True, blank=True)
-    page_learning_object = models.ForeignKey(PageLearningObject, related_name='tags', on_delete=models.CASCADE)
+    page_learning_object = models.ForeignKey(PageLearningObject, on_delete=models.CASCADE)
     id_class_ref = models.CharField(max_length=20)
+
+
+class TagAdapted(models.Model):
+    class Meta:
+        db_table = 'tag_adapted'
+
+    type = models.CharField(max_length=20)
+    text = models.TextField(null=True, blank=True)
+    html_text = models.TextField(null=True, blank=True)
+    #html_text_inyection = models.TextField(null=True, blank=True)
+    path_src = models.TextField(null=True, blank=True)
+    path_preview = models.URLField(null=True)
+    tag_page_learning_object = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)
 
 
 class DataAttribute(models.Model):

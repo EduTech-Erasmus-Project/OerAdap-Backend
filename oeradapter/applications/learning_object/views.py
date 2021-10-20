@@ -13,7 +13,7 @@ import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
 from .serializers import PageLearningObjectSerializer, TagPageLearningObjectSerializer
-from . import beautiful_soup_data as bsd
+from ...helpers import beautiful_soup_data as bsd
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -171,7 +171,17 @@ class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
         # print(request.data)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # serializer.save()
+
+        # serializer.save()\
+        if "manual":
+            #  retorno normal
+            pass
+
+        elif "automatico":
+
+            pass
+        elif "mixta":
+            pass
 
         try:
             if request.data['areas'].index('image') >= 0:

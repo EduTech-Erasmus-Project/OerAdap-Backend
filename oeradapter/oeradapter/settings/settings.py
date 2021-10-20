@@ -39,7 +39,8 @@ DJANGO_APPS = [
 ]
 
 LOCAL_APPS = [
-    'applications.learning_object'
+    'applications.learning_object',
+    'applications.adaptation',
 ]
 
 THIRD_PARTY_APPS = [
