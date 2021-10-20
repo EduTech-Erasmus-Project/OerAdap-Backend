@@ -16,6 +16,7 @@ from .serializers import PageLearningObjectSerializer, TagPageLearningObjectSeri
 from ..helpers_functions import beautiful_soup_data as bsd
 
 
+
 BASE_DIR = Path(__file__).ancestor(3)
 
 
@@ -98,6 +99,13 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         data = self.get_queryset()
         data = self.get_serializer(data, many=True)
         return Response(data.data, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, pk=None):
+        queryset = PageLearningObject.objects.all()
+        user = get_object_or_404(queryset, pk=pk)
+        serializer = PageLearningObjectSerializaer(user)
+
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         """
