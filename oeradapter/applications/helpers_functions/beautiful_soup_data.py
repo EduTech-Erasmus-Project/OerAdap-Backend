@@ -2,7 +2,8 @@ from unipath import Path
 from bs4 import BeautifulSoup
 import os
 import shortuuid
-from .models import PageLearningObject, TagPageLearningObject, DataAttribute
+
+from ..learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -18,7 +19,6 @@ def generateBeautifulSoupFile(html_doc):
     :param html_doc:
     :return BeautifulSoup Data:
     """
-    soup_data = None
     with open(html_doc, encoding='utf8') as file:
         soup_data = BeautifulSoup(file, "html.parser")
         file.close()
