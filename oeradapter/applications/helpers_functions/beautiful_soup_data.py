@@ -2,7 +2,8 @@ from unipath import Path
 from bs4 import BeautifulSoup
 import os
 import shortuuid
-from oeradapter.applications.learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute
+
+from ..learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute
 
 BASE_DIR = Path(__file__).ancestor(3)
 

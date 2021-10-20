@@ -13,7 +13,8 @@ import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
 from .serializers import PageLearningObjectSerializer, TagPageLearningObjectSerializer
-from ...helpers import beautiful_soup_data as bsd
+from ..helpers_functions import beautiful_soup_data as bsd
+
 
 BASE_DIR = Path(__file__).ancestor(3)
 
