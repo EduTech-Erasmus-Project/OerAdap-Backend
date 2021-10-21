@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
 from django.db.models import Q
 
+
 class LearningObjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearningObject
@@ -78,27 +79,3 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         }
 
 
-class TagPageLearningObjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TagPageLearningObject
-        fields = (
-            'id',
-            'tag',
-            'text',
-            'html_text',
-            'page_oa_id',
-            'id_class_ref'
-        )
-
-
-class PageLearningObjectSerializer(serializers.ModelSerializer):
-    tags = TagPageLearningObjectSerializer(many=True)
-
-    class Meta:
-        model = PageLearningObject
-        fields = (
-            'id',
-            'path',
-            'learning_object',
-            'tags'
-        )
