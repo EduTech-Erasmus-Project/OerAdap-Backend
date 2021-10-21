@@ -1,7 +1,5 @@
 from django.db.models import Prefetch
 from django.http import HttpResponse
-from rest_framework import status
-from rest_framework.response import Response
 from rest_framework import viewsets
 from . import serializers
 import shortuuid
@@ -14,8 +12,8 @@ from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
 from .serializers import PageLearningObjectSerializer, TagPageLearningObjectSerializer, LearningObjectSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
-from django.shortcuts import get_object_or_404
 from rest_framework import generics
+
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -116,6 +114,7 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
             return []
         if user_token is not None:
             return self.get_serializer().Meta.model.objects.filter(user_ref=user_token)
+
 
     def post(self, request, *args, **kwargs):
         """
