@@ -25,7 +25,7 @@ def generateBeautifulSoupFile(html_doc):
         return soup_data
 
 
-def save_filesHTML_db(files, learningObject, directory):
+def save_filesHTML_db(files, learningObject, directory, request_host):
     """Lectura de archivos html,
     guardamos cada directorio
     de cada archivo en la base
@@ -33,24 +33,32 @@ def save_filesHTML_db(files, learningObject, directory):
     """
     pages_convert = []
 
+    #print(files_name)
+
     for file in files:
-        page = PageLearningObject(path=file, learning_object=learningObject)
-        page.save()
 
-        page_object = PageLearningObject.objects.get(
-            pk=page.id)  # refactirizar sin hacer peticion a la base de datos
+        #page_object = PageLearningObject.objects.get(
+            #pk=page.id)  # refactirizar sin hacer peticion a la base de datos
         # print("Objeto"+str(Page_object))
+        print(file['file'])
 
-        directory_file = os.path.join(BASE_DIR, directory, file)
+        directory_file = os.path.join(BASE_DIR, directory, file['file'])
+        preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
         soup_data = generateBeautifulSoupFile(directory_file)
         pages_convert.append(soup_data)
 
+        page = PageLearningObject.objects.create(
+            title=soup_data.find('title').text,
+            path=directory_file,
+            preview_path=preview_path,
+            learning_object=learningObject)
+
         # Se procesa las etiquetas html
-        web_scraping_p(soup_data, page_object, file)
-        webs_craping_img(soup_data, page_object, file)
-        webs_craping_video_and_audio(soup_data, page_object, file, 'audio')
-        webs_craping_video_and_audio(soup_data, page_object, file, 'video')
-        webs_craping_iframe(soup_data, page_object, file)
+        web_scraping_p(soup_data, page, file['file'])
+        webs_craping_img(soup_data, page, file['file'])
+        webs_craping_video_and_audio(soup_data, page, file['file'], 'audio')
+        webs_craping_video_and_audio(soup_data, page, file['file'], 'video')
+        webs_craping_iframe(soup_data, page, file['file'])
 
 
 def web_scraping_p(aux_text, page_id, file):
@@ -71,12 +79,12 @@ def web_scraping_p(aux_text, page_id, file):
                 else:
                     p_text['class'] = class_uuid
 
-                tag_page = TagPageLearningObject(tag=tag_identify,
+                tag_page = TagPageLearningObject.objects.create(tag=tag_identify,
                                                  text=str(p_text.string),
                                                  html_text=str(p_text),
                                                  page_learning_object=page_id,
                                                  id_class_ref=class_uuid)
-                tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+                #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
         elif not p_text.string:
             print("Parrafo vacio")
     generate_new_htmlFile(aux_text, file)
@@ -101,19 +109,19 @@ def webs_craping_img(aux_text, page_id, file):
         else:
             tag['alt'] = text_alt
 
-        tag_page = TagPageLearningObject(
+        tag_page = TagPageLearningObject.objects.create(
             tag=tag_identify, text=str(text_alt),
             html_text=str(tag), page_learning_object=page_id, id_class_ref=class_uuid
         )
-        tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+        #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
-        tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
+        #tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
         data_attribute = DataAttribute(
             atribute=attribute_img,
             data_atribute=str(tag.get('src', [])),
-            tag_page_learning_object=tag_page_object
+            tag_page_learning_object=tag_page
         )
         data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
     generate_new_htmlFile(aux_text, file)
@@ -131,15 +139,15 @@ def webs_craping_video_and_audio(aux_text, page_id, file, tag_identify):
         else:
             tag['class'] = class_uuid
 
-        tag_page = TagPageLearningObject(
+        tag_page = TagPageLearningObject.objects.create(
             tag=tag_identify,
             html_text=str(tag),
             page_learning_object=page_id,
             id_class_ref=class_uuid
         )
-        tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+        #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
-        tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
+        #tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
         for subtag in tag.find_all('source'):
@@ -148,7 +156,7 @@ def webs_craping_video_and_audio(aux_text, page_id, file, tag_identify):
                 atribute=attribute_src,
                 data_atribute=str(subtag.get('src')),
                 type=str(subtag.get('type')),
-                tag_page_learning_object=tag_page_object
+                tag_page_learning_object=tag_page
             )
             data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
     generate_new_htmlFile(aux_text, file)
@@ -174,22 +182,22 @@ def webs_craping_iframe(aux_text, page_id, file):
         else:
             tag['title'] = text_title
 
-        tag_page = TagPageLearningObject(
+        tag_page = TagPageLearningObject.objects.create(
             tag=tag_identify,
             text=str(text_title),
             html_text=str(tag),
             page_learning_object=page_id,
             id_class_ref=class_uuid
         )
-        tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+        #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
-        tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
+        #tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
         data_atribute = DataAttribute(
             atribute=attribute_src,
             data_atribute=str(tag.get('src')),
-            tag_page_learning_object=tag_page_object
+            tag_page_learning_object=tag_page
         )
         data_atribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
     generate_new_htmlFile(aux_text, file)
