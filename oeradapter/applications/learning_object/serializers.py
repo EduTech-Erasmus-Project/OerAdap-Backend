@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
+from .models import LearningObject, AdaptationLearningObject
 
 
 class LearningObjectSerializer(serializers.ModelSerializer):
@@ -28,27 +28,3 @@ class LearningObjectAdaptationSettingsSerializer(serializers.ModelSerializer):
         # exclude = ("areas",)
 
 
-class TagPageLearningObjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TagPageLearningObject
-        fields = (
-            'id',
-            'tag',
-            'text',
-            'html_text',
-            'page_oa_id',
-            'id_class_ref'
-        )
-
-
-class PageLearningObjectSerializer(serializers.ModelSerializer):
-    tags = TagPageLearningObjectSerializer(many=True)
-
-    class Meta:
-        model = PageLearningObject
-        fields = (
-            'id',
-            'path',
-            'learning_object',
-            'tags'
-        )

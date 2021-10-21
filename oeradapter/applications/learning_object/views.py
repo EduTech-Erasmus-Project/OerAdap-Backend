@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from django.http import HttpResponse
 from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import viewsets
 from . import serializers
@@ -12,7 +13,6 @@ import shutil
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
-from .serializers import PageLearningObjectSerializer, TagPageLearningObjectSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
 
 
@@ -103,7 +103,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
     def retrieve(self, request, pk=None):
         queryset = PageLearningObject.objects.all()
         user = get_object_or_404(queryset, pk=pk)
-        serializer = PageLearningObjectSerializaer(user)
+        serializer = PageLearningObjectSerializer(user)
 
         return Response(serializer.data)
 
@@ -209,20 +209,3 @@ class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-# analizar metodos
-class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = PageLearningObject.objects.all()
-    serializer_class = PageLearningObjectSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        queryset = queryset.prefetch_related(
-            Prefetch('tags')
-        )
-        return queryset
-
-
-class TagPageViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = TagPageLearningObject.objects.all()
-    serializer_class = TagPageLearningObjectSerializer
-    model = TagPageLearningObject

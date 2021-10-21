@@ -67,7 +67,6 @@ class TagPageLearningObject(models.Model):
 class TagAdapted(models.Model):
     class Meta:
         db_table = 'tag_adapted'
-
     type = models.CharField(max_length=20)
     text = models.TextField(null=True, blank=True)
     html_text = models.TextField(null=True, blank=True)
