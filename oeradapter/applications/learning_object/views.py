@@ -12,18 +12,38 @@ import shutil
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
-from .serializers import PageLearningObjectSerializer, TagPageLearningObjectSerializer
+from .serializers import PageLearningObjectSerializer, TagPageLearningObjectSerializer, LearningObjectSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
-
+from django.shortcuts import get_object_or_404
+from rest_framework import generics
 
 BASE_DIR = Path(__file__).ancestor(3)
 
 
-class UploadFileViewSet(viewsets.GenericViewSet):
+# analizar metodos
+class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PageLearningObject.objects.all()
+    serializer_class = PageLearningObjectSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.prefetch_related(
+            Prefetch('tags')
+        )
+        return queryset
+
+
+class TagPageViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TagPageLearningObject.objects.all()
+    serializer_class = TagPageLearningObjectSerializer
+    model = TagPageLearningObject
+
+
+class LearningObjectCreateApiView(generics.CreateAPIView):
     """
         File Learning Object
     """
-    model = LearningObject
+    # model = LearningObject
     serializer_class = serializers.LearningObjectSerializer
 
     def extract_zip_file(self, path, file_name, file):
@@ -81,8 +101,11 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         files = []
         for entry in os.scandir(file):
             if entry.path.endswith(".html"):
-                # print(entry.path)
-                files.append(entry.path)
+                print(entry.name)
+                files.append({
+                    "file": entry.path,
+                    "file_name": entry.name
+                })
         return files
 
     def get_queryset(self):
@@ -94,12 +117,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         if user_token is not None:
             return self.get_serializer().Meta.model.objects.filter(user_ref=user_token)
 
-    def list(self, request):
-        data = self.get_queryset()
-        data = self.get_serializer(data, many=True)
-        return Response(data.data, status=status.HTTP_200_OK)
-
-    def create(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
             Upload file attribute required file
             file > type file
@@ -110,6 +128,8 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             "created_at"
             "expires_at"
         """
+
+        # areas = self.validated_data.pop('areas')
 
         try:
             user_token = request.COOKIES['user_ref']
@@ -134,7 +154,7 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         # print('path'+os.path.join(BASE_DIR, directory_origin))
         soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
-        serializer.save(
+        learning_object = LearningObject.objects.create(
             title=soup_data.find('title').text,
             path_origin=directory_origin,
             path_adapted=directory_adapted,
@@ -143,12 +163,22 @@ class UploadFileViewSet(viewsets.GenericViewSet):
             preview_adapted=preview_adapted,
             file_folder=os.path.join(path, file_name.split('.')[0])
         )
+        serializer = LearningObjectSerializer(learning_object)
 
-        learning_object = LearningObject.objects.get(
-            pk=serializer.data['id'])  # refactirizar sin hacer peticion a la base de datos
+        AdaptationLearningObject.objects.create(
+            method=request.data['method'],
+            areas=request.data['areas'].split(sep=','),
+            learning_object=learning_object
+        )
+
+        # learning_object = LearningObject.objects.get(
+        #    pk=serializer.data['id'])  # refactirizar sin hacer peticion a la base de datos
+
         files = self.read_html_files(os.path.join(BASE_DIR, directory_adapted))
 
-        bsd.save_filesHTML_db(files, learning_object, directory_adapted)
+        # print(files_name)
+
+        bsd.save_filesHTML_db(files, learning_object, directory_adapted, request._current_scheme_host)
 
         # remove file zip
         # path_file = os.path.join(path, file_name.split('.')[0], file_name)
@@ -164,57 +194,8 @@ class UploadFileViewSet(viewsets.GenericViewSet):
         return response
 
 
-class LearningObjectAdaptationSettingsViewSet(viewsets.GenericViewSet):
-    model = AdaptationLearningObject
-    serializer_class = serializers.LearningObjectAdaptationSettingsSerializer
-
-    def create(self, request, *args, **kwargs):
-        # print(request.data)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # serializer.save()\
-        if "manual":
-            #  retorno normal
-            pass
-
-        elif "automatico":
-
-            pass
-        elif "mixta":
-            pass
-
-        try:
-            if request.data['areas'].index('image') >= 0:
-                print("image in list")
-            if request.data['areas'].index('video') >= 0:
-                print("video in list")
-            if request.data['areas'].index('audio') >= 0:
-                print("audio in list")
-            if request.data['areas'].index('button') >= 0:
-                print("button in list")
-            if request.data['areas'].index('paragraph') >= 0:
-                print("paragraph in list")
-        except:
-            pass
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-# analizar metodos
-class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = PageLearningObject.objects.all()
-    serializer_class = PageLearningObjectSerializer
+class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
+    serializer_class = serializers.LearningObjectDetailSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        queryset = queryset.prefetch_related(
-            Prefetch('tags')
-        )
-        return queryset
-
-
-class TagPageViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = TagPageLearningObject.objects.all()
-    serializer_class = TagPageLearningObjectSerializer
-    model = TagPageLearningObject
+        return self.get_serializer().Meta.model.objects.filter()
