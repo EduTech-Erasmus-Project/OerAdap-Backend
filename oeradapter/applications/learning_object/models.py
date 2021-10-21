@@ -29,7 +29,7 @@ class LearningObject(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     expires_at = models.DateTimeField(default=datetime.now() + timedelta(days=1))
-    file_adapted = models.FileField(upload_to=directory_path, null=True, blank=True)
+    file_adapted = models.URLField(null=True)
 
     objects = LearningObjectManager()
 
@@ -60,8 +60,8 @@ class TagPageLearningObject(models.Model):
     tag = models.CharField(max_length=20)
     text = models.TextField(null=True, blank=True)
     html_text = models.TextField(null=True, blank=True)
-    page_learning_object = models.ForeignKey(PageLearningObject, on_delete=models.CASCADE)
     id_class_ref = models.CharField(max_length=20)
+    page_learning_object = models.ForeignKey(PageLearningObject, on_delete=models.CASCADE)
 
 
 class TagAdapted(models.Model):
