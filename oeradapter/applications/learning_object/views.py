@@ -13,32 +13,11 @@ import shutil
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
-from .serializers import PageLearningObjectSerializer, TagPageLearningObjectSerializer, LearningObjectSerializer
+from .serializers import  LearningObjectSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
 from rest_framework import generics
 
-
 BASE_DIR = Path(__file__).ancestor(3)
-
-
-# analizar metodos
-class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = PageLearningObject.objects.all()
-    serializer_class = PageLearningObjectSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        queryset = queryset.prefetch_related(
-            Prefetch('tags')
-        )
-        return queryset
-
-
-class TagPageViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = TagPageLearningObject.objects.all()
-    serializer_class = TagPageLearningObjectSerializer
-    model = TagPageLearningObject
-
 
 class LearningObjectCreateApiView(generics.CreateAPIView):
     """

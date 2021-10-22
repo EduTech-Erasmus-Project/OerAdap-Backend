@@ -61,7 +61,7 @@ class TagPageLearningObject(models.Model):
     text = models.TextField(null=True, blank=True)
     html_text = models.TextField(null=True, blank=True)
     id_class_ref = models.CharField(max_length=20)
-    page_learning_object = models.ForeignKey(PageLearningObject, on_delete=models.CASCADE)
+    page_learning_object = models.ForeignKey(PageLearningObject, related_name='tags',on_delete=models.CASCADE)
 
 
 class TagAdapted(models.Model):
