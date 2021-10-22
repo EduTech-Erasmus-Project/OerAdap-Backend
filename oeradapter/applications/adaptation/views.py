@@ -25,6 +25,13 @@ class IframeView(RetrieveAPIView):
     serializer_class = serializers.TagLearningObjectDetailSerializerIf
 
 
+class AudioView(RetrieveAPIView):
+    queryset = TagPageLearningObject.objects.all()
+    serializer_class = serializers.TagLearningObjectDetailSerializerAu
+
+
+
+
 
 
 
