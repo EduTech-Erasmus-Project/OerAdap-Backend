@@ -47,10 +47,24 @@ class TagLearningObjectDetailSerializerIf(serializers.ModelSerializer):
     def to_representation(self, instance):
         # config_adaptability = AdaptationLearningObject.objects.get(pk=instance.id)
 
-        pages = TagPageLearningObject.objects.filter(Q(id=instance.id) & Q(tag='iframe'))
+        pages = TagPageLearningObject.objects.filter(Q(id=instance.id) & (Q(tag='iframe') | Q(tag='video')))
         pages = TagsSerializer(pages, many=True)
 
         return {
             "pages":pages.data
         }
 
+class TagLearningObjectDetailSerializerAu(serializers.ModelSerializer):
+    class Meta:
+        model = TagPageLearningObject
+        #fields = "__all__"
+
+    def to_representation(self, instance):
+        # config_adaptability = AdaptationLearningObject.objects.get(pk=instance.id)
+
+        pages = TagPageLearningObject.objects.filter(Q(id=instance.id) & Q(tag='audio'))
+        pages = TagsSerializer(pages, many=True)
+
+        return {
+            "pages":pages.data
+        }
