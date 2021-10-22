@@ -3,20 +3,29 @@ from django.shortcuts import render
 
 # Create your views here.
 # analizar metodos
-from rest_framework import viewsets
+from rest_framework import viewsets, generics
+from rest_framework.generics import RetrieveAPIView
+from . import serializers
+from ..learning_object.models import TagPageLearningObject
 
-from .serializers import PageLearningObjectSerializer
-from ..learning_object.models import PageLearningObject
+from rest_framework import status
+from rest_framework.response import Response
 
 
-class PageOAViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = PageLearningObject.objects.all()
-    serializer_class = PageLearningObjectSerializer
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        queryset = queryset.prefetch_related(
-            Prefetch('tags')
-        )
-        return queryset
+class ParagraphView(RetrieveAPIView):
+    queryset = TagPageLearningObject.objects.all()
+    serializer_class = serializers.TagLearningObjectDetailSerializerP
+
+class ImageView(RetrieveAPIView):
+    queryset = TagPageLearningObject.objects.all()
+    serializer_class = serializers.TagLearningObjectDetailSerializerI
+
+class IframeView(RetrieveAPIView):
+    queryset = TagPageLearningObject.objects.all()
+    serializer_class = serializers.TagLearningObjectDetailSerializerIf
+
+
+
+
 
 
