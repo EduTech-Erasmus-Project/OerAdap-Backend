@@ -65,7 +65,7 @@ def web_scraping_p(aux_text, page_id, file):
     """ Exatraccion de los parrafos de cada pagina html,
     se crea un ID unico, para identificar cada elemento
     """
-    # print(aux_text)
+    # print(file_beautiful_soup)
     tag_identify = "p"
 
     # Reducir la lista con el criterio de que la longitud de texto sea > 2 para evitar que recorra todos los
@@ -162,13 +162,13 @@ def webs_craping_video_and_audio(aux_text, page_id, file, tag_identify):
     generate_new_htmlFile(aux_text, file)
 
 
-def webs_craping_iframe(aux_text, page_id, file):
+def webs_craping_iframe(file_beautiful_soup, page_id, file):
     """Vamos a extraer el src de los iframses incrustados de videos"""
     tag_identify = "iframe"
     attribute_src = "src"
     text_title = ""
 
-    for tag in aux_text.find_all(tag_identify):
+    for tag in file_beautiful_soup.find_all(tag_identify):
 
         class_uuid = tag_identify + '-' + getUUID()
 
@@ -200,12 +200,12 @@ def webs_craping_iframe(aux_text, page_id, file):
             tag_page_learning_object=tag_page
         )
         data_atribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
-    generate_new_htmlFile(aux_text, file)
+    generate_new_htmlFile(file_beautiful_soup, file)
 
 
-def generate_new_htmlFile(aux_text, path):
+def generate_new_htmlFile(file_beautiful_soup, path):
     """Genera un nuevo archivo con los atributos editados"""
-    html = aux_text.prettify('utf-8')
+    html = file_beautiful_soup.prettify('utf-8')
     # print("utf:", html)
     new_direction = path
     if os.path.exists(new_direction):
