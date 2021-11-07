@@ -13,11 +13,13 @@ import shutil
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
-from .serializers import  LearningObjectSerializer
+from .serializers import LearningObjectSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
+from ..helpers_functions import base_adaptation as ba
 from rest_framework import generics
 
 BASE_DIR = Path(__file__).ancestor(3)
+
 
 class LearningObjectCreateApiView(generics.CreateAPIView):
     """
@@ -74,19 +76,7 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
         elif len(listdir(directory_name)) == 1:
             return 0
 
-    def read_html_files(self, file):
-        """Lectura de archivos html
-        return :
-        """
-        files = []
-        for entry in os.scandir(file):
-            if entry.path.endswith(".html"):
-                print(entry.name)
-                files.append({
-                    "file": entry.path,
-                    "file_name": entry.name
-                })
-        return files
+
 
     def get_queryset(self):
         user_token = None
@@ -96,8 +86,6 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
             return []
         if user_token is not None:
             return self.get_serializer().Meta.model.objects.filter(user_ref=user_token)
-
-
 
     def post(self, request, *args, **kwargs):
         """
@@ -156,9 +144,11 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
         # learning_object = LearningObject.objects.get(
         #    pk=serializer.data['id'])  # refactirizar sin hacer peticion a la base de datos
 
-        files = self.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+        files = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
 
         # print(files_name)
+
+        self.adaptation_settings(request.data, files, directory_adapted)
 
         bsd.save_filesHTML_db(files, learning_object, directory_adapted, request._current_scheme_host)
 
@@ -175,9 +165,30 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
         # return Response(serializer.data, status=status.HTTP_201_CREATED)
         return response
 
+    def adaptation_settings(self, data, files, directory):
+        areas = data['areas'].split(sep=',')
+        button = False
+        paragraph_script = False
+        #print(areas)
+        if 'image' in areas:
+            pass
+        if 'video' in areas:
+            pass
+        if 'audio' in areas:
+            paragraph_script = True
+            pass
+        if 'button' in areas:
+            button = True
+            pass
+        if 'paragraph' in areas:
+            paragraph_script = True
+            pass
+        #pass
+        ba.add_files_adaptation(files, directory, button, paragraph_script)
+
+
 class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = serializers.LearningObjectDetailSerializer
 
     def get_queryset(self):
         return self.get_serializer().Meta.model.objects.filter()
-

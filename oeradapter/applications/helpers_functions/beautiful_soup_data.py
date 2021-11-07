@@ -8,6 +8,21 @@ from ..learning_object.models import PageLearningObject, TagPageLearningObject, 
 BASE_DIR = Path(__file__).ancestor(3)
 
 
+def read_html_files(directory):
+    """Lectura de archivos html
+    return :
+    """
+    files = []
+    for entry in os.scandir(directory):
+        if entry.path.endswith(".html"):
+            print(entry.name)
+            files.append({
+                "file": entry.path,
+                "file_name": entry.name
+            })
+    return files
+
+
 def getUUID():
     """genera un id identificador"""
     return str(shortuuid.ShortUUID().random(length=8))
@@ -33,14 +48,13 @@ def save_filesHTML_db(files, learningObject, directory, request_host):
     """
     pages_convert = []
 
-    #print(files_name)
+    # print(files_name)
 
     for file in files:
-
-        #page_object = PageLearningObject.objects.get(
-            #pk=page.id)  # refactirizar sin hacer peticion a la base de datos
+        # page_object = PageLearningObject.objects.get(
+        # pk=page.id)  # refactirizar sin hacer peticion a la base de datos
         # print("Objeto"+str(Page_object))
-        print(file['file'])
+        # print(file['file'])
 
         directory_file = os.path.join(BASE_DIR, directory, file['file'])
         preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
@@ -80,13 +94,14 @@ def web_scraping_p(aux_text, page_id, file):
                     p_text['class'] = class_uuid
 
                 tag_page = TagPageLearningObject.objects.create(tag=tag_identify,
-                                                 text=str(p_text.string),
-                                                 html_text=str(p_text),
-                                                 page_learning_object=page_id,
-                                                 id_class_ref=class_uuid)
-                #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+                                                                text=str(p_text.string),
+                                                                html_text=str(p_text),
+                                                                page_learning_object=page_id,
+                                                                id_class_ref=class_uuid)
+                # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
         elif not p_text.string:
-            print("Parrafo vacio")
+            # print("Parrafo vacio")
+            pass
     generate_new_htmlFile(aux_text, file)
 
 
@@ -113,9 +128,9 @@ def webs_craping_img(aux_text, page_id, file):
             tag=tag_identify, text=str(text_alt),
             html_text=str(tag), page_learning_object=page_id, id_class_ref=class_uuid
         )
-        #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+        # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
-        #tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
+        # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
         data_attribute = DataAttribute(
@@ -145,9 +160,9 @@ def webs_craping_video_and_audio(aux_text, page_id, file, tag_identify):
             page_learning_object=page_id,
             id_class_ref=class_uuid
         )
-        #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+        # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
-        #tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
+        # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
         for subtag in tag.find_all('source'):
@@ -189,9 +204,9 @@ def webs_craping_iframe(file_beautiful_soup, page_id, file):
             page_learning_object=page_id,
             id_class_ref=class_uuid
         )
-        #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+        # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
-        #tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
+        # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
         data_atribute = DataAttribute(
@@ -215,3 +230,137 @@ def generate_new_htmlFile(file_beautiful_soup, path):
         os.mkdir(new_direction)
         with open(new_direction, "wb") as file:
             file.write(html)
+
+
+def templateInfusion():
+    headInfusion = BeautifulSoup("""
+   <!---------------------------------------Begin infusion plugin adaptability------------------------------------------------------->
+
+    <link rel="stylesheet" type="text/css" href="oer_resources/uiAdaptability/lib/infusion/framework/fss/css/fss-layout.css" />
+    <link rel="stylesheet" type="text/css" href="oer_resources/uiAdaptability/lib/infusion/framework/fss/css/fss-text.css" />
+    <link rel="stylesheet" type="text/css" href="oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-bw-uio.css" />
+    <link rel="stylesheet" type="text/css" href="oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-wb-uio.css" />
+    <link rel="stylesheet" type="text/css" href="oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-by-uio.css" />
+    <link rel="stylesheet" type="text/css" href="oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-yb-uio.css" />
+    <link rel="stylesheet" type="text/css" href="oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-text-uio.css" />
+    <link rel="stylesheet" type="text/css" href="oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/FatPanelUIOptions.css" />
+
+    <link type="text/css" href="oer_resources/uiAdaptability/lib/jquery-ui/css/ui-lightness/jquery-ui-1.8.14.custom.css" rel="stylesheet" />
+    <link type="text/css" href="oer_resources/uiAdaptability/css/VideoPlayer.css" rel="stylesheet" />
+    <link type="text/css" href="oer_resources/uiAdaptability/lib/captionator/css/captions.css" rel="stylesheet" />
+
+
+    <!-- Fluid and jQuery Dependencies -->
+    <script type="text/javascript" src="oer_resources/uiAdaptability/lib/infusion/MyInfusion.js"></script>
+    <!-- Utils -->
+    <script type="text/javascript" src="oer_resources/uiAdaptability/lib/jquery-ui/js/jquery.ui.button.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/lib/captionator/js/captionator.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/lib/mediaelement/js/mediaelement.js"></script>
+    <!--[if lt IE 9]>
+       <script type="text/javascript" src="../lib/html5shiv/js/html5shiv.js"></script>
+    <![endif]-->
+    <!-- VideoPlayer dependencies -->
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer_framework.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer_showHide.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer_html5Captionator.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer_controllers.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/ToggleButton.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/MenuButton.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer_media.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer_transcript.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer_intervalEventsConductor.js"></script>
+    <script type="text/javascript" src="oer_resources/uiAdaptability/js/VideoPlayer_uiOptions.js"></script>
+
+    <!---------------------------------------End infusion plugin adaptability------------------------------------------------------->
+        """, 'html.parser')
+
+    bodyInfusion = BeautifulSoup(""" 
+         <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
+    <script>
+        fluid.pageEnhancer({
+            tocTemplate: "oer_resources/uiAdaptability/lib/infusion/components/tableOfContents/html/TableOfContents.html"
+        });
+    </script>
+
+    <div class="flc-uiOptions fl-uiOptions-fatPanel">
+        <div class="flc-slidingPanel-panel flc-uiOptions-iframe"></div>
+        <div class="fl-panelBar">
+            <button class="flc-slidingPanel-toggleButton fl-toggleButton">Show/Hide</button>
+        </div>
+    </div>
+    <div class="flc-toc-tocContainer"> </div>
+
+
+    <!---------------------------------------End infusion script adaptability------------------------------------------------------->
+
+
+    <!---------------------------------------Begin infusion video script adaptability------------------------------------------------------->
+
+    <script>
+        var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
+            prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
+            templateLoader: {
+                options: {
+                    templates: {
+                        mediaControls: "oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
+                    }
+                }
+            }
+        });
+
+    </script>
+
+    <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
+    """, 'html.parser')
+
+    return headInfusion, bodyInfusion
+
+
+def templateTextAdaptation():
+    head_adaptation = BeautifulSoup(""" 
+        <!---------------------------------------Begin text adaptability------------------------------------------------------->
+        
+        <link rel="stylesheet" href="oer_resources/text_adaptation/style.css">
+        
+        <!---------------------------------------End text adaptability------------------------------------------------------->
+    """, 'html.parser')
+    body_adaptation = BeautifulSoup(""" 
+        <!---------------------------------------Begin script text adaptability------------------------------------------------------->
+    
+        <script src="oer_resources/text_adaptation/script.js"></script>
+        
+        <!---------------------------------------End script text adaptability------------------------------------------------------->
+    """, 'html.parser')
+
+    return head_adaptation, body_adaptation
+
+
+def templateAdaptationTag(id_class_ref):
+    id_ref = getUUID()
+    tag_text_Adapted = """
+                <div id="%s" class="text-adaptation">
+                      
+                </div>
+            """ % id_ref
+    soup_data = BeautifulSoup(tag_text_Adapted, 'html.parser')
+
+    return soup_data, id_ref
+
+
+def templateAdaptedTextButton(id_class_ref, text):
+    button_tag_id = getUUID()
+    tag_button = """
+    <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura facil" />
+    """ % (button_tag_id, text, id_class_ref)
+    soup_data = BeautifulSoup(tag_button, 'html.parser')
+    return soup_data, button_tag_id
+
+
+def templateAdaptedAudioButton(id_class_ref, audio_src):
+    button_tag_id = getUUID()
+    tag_audio = """
+        <input id="%s" class="audio" type="image" onclick='audioAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/audio-on.svg" aria-label="Convertir a audio" />
+        """ % (button_tag_id, audio_src, id_class_ref,)
+    soup_data = BeautifulSoup(tag_audio, 'html.parser')
+    return soup_data, button_tag_id
