@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute
+from ..learning_object.models import PageLearningObject, TagPageLearningObject, TagAdapted, DataAttribute
 from django.db.models import Q
 
 
@@ -27,3 +27,9 @@ class TagsSerializerImageUpdate(serializers.ModelSerializer):
         fields=('id', 'text', 'html_text','page_learning_object')
 
 
+
+class TagAdaptedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TagAdapted
+        #file = serializers.FileField(source='model_method')
+        fields = ('id', 'text', 'html_text', 'path_preview', 'tag_page_learning_object',)

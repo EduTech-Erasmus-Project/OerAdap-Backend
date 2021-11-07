@@ -71,9 +71,18 @@ class TagAdapted(models.Model):
     text = models.TextField(null=True, blank=True)
     html_text = models.TextField(null=True, blank=True)
     #html_text_inyection = models.TextField(null=True, blank=True)
+    id_ref = models.CharField(max_length=20, null=True)
     path_src = models.TextField(null=True, blank=True)
-    path_preview = models.URLField(null=True)
-    tag_page_learning_object = models.ForeignKey(TagPageLearningObject, on_delete=models.CASCADE)
+    path_system = models.TextField(null=True, blank=True)
+    path_preview = models.URLField(max_length=255, null=True)
+    button_text_id = models.CharField(max_length=20, null=True)
+    button_audio_id = models.CharField(max_length=20, null=True)
+    tag_page_learning_object = models.OneToOneField(
+        TagPageLearningObject,
+        on_delete=models.CASCADE,
+        null=True
+    )
+
 
 
 class DataAttribute(models.Model):
