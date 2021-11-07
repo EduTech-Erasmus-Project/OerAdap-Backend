@@ -4,7 +4,9 @@ from django.shortcuts import render
 # Create your views here.
 # analizar metodos
 from rest_framework import viewsets, generics
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView, GenericAPIView, UpdateAPIView, RetrieveUpdateAPIView
+from rest_framework.parsers import JSONParser
+
 from . import serializers
 from ..learning_object.models import TagPageLearningObject
 from django.db.models import Q
@@ -31,15 +33,45 @@ class ParagraphView(RetrieveAPIView):
     #    return self.get_serializer().Meta.model.objects.all()
 
 class ImageView(RetrieveAPIView):
+
     def get(self, request, pk=None):
-        pages = TagPageLearningObject.objects.filter(Q(page_learning_object_id=pk) & Q(tag='img'))
-        pages = serializers.TagsSerializer(pages, many=True)
+        pages = TagPageLearningObject.objects.filter(Q(page_learning_object=pk) & Q(tag='img'))
+        pages = serializers.TagsSerializerImage(pages, many=True)
+
         if len(pages.data):
+            def get_queryset(self):
+                pages = super().get_queryset()
+                pages = pages.prefetch_related(
+                    Prefetch('atributes')
+                )
             return Response(pages.data)
 
         return Response({
             'message': "the page has no images"
         }, status=status.HTTP_404_NOT_FOUND)
+
+class ImageView(RetrieveAPIView):
+
+    def get(self, request, pk=None):
+        pages = TagPageLearningObject.objects.filter(Q(page_learning_object=pk) & Q(tag='img'))
+        pages = serializers.TagsSerializerImage(pages, many=True)
+
+        if len(pages.data):
+            def get_queryset(self):
+                pages = super().get_queryset()
+                pages = pages.prefetch_related(
+                    Prefetch('atributes')
+                )
+            return Response(pages.data)
+
+        return Response({
+            'message': "the page has no images"
+        }, status=status.HTTP_404_NOT_FOUND)
+
+#class ImageViewOneObject(RetrieveUpdateAPIView):
+    #def update(self, request, pk=None):
+        #pages = TagPageLearningObject.objects.filter(Q(id=pk) & Q(tag='img'))
+
 
 class IframeView(RetrieveAPIView):
     def get(self, request,pk=None):
@@ -58,7 +90,6 @@ class AudioView(RetrieveAPIView):
         pages = serializers.TagsSerializer(pages, many=True)
         if len(pages.data):
             return Response(pages.data)
-
         return Response({
             'message': "the page has no audio"
         }, status=status.HTTP_404_NOT_FOUND)
