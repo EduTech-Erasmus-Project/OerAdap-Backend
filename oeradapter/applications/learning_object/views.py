@@ -189,6 +189,5 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
 
 class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = serializers.LearningObjectDetailSerializer
-
     def get_queryset(self):
         return self.get_serializer().Meta.model.objects.filter()
