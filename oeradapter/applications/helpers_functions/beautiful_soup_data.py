@@ -55,7 +55,7 @@ def save_filesHTML_db(files, learningObject, directory, request_host):
 
         # Se procesa las etiquetas html
         web_scraping_p(soup_data, page, file['file'])
-        webs_craping_img(soup_data, page, file['file'])
+        webs_craping_img(soup_data, page, file['file'],directory, request_host)
         webs_craping_video_and_audio(soup_data, page, file['file'], 'audio')
         webs_craping_video_and_audio(soup_data, page, file['file'], 'video')
         webs_craping_iframe(soup_data, page, file['file'])
@@ -90,7 +90,7 @@ def web_scraping_p(aux_text, page_id, file):
     generate_new_htmlFile(aux_text, file)
 
 
-def webs_craping_img(aux_text, page_id, file):
+def webs_craping_img(aux_text, page_id, file, directory,request_host):
     """Vamos a extraer el alt de las imagenes y crear clases en las imagenes"""
     tag_identify = "img"
     attribute_img = "src"
@@ -113,6 +113,7 @@ def webs_craping_img(aux_text, page_id, file):
             tag=tag_identify, text=str(text_alt),
             html_text=str(tag), page_learning_object=page_id, id_class_ref=class_uuid
         )
+
         #tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
         #tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
@@ -120,7 +121,7 @@ def webs_craping_img(aux_text, page_id, file):
 
         data_attribute = DataAttribute(
             atribute=attribute_img,
-            data_atribute=str(tag.get('src', [])),
+            data_atribute=str( os.path.join(request_host, directory,tag.get('src', []))),
             tag_page_learning_object=tag_page
         )
         data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos

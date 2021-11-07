@@ -9,6 +9,12 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
 ]
 
+CORS_ORIGIN_ALLOW_ALL=False
+CORS_ORIGIN_WHITELIST = [
+    'http://127.0.0.1:4200',
+    'http://localhost:4200'
+]
+
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:4200',
 ]
