@@ -125,9 +125,6 @@ class AdapterParagraphCreateAPIView(CreateAPIView):
         tag = file_html.find('p', tag_page_learning_object.id_class_ref)
         tag.append(div_soup_data)
 
-        button_text_tag_id = None
-        button_audio_tag_id = None
-
         if 'text' in request.data:
             if request.data['text'] != '':
                 button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
@@ -162,16 +159,12 @@ class AdapterParagraphCreateAPIView(CreateAPIView):
                 path_src=path_src,
                 path_preview=save_path,
                 path_system=path_system,
-                button_text_id=button_text_tag_id,
-                button_audio_id=button_audio_tag_id
             )
 
         else:
             serializer.save(
                 type="p",
                 id_ref=id_ref,
-                button_text_id=button_text_tag_id,
-                button_audio_id=button_audio_tag_id
             )
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
@@ -214,11 +207,15 @@ class AdapterParagraphRetrieveAPIView(RetrieveUpdateAPIView):
 
             print("button_text_data"+str(button_text_data))
 
-            # tag_adaptation.insert(0, button_text_data)
-            tag_adaptation.findChildren()[0].decompose()
+            # tag_adaptation.insert(0, button_text_data).decompose()
+            tag_text = tag_adaptation.find('input', "text")
+            if tag_text is not None:
+                tag_text.decompose()
+            tag_adaptation.insert(1, button_text_data)
 
 
-            print("tag_children"+str(tag_adaptation))
+
+            print("tag_children"+str(tag_text))
 
             #tag = tag_adaptation.find(id=tag_adapted.button_text_id)
             #tag.replace_with(button_text_data)
@@ -239,24 +236,23 @@ class AdapterParagraphRetrieveAPIView(RetrieveUpdateAPIView):
 
             button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
                 tag_page_learning_object.id_class_ref, path_src)
-            tag = tag_adaptation.find(id=tag_adapted.button_audio_id)
-            tag.replace_with(button_text_data)
+
+            tag_audio = tag_adaptation.find('input', "audio")
+            if tag_audio is not None:
+                tag_audio.decompose()
+            tag_adaptation.insert(len(tag_adaptation) - 1, button_audio_data)
 
             serializer.save(
                 path_src=path_src,
                 path_preview=save_path,
                 path_system=path_system,
-                button_text_id=button_text_tag_id,
-                button_audio_id=button_audio_tag_id
+
             )
 
         else:
-            serializer.save(
-                button_text_id=button_text_tag_id,
-                #button_audio_id=button_audio_tag_id
-            )
+            serializer.save()
 
-        #bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+        bsd.generate_new_htmlFile(file_html, page_learning_object.path)
         return Response(serializer.data)
 
 
