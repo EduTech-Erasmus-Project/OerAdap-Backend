@@ -25,6 +25,8 @@ from rest_framework.response import Response
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 
+from bs4 import BeautifulSoup
+
 BASE_DIR = Path(__file__).ancestor(3)
 
 
@@ -64,24 +66,27 @@ class ImageView(RetrieveAPIView):
             'message': "the page has no images"
         }, status=status.HTTP_404_NOT_FOUND)
 
-class ImageView(RetrieveAPIView):
+    def put(self, request, pk=None):
+        print('pk', pk)
+        #print(str(request.data['html_text']))
 
-    def get(self, request, pk=None):
-        pages = TagPageLearningObject.objects.filter(Q(page_learning_object=pk) & Q(tag='img'))
-        pages = serializers.TagsSerializerImage(pages, many=True)
+        """Consultas"""
+        tag_learning_object = TagPageLearningObject.objects.get(pk =pk);
+        page_learning_object = PageLearningObject.objects.get(pk = tag_learning_object.page_learning_object_id);
 
-        if len(pages.data):
-            def get_queryset(self):
-                pages = super().get_queryset()
-                pages = pages.prefetch_related(
-                    Prefetch('atributes')
-                )
-            return Response(pages.data)
+        tag_class_ref = tag_learning_object.id_class_ref
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
 
-        return Response({
-            'message': "the page has no images"
-        }, status=status.HTTP_404_NOT_FOUND)
+        """WebScraping"""
+        html_img_code = file_html.find_all(class_= tag_class_ref)
 
+        if( (not request.data['text'].isspace()) & (request.data['text'] != "") ):
+            text_update = request.data['text'];
+            html_img_code[0]['alt'] = text_update;
+            print("update", str(page_learning_object.preview_path))
+            bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+            return Response({'status':'update successful'},status= status.HTTP_200_OK)
+        return Response({'status':'Internal server error'}, status = status.HTTP_304_NOT_MODIFIED)
 
 class IframeView(RetrieveAPIView):
     def get(self, request, pk=None):
@@ -185,7 +190,6 @@ class AdapterParagraphRetrieveAPIView(RetrieveUpdateAPIView):
         tag_adapted = get_object_or_404(TagAdapted, pk=pk)
         serializer = TagAdaptedSerializer(instance=tag_adapted, data=request.data)
         serializer.is_valid(raise_exception=True)
-
         tag_page_learning_object = TagPageLearningObject.objects.get(pk=tag_adapted.tag_page_learning_object_id)
         page_learning_object = PageLearningObject.objects.get(pk=tag_page_learning_object.page_learning_object_id)
         learning_object = LearningObject.objects.get(pk=page_learning_object.learning_object_id)
