@@ -85,8 +85,8 @@ class ImageView(RetrieveAPIView):
             html_img_code[0]['alt'] = text_update;
             print("update", str(page_learning_object.preview_path))
             bsd.generate_new_htmlFile(file_html, page_learning_object.path)
-            return Response({'status':'update successful'},status= status.HTTP_200_OK)
-        return Response({'status':'Internal server error'}, status = status.HTTP_304_NOT_MODIFIED)
+            return Response({'message':'update successful'},status= status.HTTP_200_OK)
+        return Response({'message':'Internal server error'}, status = status.HTTP_304_NOT_MODIFIED)
 
 class IframeView(RetrieveAPIView):
     def get(self, request, pk=None):
