@@ -23,10 +23,14 @@ class TagsSerializerImage(serializers.ModelSerializer):
 
 class TagsSerializerImageUpdate(serializers.ModelSerializer):
     class Meta:
+        model = TagAdapted
+        fields=('id', 'text', 'html_text','tag_page_learning_object','id_ref','path_src')
+
+class TagsSerializerImageAdapted(serializers.ModelSerializer):
+    tags_adapted = TagsSerializerImageUpdate(required=True)
+    class Meta:
         model = TagPageLearningObject
-        fields=('id', 'text', 'html_text','page_learning_object')
-
-
+        fields = ('id','page_learning_object','tags_adapted')
 
 class TagAdaptedSerializer(serializers.ModelSerializer):
     class Meta:
