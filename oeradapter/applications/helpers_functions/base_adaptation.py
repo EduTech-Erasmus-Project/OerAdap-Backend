@@ -18,7 +18,7 @@ def save_uploaded_file(path, file, resources_directory, request):
     return save_path, path_system
 
 
-def remove_uploaded_file(path_system, resources_directory):
+def remove_uploaded_file(path_system):
     """Remove and save file on folder the learning object"""
     os.remove(path_system)
     # return save_uploaded_file(path, file, resources_directory, request)

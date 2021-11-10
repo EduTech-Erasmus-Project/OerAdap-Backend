@@ -40,7 +40,7 @@ def generateBeautifulSoupFile(html_doc):
         return soup_data
 
 
-def save_filesHTML_db(files, learningObject, directory, request_host):
+def save_filesHTML_db(files, learningObject, directory, directory_origin,  request_host):
     """Lectura de archivos html,
     guardamos cada directorio
     de cada archivo en la base
@@ -56,23 +56,33 @@ def save_filesHTML_db(files, learningObject, directory, request_host):
         # print("Objeto"+str(Page_object))
         # print(file['file'])
 
-        directory_file = os.path.join(BASE_DIR, directory, file['file'])
+        directory_file = os.path.join(BASE_DIR, directory,  file['file'])
         preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
         soup_data = generateBeautifulSoupFile(directory_file)
         pages_convert.append(soup_data)
 
-        page = PageLearningObject.objects.create(
+        page_adapted = PageLearningObject.objects.create(
+            type="adapted",
             title=soup_data.find('title').text,
             path=directory_file,
             preview_path=preview_path,
             learning_object=learningObject)
 
+        directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
+        preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
+        PageLearningObject.objects.create(
+            type="origin",
+            title=soup_data.find('title').text,
+            path=directory_file_origin,
+            preview_path=preview_path_origin,
+            learning_object=learningObject)
+
         # Se procesa las etiquetas html
-        web_scraping_p(soup_data, page, file['file'])
-        webs_craping_img(soup_data, page, file['file'],directory, request_host)
-        webs_craping_video_and_audio(soup_data, page, file['file'], 'audio')
-        webs_craping_video_and_audio(soup_data, page, file['file'], 'video')
-        webs_craping_iframe(soup_data, page, file['file'])
+        web_scraping_p(soup_data, page_adapted, file['file'])
+        webs_craping_img(soup_data, page_adapted, file['file'],directory, request_host)
+        webs_craping_video_and_audio(soup_data, page_adapted, file['file'], 'audio')
+        webs_craping_video_and_audio(soup_data, page_adapted, file['file'], 'video')
+        webs_craping_iframe(soup_data, page_adapted, file['file'])
 
 
 def web_scraping_p(aux_text, page_id, file):
