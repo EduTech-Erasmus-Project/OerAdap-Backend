@@ -80,6 +80,7 @@ class TagAdapted(models.Model):
     button_audio_id = models.CharField(max_length=20, null=True)
     tag_page_learning_object = models.OneToOneField(
         TagPageLearningObject,
+        related_name="tags_adapted",
         on_delete=models.CASCADE,
         null=True
     )
@@ -89,7 +90,6 @@ class TagAdapted(models.Model):
 class DataAttribute(models.Model):
     class Meta:
         db_table = 'data_atribute'
-
     atribute = models.CharField(max_length=100)
     data_atribute = models.TextField()
     type = models.CharField(max_length=50, null=True, blank=True)

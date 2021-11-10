@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import os
 import shortuuid
 
-from ..learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute
+from ..learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute,TagAdapted
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -135,8 +135,11 @@ def webs_craping_img(aux_text, page_id, file, directory,request_host):
             tag['alt'] = text_alt
 
         tag_page = TagPageLearningObject.objects.create(
-            tag=tag_identify, text=str(text_alt),
-            html_text=str(tag), page_learning_object=page_id, id_class_ref=class_uuid
+            tag=tag_identify,
+            text=str(text_alt),
+            html_text=str(tag),
+            page_learning_object=page_id,
+            id_class_ref=class_uuid
         )
 
         # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
@@ -149,6 +152,16 @@ def webs_craping_img(aux_text, page_id, file, directory,request_host):
             tag_page_learning_object=tag_page
         )
         data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+
+        tag_adapted = TagAdapted.objects.create(
+        type=tag_identify,
+        text=str(text_alt),
+        html_text=str(tag),
+        id_ref = class_uuid,
+        path_src =str( os.path.join(request_host, directory,tag.get('src', []))),
+        tag_page_learning_object = tag_page
+        )
+
     generate_new_htmlFile(aux_text, file)
 
 
@@ -214,6 +227,8 @@ def webs_craping_iframe(file_beautiful_soup, page_id, file):
             page_learning_object=page_id,
             id_class_ref=class_uuid
         )
+
+
         # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
         # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
