@@ -51,14 +51,16 @@ class ParagraphView(RetrieveAPIView):
 class ImageView(RetrieveAPIView):
 
     def get(self, request, pk=None):
-        pages = TagPageLearningObject.objects.filter(Q(page_learning_object=pk) & Q(tag='img'))
-        pages = serializers.TagsSerializerImage(pages, many=True)
+
+        pages = TagPageLearningObject.objects.filter(Q(page_learning_object_id=pk) & Q(tag='img'))
+        #pages = TagAdapted.objects.filter(tag_page_learning_object=pages_id.id)
+        pages = serializers.TagsSerializerImageAdapted(pages, many=True)
 
         if len(pages.data):
             def get_queryset(self):
                 pages = super().get_queryset()
                 pages = pages.prefetch_related(
-                    Prefetch('atributes')
+                    Prefetch('tags_adapted')
                 )
             return Response(pages.data)
 
@@ -67,26 +69,41 @@ class ImageView(RetrieveAPIView):
         }, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request, pk=None):
-        print('pk', pk)
         #print(str(request.data['html_text']))
-
         """Consultas"""
         tag_learning_object = TagPageLearningObject.objects.get(pk =pk);
         page_learning_object = PageLearningObject.objects.get(pk = tag_learning_object.page_learning_object_id);
+        tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object = tag_learning_object.id);
 
-        tag_class_ref = tag_learning_object.id_class_ref
+        tag_class_ref = tag_adapted_learning_object.id_ref
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
 
         """WebScraping"""
         html_img_code = file_html.find_all(class_= tag_class_ref)
 
+        """Validacion de envio de datos, para realizar la actualizacion """
         if( (not request.data['text'].isspace()) & (request.data['text'] != "") ):
-            text_update = request.data['text'];
-            html_img_code[0]['alt'] = text_update;
-            print("update", str(page_learning_object.preview_path))
-            bsd.generate_new_htmlFile(file_html, page_learning_object.path)
-            return Response({'message':'update successful'},status= status.HTTP_200_OK)
+            """ Guardar en la base de datos"""
+            adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)
+            if adapted_serializer.is_valid():
+                adapted_serializer.save()
+                print('Se actualizo')
+                text_update = request.data['text'];
+                html_img_code[0]['alt'] = text_update;
+                #print("update", str(page_learning_object.preview_path))
+                bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+                return Response({'message':'update successful'},status= status.HTTP_200_OK)
         return Response({'message':'Internal server error'}, status = status.HTTP_304_NOT_MODIFIED)
+
+
+class AdapatedImageView(RetrieveUpdateAPIView):
+    serializer_class = TagAdaptedSerializer
+    def get(self, request, pk =None):
+        """Get tag adapted by paragraph pk"""
+        tag_adapted = get_object_or_404(TagAdapted, tag_page_learning_object_id=pk)
+        serializer = self.get_serializer(tag_adapted)
+        return Response(serializer.data)
+
 
 class IframeView(RetrieveAPIView):
     def get(self, request, pk=None):
