@@ -150,7 +150,7 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
 
         self.adaptation_settings(request.data, files, directory_adapted)
 
-        bsd.save_filesHTML_db(files, learning_object, directory_adapted, request._current_scheme_host)
+        bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
 
         # remove file zip
         # path_file = os.path.join(path, file_name.split('.')[0], file_name)

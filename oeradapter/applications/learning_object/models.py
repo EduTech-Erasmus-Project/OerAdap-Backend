@@ -47,6 +47,7 @@ class PageLearningObject(models.Model):
     class Meta:
         db_table = 'page_learning_object'
 
+    type = models.CharField(max_length=10, null=True)
     path = models.TextField()
     title = models.CharField(max_length=200, null=True)
     preview_path = models.URLField(null=True)

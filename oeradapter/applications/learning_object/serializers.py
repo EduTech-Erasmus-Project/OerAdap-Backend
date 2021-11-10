@@ -26,7 +26,9 @@ class LearningObjectSerializer(serializers.ModelSerializer):
 class PagesSerializer(serializers.ModelSerializer):
     class Meta:
         model = PageLearningObject
-        fields = ('id', 'title', 'preview_path')
+        fields = ('id', 'title', 'preview_path', 'type')
+
+
 
 
 class AdaptationLearningObjectSerializer(serializers.ModelSerializer):
@@ -42,8 +44,11 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         # config_adaptability = AdaptationLearningObject.objects.get(pk=instance.id)
-        pages = PageLearningObject.objects.filter(learning_object=instance.id)
-        pages = PagesSerializer(pages, many=True)
+        pages_adapted = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)
+        pages_adapted = PagesSerializer(pages_adapted, many=True)
+
+        pages_origin = PageLearningObject.objects.filter(type='origin', learning_object=instance.id)
+        pages_origin = PagesSerializer(pages_origin, many=True)
 
         config_adaptability = AdaptationLearningObject.objects.filter(learning_object=instance.id)
         config_adaptability = AdaptationLearningObjectSerializer(config_adaptability, many=True)
@@ -74,7 +79,8 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
                 "audios": count_audios
             },
             "config_adaptability": config_adaptability.data[0],
-            "pages": pages.data,
+            "pages_adapted": pages_adapted.data,
+            "pages_origin": pages_origin.data,
             "file_adapted": None
         }
 

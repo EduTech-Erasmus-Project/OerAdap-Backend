@@ -11,7 +11,7 @@ from rest_framework.decorators import api_view
 from unipath import Path
 from shutil import copyfile
 from . import serializers
-from .serializers import TagAdaptedSerializer
+from .serializers import TagAdaptedSerializer, PagesDetailSerializer
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject
 from django.db.models import Q
 import os
@@ -62,6 +62,7 @@ class ImageView(RetrieveAPIView):
                 pages = pages.prefetch_related(
                     Prefetch('tags_adapted')
                 )
+
             return Response(pages.data)
 
         return Response({
@@ -77,6 +78,7 @@ class ImageView(RetrieveAPIView):
 
         tag_class_ref = tag_adapted_learning_object.id_ref
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+
 
         """WebScraping"""
         html_img_code = file_html.find_all(class_= tag_class_ref)
@@ -137,7 +139,8 @@ class AdapterParagraphCreateAPIView(CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         tag_page_learning_object = TagPageLearningObject.objects.get(pk=request.data['tag_page_learning_object'])
-        page_learning_object = PageLearningObject.objects.get(pk=tag_page_learning_object.page_learning_object_id)
+        page_learning_object = PageLearningObject.objects.get(type='adapted',
+                                                              pk=tag_page_learning_object.page_learning_object_id)
         learning_object = LearningObject.objects.get(pk=page_learning_object.learning_object_id)
 
         print("request data", str(request.data))
@@ -166,7 +169,9 @@ class AdapterParagraphCreateAPIView(CreateAPIView):
 
             path = os.path.join(BASE_DIR, learning_object.path_adapted, 'oer_resources')
             path_src = os.path.join('oer_resources', file.name).replace("\\", "/")
-            # print(path)
+
+            print("path" + str(path))
+
             save_path, path_system = ba.save_uploaded_file(path, file, learning_object.path_adapted, request)
 
             button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
@@ -208,7 +213,8 @@ class AdapterParagraphRetrieveAPIView(RetrieveUpdateAPIView):
         serializer = TagAdaptedSerializer(instance=tag_adapted, data=request.data)
         serializer.is_valid(raise_exception=True)
         tag_page_learning_object = TagPageLearningObject.objects.get(pk=tag_adapted.tag_page_learning_object_id)
-        page_learning_object = PageLearningObject.objects.get(pk=tag_page_learning_object.page_learning_object_id)
+        page_learning_object = PageLearningObject.objects.get(type='adapted',
+                                                              pk=tag_page_learning_object.page_learning_object_id)
         learning_object = LearningObject.objects.get(pk=page_learning_object.learning_object_id)
 
         print("request data", str(request.data))
@@ -216,32 +222,21 @@ class AdapterParagraphRetrieveAPIView(RetrieveUpdateAPIView):
         # update tag adapted
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag_adaptation = file_html.find(id=tag_adapted.id_ref)
-        #tag_adaptation.clear()
+        # tag_adaptation.clear()
         # tag.append(div_soup_data)
 
-        print("tag_adaptation"+str(tag_adaptation))
-
+        print("tag_adaptation" + str(tag_adaptation))
 
         if 'text' in request.data:
-            button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(tag_page_learning_object.id_class_ref,
-                                                                                 request.data['text'])
+            if request.data['text'] != '':
+                button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
+                    tag_page_learning_object.id_class_ref,
+                    request.data['text'])
 
-            print("button_text_data"+str(button_text_data))
-
-            # tag_adaptation.insert(0, button_text_data).decompose()
-            tag_text = tag_adaptation.find('input', "text")
-            if tag_text is not None:
-                tag_text.decompose()
-            tag_adaptation.insert(1, button_text_data)
-
-
-
-            print("tag_children"+str(tag_text))
-
-            #tag = tag_adaptation.find(id=tag_adapted.button_text_id)
-            #tag.replace_with(button_text_data)
-
-            #print(tag_adaptation)
+                tag_text = tag_adaptation.find('input', "text")
+                if tag_text is not None:
+                    tag_text.decompose()
+                tag_adaptation.insert(1, button_text_data)
 
         if 'file' in request.data:
 
@@ -275,6 +270,11 @@ class AdapterParagraphRetrieveAPIView(RetrieveUpdateAPIView):
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
         return Response(serializer.data)
+
+
+class PageRetrieveAPIView(RetrieveAPIView):
+    serializer_class = PagesDetailSerializer
+    queryset = PageLearningObject.objects.all()
 
 
 @api_view(['POST'])

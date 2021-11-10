@@ -3,6 +3,7 @@ from . import views
 
 
 urlpatterns = [
+    path('page/<int:pk>', views.PageRetrieveAPIView.as_view()),
     path('page/paragraph/<int:pk>', views.ParagraphView.as_view()),
     path('page/image/<int:pk>', views.ImageView.as_view()),
 
@@ -10,13 +11,14 @@ urlpatterns = [
 
     path('page/video/<int:pk>', views.IframeView.as_view()),
     path('page/audio/<int:pk>', views.AudioView.as_view()),
+
     path('adapter/paragraph/', views.AdapterParagraphCreateAPIView.as_view()),
     path('adapter/paragraph/<int:pk>', views.AdapterParagraphRetrieveAPIView.as_view()),
 
     # Urls config adaptation
-    path('config/paragraph/<int:pk>', views.paragraph_api_view),
-    path('config/image/<int:pk>', views.image_api_view),
-    path('config/video/<int:pk>', views.video_api_view),
-    path('config/audio/<int:pk>', views.audio_api_view),
-    path('config/button/<int:pk>', views.button_api_view),
+    # path('config/paragraph/<int:pk>', views.paragraph_api_view),
+    # path('config/image/<int:pk>', views.image_api_view),
+    # path('config/video/<int:pk>', views.video_api_view),
+    # path('config/audio/<int:pk>', views.audio_api_view),
+    # path('config/button/<int:pk>', views.button_api_view),
 ]
