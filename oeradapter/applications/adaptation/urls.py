@@ -6,11 +6,12 @@ urlpatterns = [
     path('page/<int:pk>', views.PageRetrieveAPIView.as_view()),
     path('page/paragraph/<int:pk>', views.ParagraphView.as_view()),
     path('page/image/<int:pk>', views.ImageView.as_view()),
-
     path('adapter/image/<int:pk>',views.AdapatedImageView.as_view()),
 
     path('page/video/<int:pk>', views.IframeView.as_view()),
+
     path('page/audio/<int:pk>', views.AudioView.as_view()),
+    path('page/audio', views.AudioviewCreate.as_view()),
 
     path('adapter/paragraph/', views.AdapterParagraphCreateAPIView.as_view()),
     path('adapter/paragraph/<int:pk>', views.AdapterParagraphRetrieveAPIView.as_view()),

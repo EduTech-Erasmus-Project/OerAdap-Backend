@@ -15,7 +15,7 @@ def read_html_files(directory):
     files = []
     for entry in os.scandir(directory):
         if entry.path.endswith(".html"):
-            print(entry.name)
+            #print(entry.name)
             files.append({
                 "file": entry.path,
                 "file_name": entry.name
@@ -80,8 +80,8 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin,  reque
         # Se procesa las etiquetas html
         web_scraping_p(soup_data, page_adapted, file['file'])
         webs_craping_img(soup_data, page_adapted, file['file'],directory, request_host)
-        webs_craping_video_and_audio(soup_data, page_adapted, file['file'], 'audio')
-        webs_craping_video_and_audio(soup_data, page_adapted, file['file'], 'video')
+        webs_craping_audio(soup_data, page_adapted, file['file'], 'audio', request_host,directory)
+        webs_craping_video(soup_data, page_adapted, file['file'], 'video',)
         webs_craping_iframe(soup_data, page_adapted, file['file'])
 
 
@@ -149,7 +149,8 @@ def webs_craping_img(aux_text, page_id, file, directory,request_host):
         data_attribute = DataAttribute(
             atribute=attribute_img,
             data_atribute=str( os.path.join(request_host, directory,tag.get('src', []))),
-            tag_page_learning_object=tag_page
+            tag_page_learning_object=tag_page,
+            type=tag_identify
         )
         data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
@@ -165,13 +166,48 @@ def webs_craping_img(aux_text, page_id, file, directory,request_host):
     generate_new_htmlFile(aux_text, file)
 
 
-def webs_craping_video_and_audio(aux_text, page_id, file, tag_identify):
+def webs_craping_video(aux_text, page_id, file, tag_identify):
+    """Vamos a extraer el el src de los videos y audios"""
+    attribute_src = "src"
+
+    for tag in aux_text.find_all(tag_identify):
+        class_uuid = tag_identify + '-' + getUUID()
+        if len(tag.get('class', [])) > 0:
+            tag['class'].append(class_uuid)
+        else:
+            tag['class'] = class_uuid
+        tag_page = TagPageLearningObject.objects.create(
+            tag=tag_identify,
+            html_text=str(tag),
+            page_learning_object=page_id,
+            id_class_ref=class_uuid
+        )
+        # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+
+        # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
+        # peticion a la base de datos
+        for subtag in tag.find_all('source'):
+           #print(tag.find_all('source'))
+           data_attribute = DataAttribute(
+               atribute=attribute_src,
+               data_atribute=str(subtag.get('src')),
+               type=str(subtag.get('type')),
+               tag_page_learning_object=tag_page
+            )
+           data_attribute.save()
+            # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+    generate_new_htmlFile(aux_text, file)
+
+
+
+def webs_craping_audio(aux_text, page_id, file, tag_identify,request_host,directory):
     """Vamos a extraer el el src de los videos y audios"""
     attribute_src = "src"
 
     for tag in aux_text.find_all(tag_identify):
 
         class_uuid = tag_identify + '-' + getUUID()
+
         if len(tag.get('class', [])) > 0:
             tag['class'].append(class_uuid)
         else:
@@ -183,21 +219,31 @@ def webs_craping_video_and_audio(aux_text, page_id, file, tag_identify):
             page_learning_object=page_id,
             id_class_ref=class_uuid
         )
+
         # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
         # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
-        for subtag in tag.find_all('source'):
-            # print(tag.find_all('source'))
-            data_attribute = DataAttribute(
-                atribute=attribute_src,
-                data_atribute=str(subtag.get('src')),
-                type=str(subtag.get('type')),
-                tag_page_learning_object=tag_page
-            )
-            data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+        data_attribute = DataAttribute(
+            atribute=attribute_src,
+            data_atribute=str(os.path.join(request_host, directory, tag.get('src', []))),
+            tag_page_learning_object=tag_page,
+            type=tag_identify
+        )
+        data_attribute.save()
+
+        #tag_adapted = TagAdapted.objects.create(
+         #   type=tag_identify,
+          #  html_text=str(tag),
+           # id_ref=class_uuid,
+            #path_src=str(os.path.join(request_host, directory, tag.get('src', []))),
+            #tag_page_learning_object=tag_page
+       # )
+
+            # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
     generate_new_htmlFile(aux_text, file)
+
 
 
 def webs_craping_iframe(file_beautiful_soup, page_id, file):
