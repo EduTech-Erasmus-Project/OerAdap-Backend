@@ -44,11 +44,6 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         # config_adaptability = AdaptationLearningObject.objects.get(pk=instance.id)
-        pages_adapted = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)
-        pages_adapted = PagesSerializer(pages_adapted, many=True)
-
-        pages_origin = PageLearningObject.objects.filter(type='origin', learning_object=instance.id)
-        pages_origin = PagesSerializer(pages_origin, many=True)
 
         config_adaptability = AdaptationLearningObject.objects.filter(learning_object=instance.id)
         config_adaptability = AdaptationLearningObjectSerializer(config_adaptability, many=True)
@@ -61,7 +56,7 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         count_audios = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='audio')).count()
         #print(test)
 
-        return {
+        data = {
             "id": instance.id,
             "oa_detail": {
                 "title": instance.title,
@@ -79,9 +74,21 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
                 "audios": count_audios
             },
             "config_adaptability": config_adaptability.data[0],
-            "pages_adapted": pages_adapted.data,
-            "pages_origin": pages_origin.data,
+            #"pages_adapted": pages_adapted.data,
+            #"pages_origin": pages_origin.data,
             "file_adapted": None
         }
+
+        pages_adapted = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)
+        pages_adapted = PagesSerializer(pages_adapted, many=True)
+
+        data['pages_adapted'] = pages_adapted.data
+
+        pages_origin = PageLearningObject.objects.filter(type='origin', learning_object=instance.id)
+        pages_origin = PagesSerializer(pages_origin, many=True)
+
+        data['pages_origin'] = pages_origin.data
+
+        return data
 
 
