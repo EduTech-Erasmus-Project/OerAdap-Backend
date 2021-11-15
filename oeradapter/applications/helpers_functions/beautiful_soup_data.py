@@ -229,7 +229,8 @@ def webs_craping_audio(aux_text, page_id, file, tag_identify,request_host,direct
             atribute=attribute_src,
             data_atribute=str(os.path.join(request_host, directory, tag.get('src', []))),
             tag_page_learning_object=tag_page,
-            type=tag_identify
+            type=tag_identify,
+            path_system = str(os.path.join(BASE_DIR, directory, tag.get('src', []))),
         )
         data_attribute.save()
 
@@ -418,6 +419,25 @@ def templateAdaptationTag(id_class_ref):
 
     return soup_data, id_ref
 
+def templateAdaptionImage(original_tag, id_class_ref):
+    tag_figure_new = """<figure class="exe-figure exe-image float-left" style="width: 250px;"> 
+
+      </figure>"""
+    tag_figure_caption = """ <figcaption class="figcaption"><span class="title"><em>
+
+        </em></span></figcaption>"""
+    tag_figure_caption = BeautifulSoup(tag_figure_caption, "html.parser")
+    aux = tag_figure_caption.em
+    aux.append(original_tag[0].get('alt', []))
+
+    tag_figure_new = BeautifulSoup(tag_figure_new, "html.parser")
+    originaltag_new = tag_figure_new.figure
+    new_tag = tag_figure_new.new_tag('img', style="width: 100%",
+                                     **{'class': id_class_ref}, alt=original_tag[0].get('alt', []),
+                                     src=original_tag[0].get('src', []))
+    originaltag_new.append(new_tag);
+    originaltag_new.insert(2, tag_figure_caption)
+    return originaltag_new
 
 def templateAdaptedTextButton(id_class_ref, text):
     button_tag_id = getUUID()
@@ -427,6 +447,22 @@ def templateAdaptedTextButton(id_class_ref, text):
     soup_data = BeautifulSoup(tag_button, 'html.parser')
     return soup_data, button_tag_id
 
+def templateAudioTextButton(id_class_ref, text):
+    button_tag_id = getUUID()
+    tag_button = """
+    <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura facil" />
+    """ % (id_class_ref, text, id_class_ref)
+    soup_data = BeautifulSoup(tag_button, 'html.parser')
+    return soup_data
+
+
+def templateAdaptedAudio(original_tag_audio, id_class_ref):
+    class_aux = 'class="'+id_class_ref+'"'
+    tag_figure_new = """<div """+class_aux+"""id="ref_adapted">""" + str(original_tag_audio) + """
+
+       </div>"""
+    tag_figure_new = BeautifulSoup(tag_figure_new,'html.parser')
+    return tag_figure_new
 
 def templateAdaptedAudioButton(id_class_ref, audio_src):
     button_tag_id = getUUID()
@@ -435,3 +471,6 @@ def templateAdaptedAudioButton(id_class_ref, audio_src):
         """ % (button_tag_id, audio_src, id_class_ref,)
     soup_data = BeautifulSoup(tag_audio, 'html.parser')
     return soup_data, button_tag_id
+
+def convertElementBeautifulSoup(html_code):
+    return BeautifulSoup(html_code,'html.parser')

@@ -90,10 +90,10 @@ class TagAdapted(models.Model):
 class DataAttribute(models.Model):
     class Meta:
         db_table = 'data_atribute'
-    atribute = models.CharField(max_length=100)
-    data_atribute = models.TextField()
+    attribute = models.CharField(max_length=100)
+    data_attribute = models.TextField()
     type = models.CharField(max_length=50, null=True, blank=True)
     path_system = models.TextField(null=True, blank=True)
     path_preview = models.URLField(max_length=255, null=True)
     source = models.CharField(max_length=20, null=True)
-    tag_page_learning_object = models.ForeignKey(TagPageLearningObject, related_name="atributes",  on_delete=models.CASCADE)
+    tag_page_learning_object = models.ForeignKey(TagPageLearningObject, related_name="attributes",  on_delete=models.CASCADE)
