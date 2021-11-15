@@ -40,7 +40,7 @@ class AdaptationLearningObject(models.Model):
 
     method = models.CharField(max_length=10)
     areas = ArrayField(models.CharField(max_length=10, blank=True), size=6)
-    learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
+    learning_object = models.ForeignKey(LearningObject, related_name="adaptation_learning_object", on_delete=models.CASCADE)
 
 
 class PageLearningObject(models.Model):
@@ -51,7 +51,7 @@ class PageLearningObject(models.Model):
     path = models.TextField()
     title = models.CharField(max_length=200, null=True)
     preview_path = models.URLField(null=True)
-    learning_object = models.ForeignKey(LearningObject, on_delete=models.CASCADE)
+    learning_object = models.ForeignKey(LearningObject, related_name="page_learning_object", on_delete=models.CASCADE)
 
 
 class TagPageLearningObject(models.Model):
@@ -62,7 +62,7 @@ class TagPageLearningObject(models.Model):
     text = models.TextField(null=True, blank=True)
     html_text = models.TextField(null=True, blank=True)
     id_class_ref = models.CharField(max_length=20)
-    page_learning_object = models.ForeignKey(PageLearningObject,on_delete=models.CASCADE)
+    page_learning_object = models.ForeignKey(PageLearningObject, related_name="tag_page_learning_object", on_delete=models.CASCADE)
 
 
 class TagAdapted(models.Model):
@@ -90,10 +90,10 @@ class TagAdapted(models.Model):
 class DataAttribute(models.Model):
     class Meta:
         db_table = 'data_atribute'
-    atribute = models.CharField(max_length=100)
-    data_atribute = models.TextField()
+    attribute = models.CharField(max_length=100)
+    data_attribute = models.TextField()
     type = models.CharField(max_length=50, null=True, blank=True)
     path_system = models.TextField(null=True, blank=True)
     path_preview = models.URLField(max_length=255, null=True)
     source = models.CharField(max_length=20, null=True)
-    tag_page_learning_object = models.ForeignKey(TagPageLearningObject, related_name="atributes",  on_delete=models.CASCADE)
+    tag_page_learning_object = models.ForeignKey(TagPageLearningObject, related_name="attributes",  on_delete=models.CASCADE)

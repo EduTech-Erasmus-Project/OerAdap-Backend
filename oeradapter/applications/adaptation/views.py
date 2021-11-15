@@ -11,7 +11,8 @@ from rest_framework.decorators import api_view
 from unipath import Path
 from shutil import copyfile
 from . import serializers
-from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagAdaptedSerializerAudio
+from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagAdaptedSerializerAudio, TagsVideoSerializer, \
+    DataAttributeSerializer
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject, \
     DataAttribute
 from django.db.models import Q
@@ -110,15 +111,19 @@ class AdapatedImageView(RetrieveUpdateAPIView):
 
 
 class IframeView(RetrieveAPIView):
+    serializer_class = TagsVideoSerializer
+
     def get(self, request, pk=None):
         pages = TagPageLearningObject.objects.filter(Q(page_learning_object_id=pk) & (Q(tag='iframe') | Q(tag='video')))
-        pages = serializers.TagsSerializer(pages, many=True)
-        if len(pages.data):
-            return Response(pages.data)
+        pages = self.get_serializer(pages, many=True) #& (Q(tag_page_learning_object__tag='iframe') | Q(tag_page_learning_object__tag='video'))
 
-        return Response({
-            'message': "the page has no (video | iframe)"
-        }, status=status.HTTP_404_NOT_FOUND)
+        #data_attributes = DataAttribute.objects.filter(Q(tag_page_learning_object__page_learning_object_id=pk) & (Q(tag_page_learning_object__tag='iframe') | Q(tag_page_learning_object__tag='video')))
+        #data_attributes = self.get_serializer(data_attributes, many=True)
+
+        #print(data_attributes.data)
+
+        return Response(pages.data)
+
 
 
 class AudioviewCreate(RetrieveAPIView):

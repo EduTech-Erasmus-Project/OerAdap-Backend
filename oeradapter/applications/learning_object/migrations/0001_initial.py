@@ -85,7 +85,7 @@ class Migration(migrations.Migration):
             name='DataAttribute',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('atribute', models.CharField(max_length=100)),
+                ('attribute', models.CharField(max_length=100)),
                 ('data_atribute', models.TextField()),
                 ('type', models.CharField(blank=True, max_length=50, null=True)),
                 ('tag_page_learning_object', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='atributes', to='learning_object.tagpagelearningobject')),
