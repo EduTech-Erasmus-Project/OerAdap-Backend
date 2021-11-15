@@ -8,17 +8,20 @@ class TagsSerializer(serializers.ModelSerializer):
         model = TagPageLearningObject
         fields = ('id', 'text', 'html_text', 'page_learning_object')
 
+
 class TagsSerializerTagUpdate(serializers.ModelSerializer):
     class Meta:
         model = TagAdapted
-        fields=('id', 'text', 'html_text','tag_page_learning_object','id_ref','path_src')
+        fields = ('id', 'text', 'html_text', 'tag_page_learning_object', 'id_ref', 'path_src')
 
 
 class TagsSerializerTagAdapted(serializers.ModelSerializer):
     tags_adapted = TagsSerializerTagUpdate(required=True)
+
     class Meta:
         model = TagPageLearningObject
-        fields = ('id','page_learning_object','tags_adapted')
+        fields = ('id', 'page_learning_object', 'tags_adapted')
+
 
 class TagAdaptedSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,13 +29,13 @@ class TagAdaptedSerializer(serializers.ModelSerializer):
         # file = serializers.FileField(source='model_method')
         fields = ('id', 'text', 'html_text', 'path_preview', 'tag_page_learning_object',)
 
+
 class TagAdaptedSerializerAudio(serializers.ModelSerializer):
     class Meta:
         model = TagAdapted
         # file = serializers.FileField(source='model_method')
-        fields = ('id', 'text', 'html_text','type', 'html_text'
-                  ,'path_src','tag_page_learning_object','id_ref')
-
+        fields = ('id', 'text', 'html_text', 'type', 'html_text'
+                  , 'path_src', 'tag_page_learning_object', 'id_ref')
 
 
 class PagesDetailSerializer(serializers.ModelSerializer):
@@ -61,3 +64,26 @@ class PagesDetailSerializer(serializers.ModelSerializer):
                 "audios": count_audios,
             }
         }
+
+
+class DataAttributeSerializer(serializers.ModelSerializer):
+    #attribute_tag = serializers.StringRelatedField(many=True)
+
+    class Meta:
+        model = DataAttribute
+        fields = ['id', 'attribute', 'type', 'path_preview', 'source', 'tag_page_learning_object', ]
+
+
+class TagsVideoSerializer(serializers.ModelSerializer):
+    attributes = DataAttributeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = TagPageLearningObject
+        fields = ['id', 'text', 'html_text', 'page_learning_object', 'attributes', ]
+
+
+
+
+
+
+
