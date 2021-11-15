@@ -1,3 +1,5 @@
+from typing import re
+
 from rest_framework import serializers
 from ..learning_object.models import PageLearningObject, TagPageLearningObject, TagAdapted, DataAttribute
 from django.db.models import Q
@@ -14,14 +16,18 @@ class TagsSerializerTagUpdate(serializers.ModelSerializer):
         model = TagAdapted
         fields = ('id', 'text', 'html_text', 'tag_page_learning_object', 'id_ref', 'path_src')
 
+class DataAtributeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataAttribute
+        fields = ('id','data_attribute','attribute')
 
 class TagsSerializerTagAdapted(serializers.ModelSerializer):
     tags_adapted = TagsSerializerTagUpdate(required=True)
+    attributes = DataAtributeSerializer(many=True)
 
     class Meta:
         model = TagPageLearningObject
-        fields = ('id', 'page_learning_object', 'tags_adapted')
-
+        fields = ('id','page_learning_object','html_text','id_class_ref','attributes','tags_adapted')
 
 class TagAdaptedSerializer(serializers.ModelSerializer):
     class Meta:
