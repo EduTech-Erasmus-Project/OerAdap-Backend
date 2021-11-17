@@ -21,6 +21,30 @@ from rest_framework import generics
 BASE_DIR = Path(__file__).ancestor(3)
 
 
+def adaptation_settings(data, files, directory):
+    areas = data['areas'].split(sep=',')
+    button = False
+    paragraph_script = False
+    video = False
+    #print(areas)
+    if 'image' in areas:
+        pass
+    if 'video' in areas:
+        video = True
+        pass
+    if 'audio' in areas:
+        paragraph_script = True
+        pass
+    if 'button' in areas:
+        button = True
+        pass
+    if 'paragraph' in areas:
+        paragraph_script = True
+        pass
+    #pass
+    ba.add_files_adaptation(files, directory, button, paragraph_script, video)
+
+
 class LearningObjectCreateApiView(generics.CreateAPIView):
     """
         File Learning Object
@@ -148,7 +172,7 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
 
         # print(files_name)
 
-        self.adaptation_settings(request.data, files, directory_adapted)
+        adaptation_settings(request.data, files, directory_adapted)
 
         bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
 
@@ -164,27 +188,6 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
         response.status_code = 201
         # return Response(serializer.data, status=status.HTTP_201_CREATED)
         return response
-
-    def adaptation_settings(self, data, files, directory):
-        areas = data['areas'].split(sep=',')
-        button = False
-        paragraph_script = False
-        #print(areas)
-        if 'image' in areas:
-            pass
-        if 'video' in areas:
-            pass
-        if 'audio' in areas:
-            paragraph_script = True
-            pass
-        if 'button' in areas:
-            button = True
-            pass
-        if 'paragraph' in areas:
-            paragraph_script = True
-            pass
-        #pass
-        ba.add_files_adaptation(files, directory, button, paragraph_script)
 
 
 class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):

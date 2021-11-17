@@ -86,10 +86,27 @@ class TagAdapted(models.Model):
     )
 
 
+class Transcript(models.Model):
+    class Meta:
+        db_table = "transcript"
+    src = models.TextField(null=True, blank=True)
+    type = models.CharField(max_length=20, null=True, blank=True)
+    srclang = models.CharField(max_length=20, null=True, blank=True)
+    label = models.CharField(max_length=20, null=True, blank=True)
+    source = models.CharField(max_length=20, null=True, blank=True)
+    path_system = models.TextField(null=True, blank=True)
+    path_preview = models.TextField(null=True, blank=True)
+    tag_adapted = models.ForeignKey(
+        TagAdapted,
+        related_name="transcript",
+        on_delete=models.CASCADE,
+        null=True
+    )
+
 
 class DataAttribute(models.Model):
     class Meta:
-        db_table = 'data_atribute'
+        db_table = 'data_attribute'
     attribute = models.CharField(max_length=100)
     data_attribute = models.TextField()
     type = models.CharField(max_length=50, null=True, blank=True)
