@@ -1,0 +1,36 @@
+.text-adaptation input {
+  width: 15px;
+  border: 0.5px solid rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 5px;
+  background-color: transparent;
+}
+
+.text-adaptation input.active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.text-adaptation.tooltip {
+  position: relative;
+  width:40px
+}
+.text-adaptation.tooltip .tiptext {
+  visibility: hidden;  width: 120px;  background-color: black;
+  color: #fff;  text-align: center;  border-radius: 3px;
+  padding: 6px 0;  position: absolute;  z-index: 1;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+.text-adaptation.tooltip .tiptext::after {
+  content: "";  position: absolute;  border-width: 5px;  border-style: solid;
+}
+.text-adaptation.tooltip.top:hover .tiptext {
+  visibility: visible;
+}
+.text-adaptation.tooltip.top .tiptext{
+  margin-left: -60px;  bottom: 150%;  left: 70px;
+
+}
+.text-adaptation.tooltip.top .tiptext::after{
+  margin-left: -5px;  top: 100%;  left: 6%;
+  border-color: #000000 transparent transparent transparent;
+}

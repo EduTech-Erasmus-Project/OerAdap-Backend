@@ -3,7 +3,11 @@ from .settings import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["https://oeradap.edutech-project.org", "http://oeradap.edutech-project.org"]
+
+CORS_ALLOWED_ORIGINS = ["https://oeradap.edutech-project.org", "http://oeradap.edutech-project.org"]
+
+CSRF_TRUSTED_ORIGINS = ["https://oeradap.edutech-project.org", "http://oeradap.edutech-project.org"]
 
 
 # Database
@@ -11,15 +15,18 @@ ALLOWED_HOSTS = []
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': get_secret_config('DB_NAME'),
+        'USER': get_secret_config('DB_USER'),
+        'PASSWORD': get_secret_config('DB_PASSWORD'),
+        'HOST': get_secret_config('DB_HOST'),
+        'PORT': get_secret_config('DB_PORT'),
     }
 }
 
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
-STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

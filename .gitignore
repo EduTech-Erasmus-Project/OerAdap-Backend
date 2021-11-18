@@ -403,5 +403,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# Config security file
+# Config file
 config.json
+
+# Upload files
+uploads/
+

@@ -3,8 +3,21 @@ from .settings import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:4200',
+]
+
+CORS_ORIGIN_ALLOW_ALL=False
+CORS_ORIGIN_WHITELIST = [
+    'http://127.0.0.1:4200',
+    'http://localhost:4200'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:4200',
+]
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -22,8 +35,6 @@ DATABASES = {
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
-STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
