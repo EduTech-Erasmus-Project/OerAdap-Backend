@@ -9,6 +9,10 @@ from youtube_transcript_api.formatters import WebVTTFormatter
 
 import shutil
 import os
+from os import remove
+from gtts import gTTS
+import speech_recognition as sr
+from pydub import AudioSegment
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -93,6 +97,29 @@ def remove_button_adaptation(html_files, directory):
         soup_file = bsd.generateBeautifulSoupFile(file['file'])
         bsd.generate_new_htmlFile(soup_file, file['file'])
 
+def convertText_Audio(texo_adaptar,directory,id_ref):
+    # Conversion de texto a audio
+    s = gTTS(str(texo_adaptar), lang="es-us")
+    path = os.path.join( BASE_DIR,directory,'oer_resources')
+    new_path = path+"//"+id_ref+".mp3"
+    s.save(new_path)
+    return new_path
+
+def convertAudio_Text(path_init):
+    audioI = path_init.replace('\\\\','\\')
+    audio = path_init+".wav"
+
+    sound = AudioSegment.from_mp3(str(audioI))
+    sound.export(audio, format="wav")
+
+    r = sr.Recognizer()
+
+    with sr.AudioFile(audio) as source:
+        info_audio = r.record(source)
+        text_new = r.recognize_google(info_audio, language="es-ES")
+
+    remove(audio)
+    return text_new
 
 def add_paragraph_script(html_files, directory):
     pass

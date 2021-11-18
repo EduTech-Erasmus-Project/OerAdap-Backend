@@ -18,12 +18,11 @@ class TagsSerializerTagUpdate(serializers.ModelSerializer):
 class DataAttributeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataAttribute
-        fields = ('id', 'data_attribute', 'attribute')
-
+        fields = ('id','data_attribute','attribute','path_system')
 
 class TagsSerializerTagAdapted(serializers.ModelSerializer):
     tags_adapted = TagsSerializerTagUpdate(required=True)
-    attributes = DataAttributeSerializer(many=True)
+    attributes = DataAtributeSerializer(many=True)
 
     class Meta:
         model = TagPageLearningObject
@@ -56,7 +55,6 @@ class TagAdaptedSerializer(serializers.ModelSerializer):
 class TagAdaptedSerializerAudio(serializers.ModelSerializer):
     class Meta:
         model = TagAdapted
-        # file = serializers.FileField(source='model_method')
         fields = ('id', 'text', 'html_text', 'type', 'html_text'
                   , 'path_src', 'tag_page_learning_object', 'id_ref')
 """
@@ -76,6 +74,7 @@ class PagesDetailSerializer(serializers.ModelSerializer):
             Q(page_learning_object_id=instance.id) & (Q(tag='iframe') | Q(tag='video'))).count()
         count_audios = TagPageLearningObject.objects.filter(
             Q(page_learning_object_id=instance.id) & Q(tag='audio')).count()
+
         return {
             "id": instance.id,
             "title": instance.title,
