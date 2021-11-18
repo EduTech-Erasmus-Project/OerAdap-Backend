@@ -1,22 +1,22 @@
 from django.core.files.storage import FileSystemStorage
 from django.db.models import Prefetch
 from django.shortcuts import render
-
+import json
 # Create your views here.
 # analizar metodos
 from psycopg2._psycopg import adapt
 from rest_framework import viewsets, generics
 
-from rest_framework.generics import RetrieveAPIView, CreateAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import RetrieveAPIView, CreateAPIView, RetrieveUpdateAPIView, GenericAPIView
 from rest_framework.decorators import api_view
 from setuptools.command.alias import alias
 from unipath import Path
 from shutil import copyfile
 from . import serializers
-from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagAdaptedSerializerAudio, TagsVideoSerializer, \
-    DataAttributeSerializer
+from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagsVideoSerializer, \
+    DataAttributeSerializer, TagAdaptedVideoSerializer, TranscriptSerializer
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject, \
-    DataAttribute
+    DataAttribute, Transcript
 from django.db.models import Q
 import os
 
@@ -65,11 +65,13 @@ class ImageView(RetrieveAPIView):
                 pages = pages.prefetch_related(
                     Prefetch('attributes')
                 )
+
             def get_queryset(self):
                 pages = super().get_queryset()
                 pages = pages.prefetch_related(
                     Prefetch('tags_adapted')
                 )
+
             return Response(pages.data)
 
         return Response({
@@ -101,17 +103,18 @@ class ImageView(RetrieveAPIView):
             if adapted_serializer.is_valid():
                 html_img_code[0]['alt'] = text_update;
                 """Revisar si el elemento ya esta envuelto por el elemto figure"""
-                if html_img_code[0].parent.name !='figure':
-                    replace_html_code = bsd.templateAdaptionImage(html_img_code,tag_learning_object.id_class_ref)
+                if html_img_code[0].parent.name != 'figure':
+                    replace_html_code = bsd.templateAdaptionImage(html_img_code, tag_learning_object.id_class_ref)
                     html_img_code[0].replace_with(replace_html_code)
                 else:
-                    replace_description = bsd.convertElementBeautifulSoup('<em>'+text_update+"</em>")
+                    replace_description = bsd.convertElementBeautifulSoup('<em>' + text_update + "</em>")
                     html_img_code[0].parent.em.replace_with(replace_description.em)
                 print('path', page_learning_object.preview_path)
                 bsd.generate_new_htmlFile(file_html, page_learning_object.path)
                 adapted_serializer.save()
                 return Response(adapted_serializer.data)
         return Response({'message': 'Internal server error'}, status=status.HTTP_304_NOT_MODIFIED)
+
 
 class AdapatedImageView(RetrieveUpdateAPIView):
     serializer_class = TagAdaptedSerializer
@@ -128,15 +131,15 @@ class IframeView(RetrieveAPIView):
 
     def get(self, request, pk=None):
         pages = TagPageLearningObject.objects.filter(Q(page_learning_object_id=pk) & (Q(tag='iframe') | Q(tag='video')))
-        pages = self.get_serializer(pages, many=True) #& (Q(tag_page_learning_object__tag='iframe') | Q(tag_page_learning_object__tag='video'))
+        pages = self.get_serializer(pages,
+                                    many=True)  # & (Q(tag_page_learning_object__tag='iframe') | Q(tag_page_learning_object__tag='video'))
 
-        #data_attributes = DataAttribute.objects.filter(Q(tag_page_learning_object__page_learning_object_id=pk) & (Q(tag_page_learning_object__tag='iframe') | Q(tag_page_learning_object__tag='video')))
-        #data_attributes = self.get_serializer(data_attributes, many=True)
+        # data_attributes = DataAttribute.objects.filter(Q(tag_page_learning_object__page_learning_object_id=pk) & (Q(tag_page_learning_object__tag='iframe') | Q(tag_page_learning_object__tag='video')))
+        # data_attributes = self.get_serializer(data_attributes, many=True)
 
-        #print(data_attributes.data)
+        # print(data_attributes.data)
 
         return Response(pages.data)
-
 
 
 class AudioviewCreate(RetrieveAPIView):
@@ -146,25 +149,25 @@ class AudioviewCreate(RetrieveAPIView):
 
         tag_learning_object = TagPageLearningObject.objects.get(pk=pk);
         page_learning_object = PageLearningObject.objects.get(pk=tag_learning_object.page_learning_object_id);
-        audioSerializer = TagAdaptedSerializerAudio(data=request.data)
+        audioSerializer = TagAdaptedSerializer(data=request.data)
 
         """Web Scraping"""
         div_soup_data, id_ref = bsd.templateAdaptationTag(tag_learning_object.id_class_ref);
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find('audio', tag_learning_object.id_class_ref)
         tag_aux = str(tag)
-        tag.insert(1,div_soup_data)
+        tag.insert(1, div_soup_data)
 
         if str(request.data['method']) == 'create':
             if audioSerializer.is_valid():
-                #padre = file_html.find_all('audio', tag_learning_object.id_class_ref)[0].parent
+                # padre = file_html.find_all('audio', tag_learning_object.id_class_ref)[0].parent
                 audioSerializer.save()
-                button_text_data= bsd.templateAudioTextButton(
-                        tag_learning_object.id_class_ref,
-                        request.data['text'])
+                button_text_data = bsd.templateAudioTextButton(
+                    tag_learning_object.id_class_ref,
+                    request.data['text'])
                 div_soup_data = tag.find(id=id_ref)
-                div_soup_data.insert(1,button_text_data)
-                tag_audio_div = bsd.templateAdaptedAudio(tag_aux,tag_learning_object.id_class_ref)
+                div_soup_data.insert(1, button_text_data)
+                tag_audio_div = bsd.templateAdaptedAudio(tag_aux, tag_learning_object.id_class_ref)
                 tag_audio_div.append(div_soup_data)
                 tag.replace_with(tag_audio_div)
 
@@ -175,7 +178,8 @@ class AudioviewCreate(RetrieveAPIView):
         elif str(request.data['method']) == 'automatic':
             return Response({'method': 'automatic'})
 
-        return Response({'message':'audio is already adapted','status':'false'}, status= status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'audio is already adapted', 'status': 'false'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class AudioView(RetrieveAPIView):
     def get(self, request, pk=None):
@@ -187,22 +191,24 @@ class AudioView(RetrieveAPIView):
                 pages = pages.prefetch_related(
                     Prefetch('tags_adapted')
                 )
+
             return Response(pages.data)
         return Response({
             'message': "the page has no audio"
         }, status=status.HTTP_404_NOT_FOUND)
-    def put(self,request,pk=None):
+
+    def put(self, request, pk=None):
         """Consultas"""
         tag_learning_object = TagPageLearningObject.objects.get(pk=pk)
-        page_learning_object = PageLearningObject.objects.get(pk = tag_learning_object.page_learning_object_id)
-        tag_adapted_learning_object =  TagAdapted.objects.get(tag_page_learning_object=tag_learning_object.id)
+        page_learning_object = PageLearningObject.objects.get(pk=tag_learning_object.page_learning_object_id)
+        tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object=tag_learning_object.id)
 
         """Web Scraping"""
         tag_class_ref = tag_adapted_learning_object.id_ref
-        file_html= bsd.generateBeautifulSoupFile(page_learning_object.path)
-        ref_change = file_html.find_all('input',id=str(tag_class_ref))
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+        ref_change = file_html.find_all('input', id=str(tag_class_ref))
         text_adapted = request.data['text']
-        onChange_ref = """textAdaptationEvent('"""+ str(text_adapted)+"""', '"""+tag_class_ref+"""', this)"""
+        onChange_ref = """textAdaptationEvent('""" + str(text_adapted) + """', '""" + tag_class_ref + """', this)"""
         """Validacion de envio de datos, para realizar la actualizacion """
         if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
             """ Guardar en la base de datos"""
@@ -216,11 +222,14 @@ class AudioView(RetrieveAPIView):
 
         return Response({'message': 'Internal server error'}, status=status.HTTP_304_NOT_MODIFIED)
 
+
 class AdapterParagraphCreateAPIView(CreateAPIView):
     serializer_class = TagAdaptedSerializer
 
     def post(self, request, *args, **kwargs):
         """Post adapted tag"""
+
+        print("request data", str(request.data))
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -228,8 +237,6 @@ class AdapterParagraphCreateAPIView(CreateAPIView):
         page_learning_object = PageLearningObject.objects.get(type='adapted',
                                                               pk=tag_page_learning_object.page_learning_object_id)
         learning_object = LearningObject.objects.get(pk=page_learning_object.learning_object_id)
-
-        print("request data", str(request.data))
 
         div_soup_data, id_ref = bsd.templateAdaptationTag(tag_page_learning_object.id_class_ref)
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
@@ -363,34 +370,163 @@ class PageRetrieveAPIView(RetrieveAPIView):
     queryset = PageLearningObject.objects.all()
 
 
+class VideoGenerateCreateAPIView(CreateAPIView):
+    serializer_class = TagAdaptedVideoSerializer
+
+    def post(self, request, pk=None):
+        # tag = TagPageLearningObject.objects.get(pk=pk)
+        tag = get_object_or_404(TagPageLearningObject, pk=pk)
+        captions = []
+        transcripts = []
+        try:
+            tag_adapted = TagAdapted.objects.get(tag_page_learning_object_id=tag.id, type="video")
+            subtitle = Transcript.objects.filter(tag_adapted_id=tag_adapted.id)
+
+            print(tag_adapted)
+
+            sub_en = any(sub.srclang == "en" for sub in subtitle)
+            sub_es = any(sub.srclang == "es" for sub in subtitle)
+
+            print(sub_en)
+
+            if sub_en:
+                pass
+            if sub_es:
+                pass
+
+            # print(len(subtitle))
+            return Response({"status": "ready_tag_adapted"}, status=status.HTTP_200_OK)
+        except:
+            # learning_object = tag_adapted.objects.get(tag_page_learning_object__page_learning_object=)
+            data_attribute = DataAttribute.objects.get(tag_page_learning_object_id=tag.id)
+            learning_object = LearningObject.objects.get(pk=tag.page_learning_object.learning_object_id)
+            print(learning_object.path_adapted)
+
+            if data_attribute.source == "local":
+                # print("type local")
+                return Response({"message": "Local translations under development", "code": "developing"},
+                                status=status.HTTP_200_OK)
+            else:
+                path_system, path_preview, path_src, tittle = ba.download_video(data_attribute.data_attribute,
+                                                                                data_attribute.type,
+                                                                                data_attribute.source,
+                                                                                learning_object.path_adapted, request)
+                if path_system is None and path_preview is None:
+                    return Response({"status": False, "code": "video_not_found",
+                                     "message": "The source does not allow video download"},
+                                    status=status.HTTP_406_NOT_ACCEPTABLE)
+                else:
+                    page_learning_object = tag.page_learning_object
+                    file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+                    tag_adaptation = file_html.find(tag.tag, tag.id_class_ref)
+
+                    print(tag_adaptation)
+
+                    uid = bsd.getUUID()
+                    tag_adapted = TagAdapted.objects.create(
+                        type="video",
+                        id_ref=uid,
+                        text=tittle,
+                        path_src=path_src,
+                        path_preview=path_preview,
+                        path_system=path_system,
+                        tag_page_learning_object=tag,
+                    )
+
+                    serializer = self.get_serializer(tag_adapted)
+
+                    if data_attribute.source.find("youtube.") > -1:
+                        transcripts, captions = ba.generate_transcript_youtube(data_attribute.data_attribute, tittle,
+                                                                               learning_object.path_adapted, request)
+                        for transcript in transcripts:
+                            Transcript.objects.create(
+                                src=transcript['src'],
+                                type=transcript['type'],
+                                srclang=transcript['srclang'],
+                                label=transcript['label'],
+                                source=transcript['source'],
+                                path_system=transcript['path_system'],
+                                tag_adapted=tag_adapted,
+                                path_preview=transcript['path_preview']
+                            )
+                        for caption in captions:
+                            Transcript.objects.create(
+                                src=caption['src'],
+                                type=caption['type'],
+                                srclang=caption['srclang'],
+                                label=caption['label'],
+                                source=caption['source'],
+                                path_system=caption['path_system'],
+                                tag_adapted=tag_adapted
+                            )
+
+                        # transform html
+                        video_template = bsd.templateVideoAdaptation(path_src, "video/mp4", tittle, captions,
+                                                                     transcripts, uid)
+                        #tag_adaptation.replace_with(video_template)
+                        bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+
+                        return Response(serializer.data, status=status.HTTP_200_OK)
+                    else:
+                        # transform html
+                        video_template = bsd.templateVideoAdaptation(path_src, "video/mp4", tittle, captions,
+                                                                     transcripts, uid)
+                        #tag_adaptation.replace_with(video_template)
+                        bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+
+
+                        return Response({"data": serializer.data, "message": "The source has no translations",
+                                         "code": "no_suported_transcript"}, status=status.HTTP_200_OK)
+
+
+class VideoGenericAPIView(GenericAPIView):
+    pass
+
+
+@api_view(['GET'])
+def transcript_api_view(request, pk=None):
+    print(request)
+    if request.method == 'GET':
+        transcript = get_object_or_404(Transcript, pk=pk)
+
+        with open(transcript.path_system, 'r') as f:
+            data = json.load(f)
+            return Response({"id": transcript.id, "transcript": data}, status=status.HTTP_200_OK)
+
+
+""" 
 @api_view(['POST'])
 def paragraph_api_view(request, pk=None):
     if request.method == 'POST':
         return Response({"status": "ok"})
     pass
 
-
+"""
+"""
 @api_view(['POST'])
 def image_api_view(request, pk=None):
     if request.method == 'POST':
         return Response({"status": "ok"})
     pass
 
-
+"""
+"""
 @api_view(['POST'])
 def video_api_view(request, pk=None):
     if request.method == 'POST':
         return Response({"status": "ok"})
     pass
 
-
+"""
+"""
 @api_view(['POST'])
 def audio_api_view(request, pk=None):
     if request.method == 'POST':
         return Response({"status": "ok"})
     pass
 
-
+"""
+"""
 @api_view(['POST'])
 def button_api_view(request, pk=None):
     if request.method == 'POST':
@@ -410,3 +546,4 @@ def button_api_view(request, pk=None):
             print("else value")
             ba.remove_button_adaptation(files, learning_object.path_adapted)
             return Response({"status": "ok", "operation": "remove"})
+"""

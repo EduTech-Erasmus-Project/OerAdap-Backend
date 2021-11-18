@@ -192,22 +192,24 @@ def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, dire
 
         # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
-        for subtag in tag.find_all('source'):
-            # print(tag.find_all('source'))
-            path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
-            path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
+        subtag = tag.find_all('source')
+        subtag = subtag[0]
+        # print(tag.find_all('source'))
+        path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
+        path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
 
-            data_attribute = DataAttribute(
-                attribute=attribute_src,
-                data_attribute=str(subtag.get('src')),
-                type=str(subtag.get('type')),
-                tag_page_learning_object=tag_page,
-                path_preview=path_preview,
-                path_system=path_system,
-                source="local"
-            )
-            data_attribute.save()
-            # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+        data_attribute = DataAttribute(
+            attribute=attribute_src,
+            data_attribute=str(subtag.get('src')),
+            type=str(subtag.get('type')),
+            tag_page_learning_object=tag_page,
+            path_preview=path_preview,
+            path_system=path_system,
+            source="local"
+        )
+
+        data_attribute.save()
+        # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
     generate_new_htmlFile(aux_text, file)
 
 
@@ -241,7 +243,7 @@ def webs_craping_audio(aux_text, page_id, file, tag_identify, request_host, dire
             data_attribute=str(os.path.join(request_host, directory, tag.get('src', []))),
             tag_page_learning_object=tag_page,
             type=tag_identify,
-            path_system = str(os.path.join(BASE_DIR, directory, tag.get('src', []))),
+            path_system=str(os.path.join(BASE_DIR, directory, tag.get('src', []))),
         )
         data_attribute.save()
 
@@ -361,46 +363,78 @@ def templateInfusion():
     <!---------------------------------------End infusion plugin adaptability------------------------------------------------------->
         """, 'html.parser')
 
+    return headInfusion
+
+
+def templateBodyButtonInfusion():
     bodyInfusion = BeautifulSoup(""" 
-         <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
-    <script>
-        fluid.pageEnhancer({
-            tocTemplate: "oer_resources/uiAdaptability/lib/infusion/components/tableOfContents/html/TableOfContents.html"
-        });
-    </script>
+             <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
+        <script>
+            fluid.pageEnhancer({
+                tocTemplate: "oer_resources/uiAdaptability/lib/infusion/components/tableOfContents/html/TableOfContents.html"
+            });
+        </script>
 
-    <div class="flc-uiOptions fl-uiOptions-fatPanel">
-        <div class="flc-slidingPanel-panel flc-uiOptions-iframe"></div>
-        <div class="fl-panelBar">
-            <button class="flc-slidingPanel-toggleButton fl-toggleButton">Show/Hide</button>
+        <div class="flc-uiOptions fl-uiOptions-fatPanel">
+            <div class="flc-slidingPanel-panel flc-uiOptions-iframe"></div>
+            <div class="fl-panelBar">
+                <button class="flc-slidingPanel-toggleButton fl-toggleButton">Show/Hide</button>
+            </div>
         </div>
-    </div>
-    <div class="flc-toc-tocContainer"> </div>
+        <div class="flc-toc-tocContainer"> </div>
+        <!---------------------------------------End infusion script adaptability------------------------------------------------------->
 
-
-    <!---------------------------------------End infusion script adaptability------------------------------------------------------->
-
-
-    <!---------------------------------------Begin infusion video script adaptability------------------------------------------------------->
-
-    <script>
-        var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
-            prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
-            templateLoader: {
-                options: {
-                    templates: {
-                        mediaControls: "oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
+        <!---------------------------------------Begin infusion video script adaptability------------------------------------------------------->
+        <script>
+            var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
+                prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
+                templateLoader: {
+                    options: {
+                        templates: {
+                            mediaControls: "oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
+                        }
                     }
                 }
-            }
-        });
+            });
+        </script>
+        <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
+        """, 'html.parser')
+    return bodyInfusion
 
-    </script>
 
-    <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
-    """, 'html.parser')
+def templateBodyVideoInfusion():
+    bodyInfusion = BeautifulSoup(""" 
+                <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
+           <script>
+               fluid.pageEnhancer({
+                   tocTemplate: "oer_resources/uiAdaptability/lib/infusion/components/tableOfContents/html/TableOfContents.html"
+               });
+           </script>
 
-    return headInfusion, bodyInfusion
+           <div class="flc-uiOptions fl-uiOptions-fatPanel">
+               <div class="flc-slidingPanel-panel flc-uiOptions-iframe"></div>
+               
+           </div>
+           <div class="flc-toc-tocContainer"> </div>
+           <!---------------------------------------End infusion script adaptability------------------------------------------------------->
+
+           <!---------------------------------------Begin infusion video script adaptability------------------------------------------------------->
+           <script>
+               var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
+                   prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
+                   templateLoader: {
+                       options: {
+                           templates: {
+                               mediaControls: "oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
+                           }
+                       }
+                   }
+               });
+
+           </script>
+           <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
+           """, 'html.parser')
+    return bodyInfusion
 
 
 def templateTextAdaptation():
@@ -433,6 +467,7 @@ def templateAdaptationTag(id_class_ref):
 
     return soup_data, id_ref
 
+
 def templateAdaptionImage(original_tag, id_class_ref):
     tag_figure_new = """<figure class="exe-figure exe-image float-left" style="width: 250px;"> 
 
@@ -453,6 +488,7 @@ def templateAdaptionImage(original_tag, id_class_ref):
     originaltag_new.insert(2, tag_figure_caption)
     return originaltag_new
 
+
 def templateAdaptedTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
@@ -461,22 +497,24 @@ def templateAdaptedTextButton(id_class_ref, text):
     soup_data = BeautifulSoup(tag_button, 'html.parser')
     return soup_data, button_tag_id
 
+
 def templateAudioTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
-    <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura facil" />
+    <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura con audio" />
     """ % (id_class_ref, text, id_class_ref)
     soup_data = BeautifulSoup(tag_button, 'html.parser')
     return soup_data
 
 
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
-    class_aux = 'class="'+id_class_ref+'"'
-    tag_figure_new = """<div """+class_aux+"""id="ref_adapted">""" + str(original_tag_audio) + """
+    class_aux = 'class="' + id_class_ref + '"'
+    tag_figure_new = """<div """ + class_aux + """id="ref_adapted">""" + str(original_tag_audio) + """
 
        </div>"""
-    tag_figure_new = BeautifulSoup(tag_figure_new,'html.parser')
+    tag_figure_new = BeautifulSoup(tag_figure_new, 'html.parser')
     return tag_figure_new
+
 
 def templateAdaptedAudioButton(id_class_ref, audio_src):
     button_tag_id = getUUID()
@@ -486,5 +524,81 @@ def templateAdaptedAudioButton(id_class_ref, audio_src):
     soup_data = BeautifulSoup(tag_audio, 'html.parser')
     return soup_data, button_tag_id
 
+
 def convertElementBeautifulSoup(html_code):
-    return BeautifulSoup(html_code,'html.parser')
+    return BeautifulSoup(html_code, 'html.parser')
+
+
+def templateVideoAdaptation(video_src, video_type, video_title, captions, transcripts, tag_id):
+    video_bsd = """ 
+     <div class="ui-video-adaptability %s">
+                                            <div class="videoPlayer fl-videoPlayer">
+                                            </div>
+                                            <script>
+                                                var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
+                                                    prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
+                                                    components: {
+                                                        relay: {
+                                                            type: "fluid.videoPlayer.relay"
+                                                        }
+                                                    },
+                                                    templateLoader: {
+                                                        options: {
+                                                            templates: {
+                                                                mediaControls: "oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
+                                                            }
+                                                        }
+                                                    }
+                                                });
+
+                                                var videoOptions = {
+                                                    container: ".videoPlayer", options: {
+                                                        video: {
+                                                            sources: [
+                                                                {
+                                                                    src: "%s",
+                                                                    type: "%s"
+                                                                },
+                                                            ],
+                                                            captions: [
+                                                                
+    """ % (tag_id, video_src, video_type)
+
+    for caption in captions:
+        video_bsd = video_bsd + """ 
+                                                                {
+                                                                    src: "%s",
+                                                                    type: "%s",
+                                                                    srclang: "%s",
+                                                                    label: "%s"
+                                                                },
+        """ % (caption.src, caption.type, caption.srclang, caption.label)
+
+    video_bsd = video_bsd + """
+                                                            ],
+                                                            transcripts: [
+    """
+    for transcript in transcripts:
+        video_bsd = video_bsd + """ 
+                                                                {
+                                                                    src: "%s",
+                                                                    type: "%s",
+                                                                    srclang: "%s",
+                                                                    label: "%s"
+                                                                },
+        """ % (transcript.src, transcript.type, transcript.srclang, transcript.label)
+
+    video_bsd = video_bsd + """
+                                                            ]
+                                                        },
+                                                        videoTitle: "%s"
+                                                    }
+                                                };
+                                                fluid.videoPlayer.makeEnhancedInstances(videoOptions, uiOptions.relay);
+                                            </script>
+                                        </div>
+     """ % video_title
+
+    video_bsd = BeautifulSoup(video_bsd, 'html.parser')
+
+    return video_bsd
