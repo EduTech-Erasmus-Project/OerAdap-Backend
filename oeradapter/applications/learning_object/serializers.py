@@ -48,7 +48,9 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         config_adaptability = AdaptationLearningObject.objects.filter(learning_object=instance.id)
         config_adaptability = AdaptationLearningObjectSerializer(config_adaptability, many=True)
 
-        count_pages = PageLearningObject.objects.filter(learning_object=instance.id).count()
+        #count_pages = PageLearningObject.objects.filter(learning_object=instance.id).count()
+        count_pages = PageLearningObject.objects.filter(Q(learning_object=instance.id) & Q(type='adapted')).count()
+
         #test = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
         count_images = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
         count_paragraphs = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='p')).count()
