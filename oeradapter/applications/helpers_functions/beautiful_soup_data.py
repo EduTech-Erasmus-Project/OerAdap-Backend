@@ -425,7 +425,7 @@ def templateTextAdaptation():
 def templateAdaptationTag(id_class_ref):
     id_ref = getUUID()
     tag_text_Adapted = """
-                <div id="%s" class="text-adaptation">
+                <div id="%s" class="text-adaptation tooltip top">
                       
                 </div>
             """ % id_ref
@@ -434,10 +434,10 @@ def templateAdaptationTag(id_class_ref):
     return soup_data, id_ref
 
 def templateAdaptionImage(original_tag, id_class_ref):
-    tag_figure_new = """<figure class="exe-figure exe-image float-left" style="width: 250px;"> 
+    tag_figure_new = """<figure class="exe-figure exe-image float-left" style="margin: 0; padding: 10px;"> 
 
       </figure>"""
-    tag_figure_caption = """ <figcaption class="figcaption"><span class="title"><em>
+    tag_figure_caption = """ <figcaption class="figcaption" style="text-align : center"><span class="title"><em>
 
         </em></span></figcaption>"""
     tag_figure_caption = BeautifulSoup(tag_figure_caption, "html.parser")
@@ -446,7 +446,7 @@ def templateAdaptionImage(original_tag, id_class_ref):
 
     tag_figure_new = BeautifulSoup(tag_figure_new, "html.parser")
     originaltag_new = tag_figure_new.figure
-    new_tag = tag_figure_new.new_tag('img', style="width: 100%",
+    new_tag = tag_figure_new.new_tag('img', style=original_tag[0].get('style', []),
                                      **{'class': id_class_ref}, alt=original_tag[0].get('alt', []),
                                      src=original_tag[0].get('src', []))
     originaltag_new.append(new_tag);
@@ -456,7 +456,8 @@ def templateAdaptionImage(original_tag, id_class_ref):
 def templateAdaptedTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
-    <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura facil" />
+    <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura fácil" />
+    
     """ % (button_tag_id, text, id_class_ref)
     soup_data = BeautifulSoup(tag_button, 'html.parser')
     return soup_data, button_tag_id
@@ -465,6 +466,7 @@ def templateAudioTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
     <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura facil" />
+    <span class="tiptext">Texto visual</span>
     """ % (id_class_ref, text, id_class_ref)
     soup_data = BeautifulSoup(tag_button, 'html.parser')
     return soup_data
@@ -472,7 +474,7 @@ def templateAudioTextButton(id_class_ref, text):
 
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
     class_aux = 'class="'+id_class_ref+'"'
-    tag_figure_new = """<div """+class_aux+"""id="ref_adapted">""" + str(original_tag_audio) + """
+    tag_figure_new = """<div """+class_aux+"""id="ref_adapted" style="text-align: justify;">""" + str(original_tag_audio) + """
 
        </div>"""
     tag_figure_new = BeautifulSoup(tag_figure_new,'html.parser')
@@ -482,7 +484,8 @@ def templateAdaptedAudioButton(id_class_ref, audio_src):
     button_tag_id = getUUID()
     tag_audio = """
         <input id="%s" class="audio" type="image" onclick='audioAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/audio-on.svg" aria-label="Convertir a audio" />
-        """ % (button_tag_id, audio_src, id_class_ref,)
+      s
+       """ % (button_tag_id, audio_src, id_class_ref,)
     soup_data = BeautifulSoup(tag_audio, 'html.parser')
     return soup_data, button_tag_id
 
