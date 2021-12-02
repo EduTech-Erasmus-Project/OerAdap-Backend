@@ -22,7 +22,7 @@ class DataAttributeSerializer(serializers.ModelSerializer):
 
 class TagsSerializerTagAdapted(serializers.ModelSerializer):
     tags_adapted = TagsSerializerTagUpdate(required=True)
-    attributes = DataAtributeSerializer(many=True)
+    attributes = DataAttributeSerializer(many=True)
 
     class Meta:
         model = TagPageLearningObject
