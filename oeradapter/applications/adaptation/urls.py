@@ -11,11 +11,11 @@ urlpatterns = [
     path('page/audio', views.AudioviewCreate.as_view()),
 
     path('compress/learningObject/<int:pk>',views.comprimeFileZip().as_view()),
-    path('convert/paragraph/<int:pk>', views.CovertText_Audio_View.as_view()),
+    path('convert/paragraph/<int:pk>', views.CovertTextToAudioRetrieveAPIView.as_view()),
 
     path('adapter/image/<int:pk>', views.AdapatedImageView.as_view()),
-    path('adapter/paragraph/', views.AdapterParagraphCreateAPIView.as_view()),
-    path('adapter/paragraph/<int:pk>', views.AdapterParagraphRetrieveAPIView.as_view()),
+    #path('adapter/paragraph/', views.AdapterParagraphCreateAPIView.as_view()),
+    path('adapter/paragraph/<int:pk>', views.AdapterParagraphTestRetrieveAPIView.as_view()),
 
     #path('adapter/video/subtitle/<int:pk>', views.TranscriptJsonRetrieveAPIView.as_view()),
     path('adapter/video/subtitle/generate/<int:pk>', views.VideoGenerateCreateAPIView.as_view()),

@@ -385,9 +385,14 @@ def templateBodyButtonInfusion():
         <!---------------------------------------End infusion script adaptability------------------------------------------------------->
 
         <!---------------------------------------Begin infusion video script adaptability------------------------------------------------------->
-        <script>
+           <script>
             var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
                 prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
+                components: {
+                    relay: {
+                        type: "fluid.videoPlayer.relay"
+                    }
+                },
                 templateLoader: {
                     options: {
                         templates: {
@@ -396,8 +401,8 @@ def templateBodyButtonInfusion():
                     }
                 }
             });
-        </script>
-        <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
+           </script>
+           <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
         """, 'html.parser')
     return bodyInfusion
 
@@ -420,17 +425,21 @@ def templateBodyVideoInfusion():
 
            <!---------------------------------------Begin infusion video script adaptability------------------------------------------------------->
            <script>
-               var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
-                   prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
-                   templateLoader: {
-                       options: {
-                           templates: {
-                               mediaControls: "oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
-                           }
-                       }
-                   }
-               });
-
+            var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
+                prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
+                components: {
+                    relay: {
+                        type: "fluid.videoPlayer.relay"
+                    }
+                },
+                templateLoader: {
+                    options: {
+                        templates: {
+                            mediaControls: "oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
+                        }
+                    }
+                }
+            });
            </script>
            <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
            """, 'html.parser')
@@ -459,7 +468,7 @@ def templateTextAdaptation():
 def templateAdaptationTag(id_class_ref):
     id_ref = getUUID()
     tag_text_Adapted = """
-                <div id="%s" class="text-adaptation tooltip top">
+                <div id="%s" class="text-adaptation">
                       
                 </div>
             """ % id_ref
@@ -492,8 +501,11 @@ def templateAdaptionImage(original_tag, id_class_ref):
 def templateAdaptedTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
-    <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura fácil" />
-    
+     <div class="tooltip" id="%s">
+        <input class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura fácil" />
+        <span class="tooltiptext">Lectura fácil</span>
+     </div>
+   
     """ % (button_tag_id, text, id_class_ref)
     soup_data = BeautifulSoup(tag_button, 'html.parser')
     return soup_data, button_tag_id
@@ -502,10 +514,10 @@ def templateAdaptedTextButton(id_class_ref, text):
 def templateAudioTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
-    
-    <input id="%s" class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura facil" />
-    <span class="tiptext">Texto visual</span>
-
+    <div class="tooltip" id="%s">
+        <input class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Convertir a texto" />
+        <span class="tooltiptext">Convertir a texto</span>
+     </div>
     """ % (id_class_ref, text, id_class_ref)
     soup_data = BeautifulSoup(tag_button, 'html.parser')
     return soup_data
@@ -514,8 +526,6 @@ def templateAudioTextButton(id_class_ref, text):
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
     class_aux = 'class="'+id_class_ref+'"'
     tag_figure_new = """<div """+class_aux+"""id="ref_adapted" style="text-align: justify;">""" + str(original_tag_audio) + """
-
-
        </div>"""
     tag_figure_new = BeautifulSoup(tag_figure_new, 'html.parser')
     return tag_figure_new
@@ -524,9 +534,11 @@ def templateAdaptedAudio(original_tag_audio, id_class_ref):
 def templateAdaptedAudioButton(id_class_ref, audio_src):
     button_tag_id = getUUID()
     tag_audio = """
-        <input id="%s" class="audio" type="image" onclick='audioAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/audio-on.svg" aria-label="Convertir a audio" />
-      s
-       """ % (button_tag_id, audio_src, id_class_ref,)
+    <div class="tooltip" id="%s">
+        <input class="audio" type="image" onclick='audioAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/audio-on.svg" aria-label="Convertir a audio" />
+        <span class="tooltiptext">Convertir a audio</span>
+     </div>   
+    """ % (button_tag_id, audio_src, id_class_ref,)
     soup_data = BeautifulSoup(tag_audio, 'html.parser')
     return soup_data, button_tag_id
 
@@ -536,29 +548,15 @@ def convertElementBeautifulSoup(html_code):
 
 
 def templateVideoAdaptation(video_src, video_type, video_title, captions, transcripts, tag_id):
+    player_uid = getUUID()
     video_bsd = """ 
      <div class="ui-video-adaptability %s">
-                                            <div class="videoPlayer fl-videoPlayer">
+                                            <div class="videoPlayer fl-videoPlayer player-%s">
                                             </div>
                                             <script>
-                                                var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
-                                                    prefix: "oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
-                                                    components: {
-                                                        relay: {
-                                                            type: "fluid.videoPlayer.relay"
-                                                        }
-                                                    },
-                                                    templateLoader: {
-                                                        options: {
-                                                            templates: {
-                                                                mediaControls: "oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
-                                                            }
-                                                        }
-                                                    }
-                                                });
-
+                                                
                                                 var videoOptions = {
-                                                    container: ".videoPlayer", options: {
+                                                    container: ".player-%s", options: {
                                                         video: {
                                                             sources: [
                                                                 {
@@ -568,7 +566,7 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                             ],
                                                             captions: [
                                                                 
-    """ % (tag_id, video_src, video_type)
+    """ % (tag_id,player_uid, player_uid, video_src, video_type)
 
     for caption in captions:
         video_bsd = video_bsd + """ 
@@ -578,13 +576,14 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                                     srclang: "%s",
                                                                     label: "%s"
                                                                 },
-        """ % (caption.src, caption.type, caption.srclang, caption.label)
+        """ % (caption['src'], caption['type'], caption['srclang'], caption['label'])
 
     video_bsd = video_bsd + """
                                                             ],
                                                             transcripts: [
     """
     for transcript in transcripts:
+        print(transcript['src'])
         video_bsd = video_bsd + """ 
                                                                 {
                                                                     src: "%s",
@@ -592,7 +591,7 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                                     srclang: "%s",
                                                                     label: "%s"
                                                                 },
-        """ % (transcript.src, transcript.type, transcript.srclang, transcript.label)
+        """ % (transcript['src'], transcript['type'], transcript['srclang'], transcript['label'])
 
     video_bsd = video_bsd + """
                                                             ]
