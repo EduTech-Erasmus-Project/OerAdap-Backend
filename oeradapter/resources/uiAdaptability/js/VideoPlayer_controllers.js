@@ -223,7 +223,7 @@ var fluid_1_5 = fluid_1_5 || {};
         templates: {
             controllers: {
                 forceCache: true,
-                href: "html/videoPlayer_controllers_template.html"
+                href: "oer_resources/uiAdaptability/html/videoPlayer_controllers_template.html"
             }
         }
     });

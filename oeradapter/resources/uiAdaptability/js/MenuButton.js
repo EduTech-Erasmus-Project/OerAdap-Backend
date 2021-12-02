@@ -304,7 +304,7 @@ var fluid_1_5 = fluid_1_5 || {};
         templates: {
             menuButton: {
                 forceCache: true,
-                href: "html/menuButton_template.html"
+                href: "oer_resources/uiAdaptability/html/menuButton_template.html"
             }
         },
         invokers: {

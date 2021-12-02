@@ -3,7 +3,6 @@ from django.core.files.storage import FileSystemStorage
 from . import beautiful_soup_data as bsd
 from youtube_dl import YoutubeDL
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import Formatter
 from youtube_transcript_api.formatters import JSONFormatter
 from youtube_transcript_api.formatters import WebVTTFormatter
 
@@ -19,13 +18,18 @@ BASE_DIR = Path(__file__).ancestor(3)
 
 def save_uploaded_file(path, file, resources_directory, request):
     """Save file on folder the learning object"""
+    try:
+        path_system = os.path.join(path, file.name)
+        with open(path_system, 'wb+',) as file_destination:
+            for chunk in file.chunks():
+                file_destination.write(chunk)
+    except Exception as e:
+        print("Error: %s ." % e)
 
-    fs = FileSystemStorage(location=path)  # defaults to   MEDIA_ROOT
-    filename = fs.save(file.name, file)
-    save_path = os.path.join(request._current_scheme_host, resources_directory, 'oer_resources', filename).replace(
+    path_preview = os.path.join(request._current_scheme_host, resources_directory, 'oer_resources', file.name).replace(
         "\\", "/")
-    path_system = os.path.join(path, filename)
-    return save_path, path_system
+
+    return path_preview, path_system
 
 
 def remove_uploaded_file(path_system):
@@ -97,13 +101,15 @@ def remove_button_adaptation(html_files, directory):
         soup_file = bsd.generateBeautifulSoupFile(file['file'])
         bsd.generate_new_htmlFile(soup_file, file['file'])
 
-def convertText_Audio(texo_adaptar,directory,id_ref):
+def convertText_Audio(texo_adaptar,directory,id_ref, request):
     # Conversion de texto a audio
     s = gTTS(str(texo_adaptar), lang="es-us")
-    path = os.path.join( BASE_DIR,directory,'oer_resources')
-    new_path = path+"//"+id_ref+".mp3"
-    s.save(new_path)
-    return new_path
+    path_src = 'oer_resources/'+ id_ref+".mp3"
+    path_system = os.path.join( BASE_DIR,directory,'oer_resources', id_ref+".mp3")
+    path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref+".mp3").replace(
+        "\\", "/")
+    s.save(path_system)
+    return path_src, path_system, path_preview
 
 def convertAudio_Text(path_init):
     audioI = path_init.replace('\\\\','\\')
@@ -171,12 +177,16 @@ def download_video_youtubedl(video_url, directory_adapted, request):
 
 def generate_transcript_youtube(video_url, video_title, path_adapted, request):
     with YoutubeDL({}) as ydl:
-        info_dict = ydl.extract_info(video_url, download=False)
-        id_video = info_dict.get('id', None)
-        transcript_list = YouTubeTranscriptApi.list_transcripts(id_video)
-
         transcripts = []
         captions = []
+
+        try:
+            info_dict = ydl.extract_info(video_url, download=False)
+            id_video = info_dict.get('id', None)
+            transcript_list = YouTubeTranscriptApi.list_transcripts(id_video)
+        except:
+            print("no supported transcriptions")
+            return transcripts, captions
 
         try:
             transcript = transcript_list.find_manually_created_transcript(['es', 'en'])
@@ -188,6 +198,8 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request):
         except:
             transcript_es = get_transcript_youtube(transcript_list, 'es')
             transcript_en = get_transcript_youtube(transcript_list, 'en')
+
+
 
         print(transcript_es)
         print(transcript_en)
@@ -207,9 +219,7 @@ def save_transcript(transcript, path_adapted,  video_title, transcripts, caption
     vtt_formatterd = WebVTTFormatter().format_transcript(transcript.fetch())
     json_system = os.path.join(BASE_DIR, path_adapted, "oer_resources", video_title + "_"+transcript.language_code + ".json")
     vtt_system = os.path.join(BASE_DIR, path_adapted, "oer_resources", video_title + "_"+transcript.language_code + ".vtt")
-    json_preview = os.path.join(request._current_scheme_host, path_adapted, 'oer_resources',
-                                        video_title + "_"+transcript.language_code + ".json").replace(
-                "\\", "/")
+
     json_path = 'oer_resources/' + video_title + "_"+transcript.language_code + ".json"
     vtt_path = 'oer_resources/' + video_title + "_"+transcript.language_code + ".vtt"
 
@@ -225,7 +235,6 @@ def save_transcript(transcript, path_adapted,  video_title, transcripts, caption
         "label": transcript.language,
         "source": source,
         "path_system": json_system,
-        "path_preview": json_preview
     }
     transcripts.append(transcripts_obj)
     captions_obj = {
