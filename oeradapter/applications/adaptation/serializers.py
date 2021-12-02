@@ -52,6 +52,10 @@ class TagAdaptedSerializer(serializers.ModelSerializer):
         model = TagAdapted
         fields = ('id', 'text', 'html_text', 'tag_page_learning_object')
 
+class TagAdaptedSerializerNew(serializers.ModelSerializer):
+    class Meta:
+        model = TagAdapted
+        fields = ('id', 'text','type','html_text', 'tag_page_learning_object','id_ref')
 
 class TagAdaptedAudioSerializer(serializers.ModelSerializer):
 
