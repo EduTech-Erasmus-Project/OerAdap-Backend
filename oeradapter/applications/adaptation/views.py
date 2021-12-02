@@ -15,7 +15,7 @@ from unipath import Path
 from shutil import copyfile
 from . import serializers
 from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagsVideoSerializer, TagAdaptedVideoSerializer, \
-    TagAdaptedAudioSerializer
+    TagAdaptedAudioSerializer,TagAdaptedSerializerNew
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject, \
     DataAttribute, Transcript
 from django.db.models import Q
@@ -154,7 +154,7 @@ class AudioviewCreate(RetrieveAPIView):
         pk = request.data['tag_page_learning_object']
         tag_learning_object = TagPageLearningObject.objects.get(pk=pk);
         page_learning_object = PageLearningObject.objects.get(pk=tag_learning_object.page_learning_object_id);
-        audioSerializer = TagAdaptedSerializer(data=request.data)
+        audioSerializer = TagAdaptedSerializerNew(data=request.data)
 
         """Web Scraping"""
         div_soup_data, id_ref = bsd.templateAdaptationTag(tag_learning_object.id_class_ref);
@@ -199,7 +199,7 @@ class AudioviewCreate(RetrieveAPIView):
                     path_src=request.data['path_src'],
                     text=new_text
                 )
-                serializer = TagAdaptedSerializer(TagAdapted_create)
+                serializer = TagAdaptedSerializerNew(TagAdapted_create)
 
                 button_text_data = bsd.templateAudioTextButton(
                     tag_learning_object.id_class_ref,
@@ -237,17 +237,20 @@ class AudioView(RetrieveAPIView):
         }, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request, pk=None):
+
+
         """Consultas"""
         tag_learning_object = TagPageLearningObject.objects.get(pk=pk)
         page_learning_object = PageLearningObject.objects.get(pk=tag_learning_object.page_learning_object_id)
         tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object=tag_learning_object.id)
 
+
         """Web Scraping"""
         tag_class_ref = tag_adapted_learning_object.id_ref
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
-        ref_change = file_html.find_all('input', id=str(tag_class_ref))
+        ref_change = file_html.find_all('div', id=str(tag_class_ref))
         text_adapted = request.data['text']
-        onChange_ref = """textAdaptationEvent('""" + str(text_adapted) + """', '""" + tag_class_ref + """', this)"""
+        onChange_ref = """textAdaptationEvent('""" + str(text_adapted) + """', '""" +tag_class_ref + """', this)"""
         """Validacion de envio de datos, para realizar la actualizacion """
         if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
             """ Guardar en la base de datos"""
