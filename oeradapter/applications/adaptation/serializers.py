@@ -18,7 +18,8 @@ class TagsSerializerTagUpdate(serializers.ModelSerializer):
 class DataAttributeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataAttribute
-        fields = ('id','data_attribute','attribute','path_system')
+        fields = ('id', 'data_attribute', 'attribute', 'path_system')
+
 
 class TagsSerializerTagAdapted(serializers.ModelSerializer):
     tags_adapted = TagsSerializerTagUpdate(required=True)
@@ -45,20 +46,23 @@ class TagAdaptedVideoSerializer(serializers.ModelSerializer):
 
 
 class TagAdaptedSerializer(serializers.ModelSerializer):
+    #tags_adapted = TagAdaptedSerializerAudio(many=True, read_only=True)
+
     class Meta:
         model = TagAdapted
-        # file = serializers.FileField(source='model_method')
         fields = ('id', 'text', 'html_text', 'tag_page_learning_object')
 
+class TagAdaptedSerializerNew(serializers.ModelSerializer):
+    class Meta:
+        model = TagAdapted
+        fields = ('id', 'text','type','html_text', 'tag_page_learning_object','id_ref')
 
-""" 
-class TagAdaptedSerializerAudio(serializers.ModelSerializer):
+class TagAdaptedAudioSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = TagAdapted
         fields = ('id', 'text', 'html_text', 'type', 'html_text'
-                  , 'path_src', 'tag_page_learning_object', 'id_ref')
-"""
-
+                  , 'path_preview', 'tag_page_learning_object', 'id_ref', )
 
 class PagesDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -104,5 +108,3 @@ class TagsVideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TagPageLearningObject
         fields = ['id', 'text', 'html_text', 'page_learning_object', 'attributes', 'tags_adapted', ]
-
-

@@ -13,6 +13,7 @@ import shutil
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
+from .permission import IsPermissionToken
 from .serializers import LearningObjectSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
@@ -26,7 +27,7 @@ def adaptation_settings(data, files, directory):
     button = False
     paragraph_script = False
     video = False
-    #print(areas)
+    # print(areas)
     if 'image' in areas:
         pass
     if 'video' in areas:
@@ -41,15 +42,16 @@ def adaptation_settings(data, files, directory):
     if 'paragraph' in areas:
         paragraph_script = True
         pass
-    #pass
+    # pass
     ba.add_files_adaptation(files, directory, button, paragraph_script, video)
 
 
-class LearningObjectCreateApiView(generics.CreateAPIView):
+class LearningObjectCreateApiView(generics.GenericAPIView):
     """
         File Learning Object
     """
     # model = LearningObject
+    permission_classes = [IsPermissionToken]
     serializer_class = serializers.LearningObjectSerializer
 
     def extract_zip_file(self, path, file_name, file):
@@ -100,16 +102,21 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
         elif len(listdir(directory_name)) == 1:
             return 0
 
-
-
     def get_queryset(self):
-        user_token = None
-        try:
-            user_token = self.request.COOKIES['user_ref']
-        except:
-            return []
-        if user_token is not None:
-            return self.get_serializer().Meta.model.objects.filter(user_ref=user_token)
+        return self.get_serializer().Meta.model.objects.all
+
+    def get(self, request, *args, **kwargs):
+
+        if 'HTTP_AUTHORIZATION' in request.META:
+            print(request.META['HTTP_AUTHORIZATION'])
+            data = LearningObject.objects.filter(user_ref=request.META['HTTP_AUTHORIZATION'])
+            serializer = LearningObjectSerializer(data, many=True)
+            return Response(serializer.data)
+        else:
+            return Response([])
+
+
+
 
     def post(self, request, *args, **kwargs):
         """
@@ -123,12 +130,12 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
             "expires_at"
         """
 
-        # areas = self.validated_data.pop('areas')
-
-        try:
-            user_token = request.COOKIES['user_ref']
-        except:
+        if ('HTTP_AUTHORIZATION' in request.META) and (len(self.request.object_ref) > 0):
+            user_token = request.META['HTTP_AUTHORIZATION']
+        else:
             user_token = str(shortuuid.ShortUUID().random(length=64))
+
+        print(self.request)
 
         uuid = str(shortuuid.ShortUUID().random(length=8))
         file = request.FILES['file']
@@ -145,7 +152,6 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
         # save the learning object preview path
         preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
         preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
-        # print('path'+os.path.join(BASE_DIR, directory_origin))
         soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
         learning_object = LearningObject.objects.create(
@@ -165,32 +171,25 @@ class LearningObjectCreateApiView(generics.CreateAPIView):
             learning_object=learning_object
         )
 
-        # learning_object = LearningObject.objects.get(
-        #    pk=serializer.data['id'])  # refactirizar sin hacer peticion a la base de datos
-
         files = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
-
-        # print(files_name)
-
         adaptation_settings(request.data, files, directory_adapted)
-
         bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
-
-        # remove file zip
-        # path_file = os.path.join(path, file_name.split('.')[0], file_name)
-        # os.remove(os.path.join(BASE_DIR, path_file))
-
-        # Response data
-        data = json.dumps(serializer.data, indent=4, sort_keys=True, default=str)
-        response = HttpResponse(data, content_type='application/json')
-        response.delete_cookie(key='user_ref')
-        response.set_cookie('user_ref', value=user_token, expires=serializer.data['expires_at'])
-        response.status_code = 201
-        # return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return response
+        return Response(serializer.data)
 
 
 class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = serializers.LearningObjectDetailSerializer
+
     def get_queryset(self):
+
         return self.get_serializer().Meta.model.objects.filter()
+
+    def get(self, request, pk=None):
+        if 'HTTP_AUTHORIZATION' in request.META:
+            #print(request.META['HTTP_AUTHORIZATION'])
+            # data = LearningObject.objects.filter(user_ref=request.META['HTTP_AUTHORIZATION'], pk=pk)
+            data = get_object_or_404(LearningObject, pk=pk, user_ref=request.META['HTTP_AUTHORIZATION'])
+            serializer = self.get_serializer(data)
+            return Response(serializer.data)
+        else:
+            return Response({"status":"ERROR_UNAUTHORIZED", "code":"no authorization key"}, status=status.HTTP_401_UNAUTHORIZED)
