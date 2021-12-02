@@ -478,7 +478,7 @@ def templateAdaptationTag(id_class_ref):
 
 
 def templateAdaptionImage(original_tag, id_class_ref):
-    tag_figure_new = """<figure class="exe-figure exe-image float-left" style="margin: 0; padding: 10px;"> 
+    tag_figure_new = """<figure class="exe-figure exe-image float-left" style="margin: 0; padding: 10px;text-align: center;"> 
 
       </figure>"""
     tag_figure_caption = """ <figcaption class="figcaption" style="text-align : center"><span class="title"><em>
@@ -491,7 +491,7 @@ def templateAdaptionImage(original_tag, id_class_ref):
     tag_figure_new = BeautifulSoup(tag_figure_new, "html.parser")
     originaltag_new = tag_figure_new.figure
     new_tag = tag_figure_new.new_tag('img', style=original_tag[0].get('style', []),
-                                     **{'class': id_class_ref}, alt=original_tag[0].get('alt', []),
+                                     **{'class': original_tag[0].get('class', [])}, alt=original_tag[0].get('alt', []),
                                      src=original_tag[0].get('src', []))
     originaltag_new.append(new_tag);
     originaltag_new.insert(2, tag_figure_caption)

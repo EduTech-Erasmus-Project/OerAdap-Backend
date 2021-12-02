@@ -102,8 +102,11 @@ class ImageView(RetrieveAPIView):
         """Validacion de envio de datos, para realizar la actualizacion """
         if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
             """ Guardar en la base de datos"""
+
             adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)
             if adapted_serializer.is_valid():
+                print(request.data['text'])
+
                 html_img_code[0]['alt'] = text_update;
                 """Revisar si el elemento ya esta envuelto por el elemto figure"""
                 if html_img_code[0].parent.name != 'figure':
