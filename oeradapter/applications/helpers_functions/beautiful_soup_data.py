@@ -501,7 +501,7 @@ def templateAdaptionImage(original_tag, id_class_ref):
 def templateAdaptedTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
-     <div class="tooltip" id="%s">
+     <div class="tooltip text-container" id="%s">
         <input class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura fácil" />
         <span class="tooltiptext">Lectura fácil</span>
      </div>
@@ -514,7 +514,7 @@ def templateAdaptedTextButton(id_class_ref, text):
 def templateAudioTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
-    <div class="tooltip" id="%s">
+    <div class="tooltip text-container" id="%s">
         <input class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Convertir a texto" />
         <span class="tooltiptext">Convertir a texto</span>
      </div>
@@ -534,7 +534,7 @@ def templateAdaptedAudio(original_tag_audio, id_class_ref):
 def templateAdaptedAudioButton(id_class_ref, audio_src):
     button_tag_id = getUUID()
     tag_audio = """
-    <div class="tooltip" id="%s">
+    <div class="tooltip audio-container" id="%s">
         <input class="audio" type="image" onclick='audioAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/audio-on.svg" aria-label="Convertir a audio" />
         <span class="tooltiptext">Convertir a audio</span>
      </div>   

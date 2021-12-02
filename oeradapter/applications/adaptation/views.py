@@ -267,6 +267,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
 
     def get(self, request, pk=None):
         """Get tag adapted by paragraph pk"""
+        print("pk search"+str(pk))
         tag_adapted = get_object_or_404(TagAdapted, tag_page_learning_object_id=pk)
         serializer = TagAdaptedAudioSerializer(tag_adapted)
         print(serializer.data)
@@ -290,7 +291,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                     button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
                         tag_page_learning_object.id_class_ref,
                         request.data['text'])
-                    tag_text = tag_adaptation.find('input', "text")
+                    tag_text = tag_adaptation.find('div', class_="tooltip text-container")
                     if tag_text is not None:
                         tag_text.decompose()
                     tag_adaptation.insert(1, button_text_data)
@@ -310,7 +311,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                 button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
                     tag_page_learning_object.id_class_ref, path_src)
 
-                tag_audio = tag_adaptation.find('input', "audio")
+                tag_audio = tag_adaptation.find('div', class_="tooltip audio-container")
                 if tag_audio is not None:
                     tag_audio.decompose()
                 tag_adaptation.insert(len(tag_adaptation) - 1, button_audio_data)
@@ -423,6 +424,7 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
                 path_src=path_src,
                 path_preview=path_preview,
                 path_system=path_system,
+                tag_page_learning_object=tag_page_learning_object
             )
             serializers = self.get_serializer(data)
         else:
@@ -430,7 +432,7 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
             button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
                 tag_page_learning_object.id_class_ref, path_src)
 
-            tag_audio = tag_adaptation.find('input', "audio")
+            tag_audio = tag_adaptation.find('div', class_="tooltip audio-container")
             if tag_audio is not None:
                 tag_audio.decompose()
             tag_adaptation.insert(len(tag_adaptation) - 1, button_audio_data)
@@ -519,7 +521,7 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                         transcripts, captions = ba.generate_transcript_youtube(data_attribute.data_attribute, tittle,
                                                                                learning_object.path_adapted, request)
 
-                        print(transcripts)
+
 
                         for transcript in transcripts:
                             Transcript.objects.create(
@@ -554,7 +556,13 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                         tag_adaptation.replace_with(video_template)
                         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
 
-                        return Response(serializer.data, status=status.HTTP_200_OK)
+                        if len(transcripts) > 0 and len(captions) > 0:
+                            return Response(serializer.data, status=status.HTTP_200_OK)
+                        else:
+                            return Response({"data": serializer.data, "message": "The source has no translations",
+                                             "code": "no_suported_transcript"}, status=status.HTTP_200_OK)
+
+
                     else:
                         # transform html
                         video_template = bsd.templateVideoAdaptation(path_src, "video/mp4", tittle, captions,
