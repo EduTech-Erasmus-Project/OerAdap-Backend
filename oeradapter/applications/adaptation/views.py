@@ -35,6 +35,10 @@ import shutil
 
 BASE_DIR = Path(__file__).ancestor(3)
 
+PROD = None
+with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
+    PROD = json.loads(f.read())
+
 
 class ParagraphView(RetrieveAPIView):
     # serializer_class = serializers.TagLearningObjectDetailSerializerP
@@ -653,7 +657,7 @@ class comprimeFileZip(RetrieveAPIView):
         path_folder = os.path.join(BASE_DIR, learning_object.path_adapted)
         archivo_zip = shutil.make_archive(path_folder, "zip", path_folder)
         new_path = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip')
-        if not DEBUG:
+        if PROD['PROD']:
             new_path = new_path.replace("http://", "https://")
 
         # print("Creado el archivo:", new_path)
