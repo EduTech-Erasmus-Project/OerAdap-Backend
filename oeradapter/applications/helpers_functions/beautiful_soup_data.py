@@ -1,3 +1,4 @@
+import json
 from urllib.parse import urlparse
 from unipath import Path
 from bs4 import BeautifulSoup
@@ -5,8 +6,11 @@ import os
 import shortuuid
 from ..learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute, TagAdapted
 
-
 BASE_DIR = Path(__file__).ancestor(3)
+
+PROD = None
+with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
+    PROD = json.loads(f.read())
 
 
 def read_html_files(directory):
@@ -59,7 +63,7 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
 
         directory_file = os.path.join(BASE_DIR, directory, file['file'])
         preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
-        if not prod.DEBUG:
+        if PROD['PROD']:
             preview_path = preview_path.replace("http://", "https://")
 
         soup_data = generateBeautifulSoupFile(directory_file)
@@ -74,7 +78,7 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
 
         directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
         preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
-        if not DEBUG:
+        if PROD['PROD']:
             preview_path_origin = preview_path_origin.replace("http://", "https://")
 
         PageLearningObject.objects.create(
@@ -203,10 +207,8 @@ def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, dire
         # print(tag.find_all('source'))
         path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
 
-        """
-        if not DEBUG:
+        if PROD['PROD']:
             path_preview = path_preview.replace("http://", "https://")
-        """
 
         path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
 
@@ -536,8 +538,9 @@ def templateAudioTextButton(id_class_ref, text):
 
 
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
-    class_aux = 'class="'+id_class_ref+'"'
-    tag_figure_new = """<div """+class_aux+"""id="ref_adapted" style="text-align: justify;">""" + str(original_tag_audio) + """
+    class_aux = 'class="' + id_class_ref + '"'
+    tag_figure_new = """<div """ + class_aux + """id="ref_adapted" style="text-align: justify;">""" + str(
+        original_tag_audio) + """
        </div>"""
     tag_figure_new = BeautifulSoup(tag_figure_new, 'html.parser')
     return tag_figure_new
@@ -578,7 +581,7 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                             ],
                                                             captions: [
                                                                 
-    """ % (tag_id,player_uid, player_uid, video_src, video_type)
+    """ % (tag_id, player_uid, player_uid, video_src, video_type)
 
     for caption in captions:
         video_bsd = video_bsd + """ 
