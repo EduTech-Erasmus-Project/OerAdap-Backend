@@ -17,3 +17,14 @@ in file config.json
     "DB_PORT": "database_port"
 }
 ```
+
+Create file prod.json 
+
+In value PROD change true or false, in server production this value is true.
+
+In file prod.json 
+```json
+{
+    "PROD": false
+}
+```
