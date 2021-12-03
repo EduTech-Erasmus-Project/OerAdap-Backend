@@ -28,7 +28,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -221,6 +220,7 @@ Temporary Items
 .idea/**/gradle.xml
 .idea/**/libraries
 
+
 # Gradle and Maven with auto-import
 # When using Gradle or Maven with auto-import, you should exclude module files,
 # since they will be recreated, and may cause churn.  Uncomment if using
@@ -405,6 +405,7 @@ $RECYCLE.BIN/
 
 # Config file
 config.json
+prod.json
 
 # Upload files
 uploads/
