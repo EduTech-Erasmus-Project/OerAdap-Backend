@@ -13,6 +13,7 @@ from gtts import gTTS
 import speech_recognition as sr
 from pydub import AudioSegment
 
+
 BASE_DIR = Path(__file__).ancestor(3)
 
 
@@ -28,6 +29,11 @@ def save_uploaded_file(path, file, resources_directory, request):
 
     path_preview = os.path.join(request._current_scheme_host, resources_directory, 'oer_resources', file.name).replace(
         "\\", "/")
+
+    """
+    if not prod.DEBUG:
+        path_preview = path_preview.replace("http://", "https://")
+    """
 
     return path_preview, path_system
 
@@ -108,6 +114,12 @@ def convertText_Audio(texo_adaptar,directory,id_ref, request):
     path_system = os.path.join( BASE_DIR,directory,'oer_resources', id_ref+".mp3")
     path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref+".mp3").replace(
         "\\", "/")
+
+    """
+    if not prod.DEBUG:
+        path_preview = path_preview.replace("http://", "https://")
+    """
+
     s.save(path_system)
     return path_src, path_system, path_preview
 
@@ -169,6 +181,12 @@ def download_video_youtubedl(video_url, directory_adapted, request):
             path_preview = os.path.join(request._current_scheme_host, directory_adapted, 'oer_resources',
                                         video_title + ".mp4").replace(
                 "\\", "/")
+
+            """
+            if not prod.DEBUG:
+                path_preview = path_preview.replace("http://", "https://")
+            """
+
             path_src = 'oer_resources/' + video_title + ".mp4"
             return path_system, path_preview, path_src, video_title
     except Exception as e:
