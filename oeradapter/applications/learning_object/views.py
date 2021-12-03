@@ -1,9 +1,6 @@
-from django.db.models import Prefetch
-from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework import viewsets
 from . import serializers
 import shortuuid
 import json
@@ -21,6 +18,10 @@ from rest_framework import generics
 
 
 BASE_DIR = Path(__file__).ancestor(3)
+
+PROD = None
+with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
+    PROD = json.loads(f.read())
 
 
 def adaptation_settings(data, files, directory):
@@ -153,11 +154,11 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         # save the learning object preview path
         preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
         preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
-        """ 
-        if not prod.DEBUG:
+
+        if PROD['PROD']:
             preview_origin = preview_origin.replace("http://", "https://")
             preview_adapted = preview_adapted.replace("http://", "https://")
-        """
+
 
         soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 

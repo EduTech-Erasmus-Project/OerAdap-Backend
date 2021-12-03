@@ -1,3 +1,5 @@
+import json
+
 from unipath import Path
 from django.core.files.storage import FileSystemStorage
 from . import beautiful_soup_data as bsd
@@ -13,15 +15,18 @@ from gtts import gTTS
 import speech_recognition as sr
 from pydub import AudioSegment
 
-
 BASE_DIR = Path(__file__).ancestor(3)
+
+PROD = None
+with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
+    PROD = json.loads(f.read())
 
 
 def save_uploaded_file(path, file, resources_directory, request):
     """Save file on folder the learning object"""
     try:
         path_system = os.path.join(path, file.name)
-        with open(path_system, 'wb+',) as file_destination:
+        with open(path_system, 'wb+', ) as file_destination:
             for chunk in file.chunks():
                 file_destination.write(chunk)
     except Exception as e:
@@ -30,10 +35,8 @@ def save_uploaded_file(path, file, resources_directory, request):
     path_preview = os.path.join(request._current_scheme_host, resources_directory, 'oer_resources', file.name).replace(
         "\\", "/")
 
-    """
-    if not prod.DEBUG:
+    if PROD['PROD']:
         path_preview = path_preview.replace("http://", "https://")
-    """
 
     return path_preview, path_system
 
@@ -107,25 +110,25 @@ def remove_button_adaptation(html_files, directory):
         soup_file = bsd.generateBeautifulSoupFile(file['file'])
         bsd.generate_new_htmlFile(soup_file, file['file'])
 
-def convertText_Audio(texo_adaptar,directory,id_ref, request):
+
+def convertText_Audio(texo_adaptar, directory, id_ref, request):
     # Conversion de texto a audio
     s = gTTS(str(texo_adaptar), lang="es-us")
-    path_src = 'oer_resources/'+ id_ref+".mp3"
-    path_system = os.path.join( BASE_DIR,directory,'oer_resources', id_ref+".mp3")
-    path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref+".mp3").replace(
+    path_src = 'oer_resources/' + id_ref + ".mp3"
+    path_system = os.path.join(BASE_DIR, directory, 'oer_resources', id_ref + ".mp3")
+    path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
         "\\", "/")
 
-    """
-    if not prod.DEBUG:
+    if PROD['PROD']:
         path_preview = path_preview.replace("http://", "https://")
-    """
 
     s.save(path_system)
     return path_src, path_system, path_preview
 
+
 def convertAudio_Text(path_init):
-    audioI = path_init.replace('\\\\','\\')
-    audio = path_init+".wav"
+    audioI = path_init.replace('\\\\', '\\')
+    audio = path_init + ".wav"
 
     sound = AudioSegment.from_mp3(str(audioI))
     sound.export(audio, format="wav")
@@ -138,6 +141,7 @@ def convertAudio_Text(path_init):
 
     remove(audio)
     return text_new
+
 
 def add_paragraph_script(html_files, directory):
     pass
@@ -182,10 +186,8 @@ def download_video_youtubedl(video_url, directory_adapted, request):
                                         video_title + ".mp4").replace(
                 "\\", "/")
 
-            """
-            if not prod.DEBUG:
+            if PROD['PROD']:
                 path_preview = path_preview.replace("http://", "https://")
-            """
 
             path_src = 'oer_resources/' + video_title + ".mp4"
             return path_system, path_preview, path_src, video_title
@@ -208,7 +210,8 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request):
 
         try:
             transcript = transcript_list.find_manually_created_transcript(['es', 'en'])
-            transcripts, captions = save_transcript(transcript, path_adapted, video_title, transcripts, captions, "manual", request)
+            transcripts, captions = save_transcript(transcript, path_adapted, video_title, transcripts, captions,
+                                                    "manual", request)
             if transcript.language_code != 'es':
                 transcript_es = get_transcript_youtube(transcript_list, 'es')
             elif transcript.language_code != 'en':
@@ -217,12 +220,12 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request):
             transcript_es = get_transcript_youtube(transcript_list, 'es')
             transcript_en = get_transcript_youtube(transcript_list, 'en')
 
-
-
         print(transcript_es)
         print(transcript_en)
-        transcripts, captions = save_transcript(transcript_es, path_adapted, video_title, transcripts, captions, "automatic/youtube", request)
-        transcripts, captions = save_transcript(transcript_en, path_adapted, video_title, transcripts, captions, "automatic/youtube", request)
+        transcripts, captions = save_transcript(transcript_es, path_adapted, video_title, transcripts, captions,
+                                                "automatic/youtube", request)
+        transcripts, captions = save_transcript(transcript_en, path_adapted, video_title, transcripts, captions,
+                                                "automatic/youtube", request)
 
         return transcripts, captions
 
@@ -232,14 +235,16 @@ def get_transcript_youtube(transcript_list, lang):
     return transcript.translate(lang)
 
 
-def save_transcript(transcript, path_adapted,  video_title, transcripts, captions, source, request):
+def save_transcript(transcript, path_adapted, video_title, transcripts, captions, source, request):
     json_formatted = JSONFormatter().format_transcript(transcript.fetch())
     vtt_formatterd = WebVTTFormatter().format_transcript(transcript.fetch())
-    json_system = os.path.join(BASE_DIR, path_adapted, "oer_resources", video_title + "_"+transcript.language_code + ".json")
-    vtt_system = os.path.join(BASE_DIR, path_adapted, "oer_resources", video_title + "_"+transcript.language_code + ".vtt")
+    json_system = os.path.join(BASE_DIR, path_adapted, "oer_resources",
+                               video_title + "_" + transcript.language_code + ".json")
+    vtt_system = os.path.join(BASE_DIR, path_adapted, "oer_resources",
+                              video_title + "_" + transcript.language_code + ".vtt")
 
-    json_path = 'oer_resources/' + video_title + "_"+transcript.language_code + ".json"
-    vtt_path = 'oer_resources/' + video_title + "_"+transcript.language_code + ".vtt"
+    json_path = 'oer_resources/' + video_title + "_" + transcript.language_code + ".json"
+    vtt_path = 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
 
     with open(json_system, 'w', encoding='utf-8') as json_file:
         json_file.write(json_formatted)
