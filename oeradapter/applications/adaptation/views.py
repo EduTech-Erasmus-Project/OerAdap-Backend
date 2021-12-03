@@ -653,5 +653,8 @@ class comprimeFileZip(RetrieveAPIView):
         path_folder = os.path.join(BASE_DIR, learning_object.path_adapted)
         archivo_zip = shutil.make_archive(path_folder, "zip", path_folder)
         new_path = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip')
-        print("Creado el archivo:", new_path)
+        if not DEBUG:
+            new_path = new_path.replace("http://", "https://")
+
+        # print("Creado el archivo:", new_path)
         return Response({'path': new_path, 'status': 'create zip'}, status=status.HTTP_200_OK)
