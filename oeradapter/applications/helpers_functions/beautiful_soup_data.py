@@ -3,8 +3,8 @@ from unipath import Path
 from bs4 import BeautifulSoup
 import os
 import shortuuid
-
 from ..learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute, TagAdapted
+
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -59,6 +59,9 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
 
         directory_file = os.path.join(BASE_DIR, directory, file['file'])
         preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
+        if not prod.DEBUG:
+            preview_path = preview_path.replace("http://", "https://")
+
         soup_data = generateBeautifulSoupFile(directory_file)
         pages_convert.append(soup_data)
 
@@ -71,6 +74,9 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
 
         directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
         preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
+        if not DEBUG:
+            preview_path_origin = preview_path_origin.replace("http://", "https://")
+
         PageLearningObject.objects.create(
             type="origin",
             title=soup_data.find('title').text,
@@ -196,6 +202,12 @@ def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, dire
         subtag = subtag[0]
         # print(tag.find_all('source'))
         path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
+
+        """
+        if not DEBUG:
+            path_preview = path_preview.replace("http://", "https://")
+        """
+
         path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
 
         data_attribute = DataAttribute(
@@ -501,7 +513,7 @@ def templateAdaptionImage(original_tag, id_class_ref):
 def templateAdaptedTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
-     <div class="tooltip" id="%s">
+     <div class="tooltip text-container" id="%s">
         <input class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura fácil" />
         <span class="tooltiptext">Lectura fácil</span>
      </div>
@@ -514,7 +526,7 @@ def templateAdaptedTextButton(id_class_ref, text):
 def templateAudioTextButton(id_class_ref, text):
     button_tag_id = getUUID()
     tag_button = """
-    <div class="tooltip" id="%s">
+    <div class="tooltip text-container" id="%s">
         <input class="text" type="image" onclick='textAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/paragraph.svg" aria-label="Convertir a texto" />
         <span class="tooltiptext">Convertir a texto</span>
      </div>
@@ -534,7 +546,7 @@ def templateAdaptedAudio(original_tag_audio, id_class_ref):
 def templateAdaptedAudioButton(id_class_ref, audio_src):
     button_tag_id = getUUID()
     tag_audio = """
-    <div class="tooltip" id="%s">
+    <div class="tooltip audio-container" id="%s">
         <input class="audio" type="image" onclick='audioAdaptationEvent("%s", "%s", this)' src="oer_resources/text_adaptation/audio-on.svg" aria-label="Convertir a audio" />
         <span class="tooltiptext">Convertir a audio</span>
      </div>   

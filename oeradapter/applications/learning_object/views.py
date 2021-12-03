@@ -19,6 +19,7 @@ from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 from rest_framework import generics
 
+
 BASE_DIR = Path(__file__).ancestor(3)
 
 
@@ -152,6 +153,12 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         # save the learning object preview path
         preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
         preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
+        """ 
+        if not prod.DEBUG:
+            preview_origin = preview_origin.replace("http://", "https://")
+            preview_adapted = preview_adapted.replace("http://", "https://")
+        """
+
         soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
         learning_object = LearningObject.objects.create(
