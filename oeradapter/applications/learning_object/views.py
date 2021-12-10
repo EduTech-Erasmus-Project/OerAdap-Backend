@@ -14,8 +14,8 @@ from .permission import IsPermissionToken
 from .serializers import LearningObjectSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
+from ..helpers_functions import automatic_adaptation as aa
 from rest_framework import generics
-
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -117,9 +117,6 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         else:
             return Response([])
 
-
-
-
     def post(self, request, *args, **kwargs):
         """
             Upload file attribute required file
@@ -137,7 +134,7 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         else:
             user_token = str(shortuuid.ShortUUID().random(length=64))
 
-        print(self.request)
+        # print(self.request)
 
         uuid = str(shortuuid.ShortUUID().random(length=8))
         file = request.FILES['file']
@@ -159,8 +156,9 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
             preview_origin = preview_origin.replace("http://", "https://")
             preview_adapted = preview_adapted.replace("http://", "https://")
 
-
         soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
+
+        areas = request.data['areas'].split(sep=',')
 
         learning_object = LearningObject.objects.create(
             title=soup_data.find('title').text,
@@ -175,14 +173,38 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
 
         AdaptationLearningObject.objects.create(
             method=request.data['method'],
-            areas=request.data['areas'].split(sep=','),
+            areas=areas,
             learning_object=learning_object
         )
 
         files = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
         adaptation_settings(request.data, files, directory_adapted)
         bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
-        return Response(serializer.data)
+
+        if request.data['method'] == "handbook":
+            return Response(serializer.data)
+
+        if request.data['method'] == "automatic" or request.data['method'] == "mixed":
+
+            if 'paragraph' in areas:
+                aa.paragraph_adaptation(learning_object, request)
+            if 'audio' in areas:
+                aa.audio_adaptation(learning_object, request)
+            if 'image' in areas:
+                aa.image_adaptation(learning_object, request)
+            if 'video' in areas:
+                aa.video_adaptation(learning_object, request)
+
+            aa.adaptation(areas, files,  request)
+            #Response().write(self, {"state": "process"})
+            #Response({"state": "process"})
+            #Response({"state": "done"})
+            return Response({"state": "ok"})
+
+
+
+        else:
+            return Response({"state": "Error method not supported"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
@@ -194,10 +216,11 @@ class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
 
     def get(self, request, pk=None):
         if 'HTTP_AUTHORIZATION' in request.META:
-            #print(request.META['HTTP_AUTHORIZATION'])
+            # print(request.META['HTTP_AUTHORIZATION'])
             # data = LearningObject.objects.filter(user_ref=request.META['HTTP_AUTHORIZATION'], pk=pk)
             data = get_object_or_404(LearningObject, pk=pk, user_ref=request.META['HTTP_AUTHORIZATION'])
             serializer = self.get_serializer(data)
             return Response(serializer.data)
         else:
-            return Response({"status":"ERROR_UNAUTHORIZED", "code":"no authorization key"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"status": "ERROR_UNAUTHORIZED", "code": "no authorization key"},
+                            status=status.HTTP_401_UNAUTHORIZED)

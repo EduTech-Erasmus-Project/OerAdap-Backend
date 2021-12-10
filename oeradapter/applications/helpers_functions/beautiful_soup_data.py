@@ -281,7 +281,7 @@ def webs_craping_iframe(file_beautiful_soup, page_id, file):
 
     for tag in file_beautiful_soup.find_all(tag_identify):
 
-        print(tag)
+        #print(tag)
 
         class_uuid = tag_identify + '-' + getUUID()
 
@@ -598,7 +598,7 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                             transcripts: [
     """
     for transcript in transcripts:
-        print(transcript['src'])
+        #print(transcript['src'])
         video_bsd = video_bsd + """ 
                                                                 {
                                                                     src: "%s",
