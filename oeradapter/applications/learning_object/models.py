@@ -114,3 +114,13 @@ class DataAttribute(models.Model):
     path_preview = models.URLField(max_length=255, null=True)
     source = models.CharField(max_length=20, null=True)
     tag_page_learning_object = models.ForeignKey(TagPageLearningObject, related_name="attributes",  on_delete=models.CASCADE)
+
+class MetadataInfo(models.Model):
+    class Meta:
+        db_table = 'metadata_info'
+    browser = models.CharField(max_length=100, null=True, blank=True)
+    country = models.CharField(max_length=100, null=True, blank=True)
+    text_number = models.CharField(max_length=100, null=True, blank=True)
+    video_number = models.CharField(max_length=100, null=True, blank=True)
+    audio_number = models.CharField(max_length=100, null=True, blank=True)
+    img_number = models.CharField(max_length=100, null=True, blank=True)

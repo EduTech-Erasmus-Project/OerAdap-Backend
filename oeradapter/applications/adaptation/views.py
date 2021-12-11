@@ -17,7 +17,7 @@ from . import serializers
 from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagsVideoSerializer, TagAdaptedVideoSerializer, \
     TagAdaptedAudioSerializer,TagAdaptedSerializerNew
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject, \
-    DataAttribute, Transcript
+    DataAttribute, Transcript, MetadataInfo
 from django.db.models import Q
 import os
 
@@ -30,6 +30,7 @@ from rest_framework.response import Response
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 import shutil
+from geopy.geocoders import Nominatim
 
 # Conversion de audio a texto
 
@@ -652,13 +653,61 @@ def button_api_view(request, pk=None):
 
 
 class comprimeFileZip(RetrieveAPIView):
-    def get(self, request, pk):
+    def post(self, request, pk):
+        """Recibe latitud, longitud y user_agend """
+        """generamos le zip del nuevo objeto de aprendizaje adaptado"""
         learning_object = LearningObject.objects.get(pk=pk)
+        page_learning_object = PageLearningObject.objects.filter(learning_object_id=learning_object.id)
+        count_images_count, count_paragraphs_count, count_videos_count, count_audios_count = self.dev_count(page_learning_object)
+
+        laltitud = str(request.data['latitude'])
+        longitud = str(request.data['longitude'])
+        geolocator = Nominatim(user_agent="geoapiExercises")
+        location = geolocator.reverse(laltitud + "," + longitud)
+
+        metadataInfo = MetadataInfo.objects.create(
+            browser=str(request.data['browser']),
+            country= str(location),
+            text_number=count_paragraphs_count,
+            video_number=count_videos_count,
+            audio_number=count_audios_count,
+            img_number=count_images_count,
+        );
+
         path_folder = os.path.join(BASE_DIR, learning_object.path_adapted)
         archivo_zip = shutil.make_archive(path_folder, "zip", path_folder)
         new_path = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip')
+        
         if PROD['PROD']:
             new_path = new_path.replace("http://", "https://")
 
         # print("Creado el archivo:", new_path)
+        
         return Response({'path': new_path, 'status': 'create zip'}, status=status.HTTP_200_OK)
+
+    def dev_count(self,page_learning_object):
+        count_images_count = 0
+        count_paragraphs_count= 0
+        count_videos_count= 0
+        count_audios_count = 0
+        for i in range( len(page_learning_object)):
+             count_images = TagPageLearningObject.objects.filter(
+               Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='img')).count()
+             count_images_count = count_images + count_images_count
+
+             count_paragraphs = TagPageLearningObject.objects.filter(
+               Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='p')).count()
+             count_paragraphs_count = count_paragraphs_count + count_paragraphs
+
+             count_videos = TagPageLearningObject.objects.filter(
+               Q(page_learning_object_id=page_learning_object[i].id) & (Q(tag='iframe') | Q(tag='video'))).count()
+             count_videos_count = count_videos_count + count_videos
+
+             count_audios = TagPageLearningObject.objects.filter(
+               Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='audio')).count()
+             count_audios_count = count_audios_count + count_audios
+
+        return count_images_count, count_paragraphs_count, count_videos_count, count_audios_count
+
+
+
