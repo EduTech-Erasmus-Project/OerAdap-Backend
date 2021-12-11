@@ -1,0 +1,42 @@
+<ul class="fl-clearfix fl-uiOptions-media fl-uiOptions-topContainer">
+    <li class="fl-uiOptions-volume fl-media-column">
+        <label for="volume">Volumen predeterminado</label>
+        <div class="fl-inputs">
+                <div class="fl-force-left fl-icon fl-volume-slider-left"><span class="fl-hidden-accessible">icono de un altavoz sin sonido</span></div>                       
+                <div id="volume" class="flc-uiOptions-volume fl-slider fl-slider-horz"></div>
+                <div class="fl-force-left fl-icon fl-volume-slider-right"><span class="fl-hidden-accessible">icono de un altavoz con sonido máximo</span></div>
+        </div>
+    </li>
+    <li class="fl-media-column">
+        <ul class="fl-uiOptions-nestedList">
+            <li>
+		        <input type="checkbox" id="captions" class="flc-uiOptions-captions fl-force-left" />
+		        <div>
+		            <label for="captions">Muestre subtítulos siempre que sea posible</label>
+		            <p class="fl-uiOptions-option-description">Los subtítulos muestran solo el texto que se está hablando actualmente</p>
+		        </div>
+		        <input type="checkbox" id="transcripts" class="flc-uiOptions-transcripts fl-force-left" />
+		        <div>
+		            <label for="transcripts">Muestre las transcripciones siempre que sea posible</label>
+		            <p class="fl-uiOptions-option-description">Las transcripciones muestran el texto completo y resaltan la parte que se está hablando</p>
+		        </div>
+            </li>
+        </ul>
+    </li>
+    <li class="fl-media-column">
+        <ul class="fl-uiOptions-nestedList">
+          <li>
+            <label for="language">Utilice el idioma preferido</label>
+          </li>
+          <li>
+            <p>Los subtítulos y las transcripciones se utilizarán de forma predeterminada en este idioma si están disponibles</p>
+            <select class="flc-uiOptions-language">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+            </select>
+          </li>
+        </ul>
+    </li> 
+</ul>
+
+
