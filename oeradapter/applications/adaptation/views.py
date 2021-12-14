@@ -15,7 +15,7 @@ from unipath import Path
 from shutil import copyfile
 from . import serializers
 from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagsVideoSerializer, TagAdaptedVideoSerializer, \
-    TagAdaptedAudioSerializer,TagAdaptedSerializerNew
+    TagAdaptedAudioSerializer, TagAdaptedSerializerNew
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject, \
     DataAttribute, Transcript, MetadataInfo
 from django.db.models import Q
@@ -243,19 +243,17 @@ class AudioView(RetrieveAPIView):
 
     def put(self, request, pk=None):
 
-
         """Consultas"""
         tag_learning_object = TagPageLearningObject.objects.get(pk=pk)
         page_learning_object = PageLearningObject.objects.get(pk=tag_learning_object.page_learning_object_id)
         tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object=tag_learning_object.id)
-
 
         """Web Scraping"""
         tag_class_ref = tag_adapted_learning_object.id_ref
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         ref_change = file_html.find_all('div', id=str(tag_class_ref))
         text_adapted = request.data['text']
-        onChange_ref = """textAdaptationEvent('""" + str(text_adapted) + """', '""" +tag_class_ref + """', this)"""
+        onChange_ref = """textAdaptationEvent('""" + str(text_adapted) + """', '""" + tag_class_ref + """', this)"""
         """Validacion de envio de datos, para realizar la actualizacion """
         if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
             """ Guardar en la base de datos"""
@@ -275,7 +273,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
 
     def get(self, request, pk=None):
         """Get tag adapted by paragraph pk"""
-        print("pk search"+str(pk))
+        print("pk search" + str(pk))
         tag_adapted = get_object_or_404(TagAdapted, tag_page_learning_object_id=pk)
         serializer = TagAdaptedAudioSerializer(tag_adapted)
         print(serializer.data)
@@ -491,7 +489,6 @@ class VideoGenerateCreateAPIView(CreateAPIView):
             print("path " + str(learning_object.path_adapted))
 
             if data_attribute.source == "local":
-                # print("type local")
                 return Response({"message": "Local translations under development", "code": "developing"},
                                 status=status.HTTP_200_OK)
             else:
@@ -511,7 +508,6 @@ class VideoGenerateCreateAPIView(CreateAPIView):
 
                     print(page_learning_object)
 
-
                     uid = bsd.getUUID()
                     tag_adapted = TagAdapted.objects.create(
                         type="video",
@@ -528,8 +524,6 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                     if data_attribute.source.find("youtube.") > -1:
                         transcripts, captions = ba.generate_transcript_youtube(data_attribute.data_attribute, tittle,
                                                                                learning_object.path_adapted, request)
-
-
 
                         for transcript in transcripts:
                             Transcript.objects.create(
@@ -580,6 +574,178 @@ class VideoGenerateCreateAPIView(CreateAPIView):
 
                         return Response({"data": serializer.data, "message": "The source has no translations",
                                          "code": "no_suported_transcript"}, status=status.HTTP_200_OK)
+
+
+class VideoAddCreateAPIView(CreateAPIView):
+    serializer_class = TagAdaptedVideoSerializer
+
+    def post(self, request, pk=None):
+
+        tag = get_object_or_404(TagPageLearningObject, pk=pk)
+        page_learning_object = tag.page_learning_object
+        learning_object = page_learning_object.learning_object
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+
+        codes = request.data.getlist('code')
+        languages = request.data.getlist('language')
+        files = request.FILES.getlist('file')
+
+        transcripts = []
+        captions = []
+
+        try:
+            tag_adapted = TagAdapted.objects.get(tag_page_learning_object_id=tag.id, type="video")
+            subtitles = Transcript.objects.filter(tag_adapted_id=tag_adapted.id)
+
+            for subtitle in subtitles:
+                for data in codes:
+                    if data == subtitle.srclang and subtitle.type == "JSONcc":
+                        idx = codes.index(data)
+
+                        file = files[idx]
+                        code = codes[idx]
+                        language = languages[idx]
+
+                        transcript, caption = save_files(learning_object, file, code, language)
+
+                        transcripts.append(transcript)
+                        captions.append(caption)
+
+                        update_data(subtitle, transcript)
+
+                        # codes.pop(idx)
+                        # languages.pop(idx)
+                        # files.pop(idx)
+                    elif data == subtitle.srclang and subtitle.type == "text/vtt":
+                        update_data(subtitle, caption)
+                    else:
+                        idx = codes.index(data)
+                        transcripts, captions = create_transcription(files[idx], learning_object, tag_adapted, request,
+                                                                     transcripts, captions[idx], codes[idx], languages)
+
+            video_template = bsd.templateVideoAdaptation(tag_adapted.path_src, "video/mp4", tag_adapted.text,
+                                                         captions,
+                                                         transcripts, tag_adapted.id_ref)
+
+            print(video_template)
+            tag_adaptation = file_html.find(tag.tag, tag_adapted.id_ref)
+            tag_adaptation.replace_with(video_template)
+            bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+
+            serializer = self.get_serializer(tag_adapted)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except:
+            data_attribute = DataAttribute.objects.get(tag_page_learning_object_id=tag.id)
+            if data_attribute.source == "local":
+                tag_adaptation = file_html.find(tag.tag, tag.id_class_ref)
+                transcripts = []
+                captions = []
+                idx = 0
+                uid = bsd.getUUID()
+                tag_adapted = TagAdapted.objects.create(
+                    type="video",
+                    id_ref=uid,
+                    text=data_attribute.data_attribute.split(".")[-2],
+                    path_src=data_attribute.data_attribute,
+                    path_preview=data_attribute.path_preview,
+                    path_system=data_attribute.path_system,
+                    tag_page_learning_object=tag,
+                )
+
+                serializer = self.get_serializer(tag_adapted)
+                idx = 0
+                for file in files:
+                    transcripts, captions = create_transcription(file, learning_object, tag_adapted, request,
+                                                                 transcripts,
+                                                                 captions, codes[idx], languages[idx])
+                    idx = idx + 1
+                # path_json = ba.convert_str_to_json(path_test_str, learning_object.path_adapted, file.name)
+                video_template = bsd.templateVideoAdaptation(tag_adapted.path_src, "video/mp4", tag_adapted.text,
+                                                             captions,
+                                                             transcripts, uid)
+
+                print(video_template)
+
+                tag_adaptation.replace_with(video_template)
+                bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                pass
+            # return Response({"status": "no adapted"}, status=status.HTTP_200_OK)
+
+
+def create_transcription(file, learning_object, tag_adapted, request, transcripts, captions, language_code, language):
+    # for file in files:
+    try:
+        path_srt = os.path.join(BASE_DIR, learning_object.path_adapted, "oer_resources", file.name)
+        ba.save_file_on_system(file, path_srt)
+    except Exception as e:
+        print("Error: %s ." % e)
+
+    path_vtt = ba.convert_str_to_vtt(path_srt)
+    path_json = ba.convert_str_to_json(path_srt, learning_object.path_adapted, file.name)
+
+    src = "oer_resources/" + file.name.split(".")[-2]
+
+    # language_code = codes[idx]
+    # language = languages[idx]
+
+    transcript, caption = ba.get_object_captions_transcripts(src + ".json", src + ".vtt", language_code,
+                                                             language, "manual_transcription",
+                                                             path_json, path_vtt)
+    transcripts.append(transcript)
+    captions.append(caption)
+    Transcript.objects.create(
+        src=transcript['src'],
+        type=transcript['type'],
+        srclang=transcript['srclang'],
+        label=transcript['label'],
+        source=transcript['source'],
+        path_system=transcript['path_system'],
+        tag_adapted=tag_adapted,
+    )
+    Transcript.objects.create(
+        src=caption['src'],
+        type=caption['type'],
+        srclang=caption['srclang'],
+        label=caption['label'],
+        source=caption['source'],
+        path_system=caption['path_system'],
+        tag_adapted=tag_adapted
+    )
+    # idx = idx + 1
+    return transcripts, captions
+
+
+def save_files(learning_object, file, code, language):
+    try:
+        path_srt = os.path.join(BASE_DIR, learning_object.path_adapted, "oer_resources",
+                                file.name)
+        ba.save_file_on_system(file, path_srt)
+    except Exception as e:
+        print("Error: %s ." % e)
+
+    path_vtt = ba.convert_str_to_vtt(path_srt)
+    path_json = ba.convert_str_to_json(path_srt, learning_object.path_adapted, file.name)
+
+    src = "oer_resources/" + file.name.split(".")[-2]
+
+    transcript, caption = ba.get_object_captions_transcripts(src + ".json", src + ".vtt",
+                                                             code,
+                                                             language, "manual_transcription",
+                                                             path_json, path_vtt)
+    return transcript, caption
+
+
+def update_data(subtitle, data):
+    subtitle.src = data['src'],
+    subtitle.type = data['type'],
+    subtitle.srclang = data['srclang'],
+    subtitle.label = data['label'],
+    subtitle.source = data['source'],
+    subtitle.path_system = data['path_system'],
+    subtitle.save()
 
 
 class VideoGenericAPIView(GenericAPIView):

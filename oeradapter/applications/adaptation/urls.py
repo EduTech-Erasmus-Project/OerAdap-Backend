@@ -19,6 +19,7 @@ urlpatterns = [
 
     #path('adapter/video/subtitle/<int:pk>', views.TranscriptJsonRetrieveAPIView.as_view()),
     path('adapter/video/subtitle/generate/<int:pk>', views.VideoGenerateCreateAPIView.as_view()),
+    path('adapter/video/subtitle/add/<int:pk>', views.VideoAddCreateAPIView.as_view()),
     path('adapter/gettranscript/<int:pk>', views.transcript_api_view),
 
 

@@ -3,6 +3,8 @@ from django.db import models
 from datetime import datetime
 from datetime import timedelta
 
+from pytz import utc
+
 from .manager import LearningObjectManager
 import shortuuid
 import os
@@ -26,9 +28,9 @@ class LearningObject(models.Model):
     file_folder = models.TextField()
     preview_origin = models.URLField(null=True)
     preview_adapted = models.URLField(null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=datetime.now().replace(tzinfo=utc))
     updated_at = models.DateTimeField(auto_now=True)
-    expires_at = models.DateTimeField(default=datetime.now() + timedelta(days=1))
+    expires_at = models.DateTimeField(default=(datetime.now() + timedelta(days=1)).replace(tzinfo=utc))
     file_adapted = models.URLField(null=True)
 
     objects = LearningObjectManager()
