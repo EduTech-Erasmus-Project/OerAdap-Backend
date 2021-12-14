@@ -1,3 +1,7 @@
+import threading
+from datetime import datetime
+
+from pytz import utc
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -110,8 +114,20 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
 
         if 'HTTP_AUTHORIZATION' in request.META:
-            print(request.META['HTTP_AUTHORIZATION'])
+            # print(request.META['HTTP_AUTHORIZATION'])
             data = LearningObject.objects.filter(user_ref=request.META['HTTP_AUTHORIZATION'])
+            excludes = []
+            for item in data:
+                expired_on = item.expires_at.replace(tzinfo=utc)
+                checked_on = datetime.now().replace(tzinfo=utc)
+                # print(expired_on)
+                # print(checked_on)
+                if expired_on <= checked_on:
+                    ba.remove_folder(os.path.join(BASE_DIR, item.file_folder))
+                    excludes.append(item.id)
+                    item.delete()
+            data = data.exclude(id__in=excludes)
+
             serializer = LearningObjectSerializer(data, many=True)
             return Response(serializer.data)
         else:
@@ -186,20 +202,43 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
 
         if request.data['method'] == "automatic" or request.data['method'] == "mixed":
 
+            paragraph_th = None
+            video_th = None
+            audio_th = None
+            image_th = None
+
             if 'paragraph' in areas:
-                aa.paragraph_adaptation(learning_object, request)
+                #aa.paragraph_adaptation(learning_object, request)
+                paragraph_th = threading.Thread(name="paragraph", target=aa.paragraph_adaptation, args=(learning_object, request))
+
             if 'audio' in areas:
+                audio_th = None
                 aa.audio_adaptation(learning_object, request)
             if 'image' in areas:
+                image_th = None
                 aa.image_adaptation(learning_object, request)
             if 'video' in areas:
-                aa.video_adaptation(learning_object, request)
+                #aa.video_adaptation(learning_object, request)
+                video_th = threading.Thread(name="paragraph", target=aa.video_adaptation,
+                                                args=(learning_object, request))
 
-            aa.adaptation(areas, files,  request)
-            #Response().write(self, {"state": "process"})
-            #Response({"state": "process"})
-            #Response({"state": "done"})
-            return Response({"state": "ok"})
+            if paragraph_th is not None:
+                paragraph_th.start()
+            if video_th is not None:
+                video_th.start()
+
+            if paragraph_th is not None:
+                paragraph_th.join()
+            if video_th is not None:
+                video_th.join()
+
+
+
+            # aa.adaptation(areas, files, request)
+            # Response().write(self, {"state": "process"})
+            # Response({"state": "process"})
+            # Response({"state": "done"})
+            return Response(serializer.data)
 
 
 
@@ -219,8 +258,17 @@ class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
             # print(request.META['HTTP_AUTHORIZATION'])
             # data = LearningObject.objects.filter(user_ref=request.META['HTTP_AUTHORIZATION'], pk=pk)
             data = get_object_or_404(LearningObject, pk=pk, user_ref=request.META['HTTP_AUTHORIZATION'])
+
+            expired_on = data.expires_at.replace(tzinfo=utc)
+            checked_on = datetime.now().replace(tzinfo=utc)
+            if expired_on <= checked_on:
+                ba.remove_folder(os.path.join(BASE_DIR, data.file_folder))
+                data.delete()
+                return Response({"status": False, "code": "expire_time", "message": "Time expired"},
+                                status=status.HTTP_404_NOT_FOUND)
+
             serializer = self.get_serializer(data)
             return Response(serializer.data)
         else:
-            return Response({"status": "ERROR_UNAUTHORIZED", "code": "no authorization key"},
+            return Response({"status": False, "code": "ERROR_UNAUTHORIZED", "message": "no authorization key"},
                             status=status.HTTP_401_UNAUTHORIZED)

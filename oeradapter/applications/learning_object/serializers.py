@@ -11,7 +11,7 @@ class LearningObjectSerializer(serializers.ModelSerializer):
             'file_folder',)
 
     def to_representation(self, instance):
-        print(instance)
+        #print(instance)
         return {
             "id": instance.id,
             "title": instance.title,
