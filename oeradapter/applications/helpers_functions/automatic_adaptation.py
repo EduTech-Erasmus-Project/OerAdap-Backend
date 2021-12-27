@@ -95,7 +95,7 @@ def text_easy_reading(tag_page_learning_object, page_learning_object):
             tag_adaptation.insert(1, button_text_data)
 
         tag_adapted.text = unicode(text_content_bsd.get_text())
-        tag_adapted.html_text = unicode(str(text_content_bsd)),
+        tag_adapted.html_text = unicode(str(text_content_bsd))
         tag_adapted.save()
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)

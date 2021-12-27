@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject
+from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, RequestApi, \
+    TagAdapted
 from django.db.models import Q
 
 
@@ -11,7 +12,7 @@ class LearningObjectSerializer(serializers.ModelSerializer):
             'file_folder',)
 
     def to_representation(self, instance):
-        #print(instance)
+        # print(instance)
         return {
             "id": instance.id,
             "title": instance.title,
@@ -29,13 +30,25 @@ class PagesSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'preview_path', 'type')
 
 
-
-
 class AdaptationLearningObjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdaptationLearningObject
         fields = ('id', 'method', 'areas')
 
+def count_data(instance):
+    # count_pages = PageLearningObject.objects.filter(learning_object=instance.id).count()
+    count_pages = PageLearningObject.objects.filter(Q(learning_object=instance.id) & Q(type='adapted')).count()
+
+    # test = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
+    count_images = TagPageLearningObject.objects.filter(
+        Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
+    count_paragraphs = TagPageLearningObject.objects.filter(
+        Q(page_learning_object__learning_object__id=instance.id) & Q(tag='p')).count()
+    count_videos = TagPageLearningObject.objects.filter(
+        Q(page_learning_object__learning_object__id=instance.id) & (Q(tag='iframe') | Q(tag='video'))).count()
+    count_audios = TagPageLearningObject.objects.filter(
+        Q(page_learning_object__learning_object__id=instance.id) & Q(tag='audio')).count()
+    return count_pages, count_images, count_paragraphs, count_videos, count_audios
 
 class LearningObjectDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,15 +61,9 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         config_adaptability = AdaptationLearningObject.objects.filter(learning_object=instance.id)
         config_adaptability = AdaptationLearningObjectSerializer(config_adaptability, many=True)
 
-        #count_pages = PageLearningObject.objects.filter(learning_object=instance.id).count()
-        count_pages = PageLearningObject.objects.filter(Q(learning_object=instance.id) & Q(type='adapted')).count()
-
-        #test = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
-        count_images = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
-        count_paragraphs = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='p')).count()
-        count_videos = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & (Q(tag='iframe') | Q(tag='video'))).count()
-        count_audios = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='audio')).count()
-        #print(test)
+        # count data
+        count_pages, count_images, count_paragraphs, count_videos, count_audios = count_data(instance)
+        # print(test)
 
         data = {
             "id": instance.id,
@@ -76,8 +83,8 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
                 "audios": count_audios
             },
             "config_adaptability": config_adaptability.data[0],
-            #"pages_adapted": pages_adapted.data,
-            #"pages_origin": pages_origin.data,
+            # "pages_adapted": pages_adapted.data,
+            # "pages_origin": pages_origin.data,
             "file_adapted": None
         }
 
@@ -94,3 +101,60 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         return data
 
 
+class RequestApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestApi
+        exclude = ('api_key',)
+
+
+class ApiLearningObjectDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LearningObject
+        exclude = "__all__"
+
+    def to_representation(self, instance):
+        # config_adaptability = AdaptationLearningObject.objects.get(pk=instance.id)
+
+        config_adaptability = AdaptationLearningObject.objects.filter(learning_object_id=instance.id)
+        config_adaptability = AdaptationLearningObjectSerializer(config_adaptability, many=True)
+
+        count_pages, count_images, count_paragraphs, count_videos, count_audios = count_data(instance)
+
+        # count resumen adaptation
+        count_adap_images = TagAdapted.objects.filter(
+            Q(tag_page_learning_object__page_learning_object__learning_object__id=instance.id) & Q(type='img')).count()
+        count_adap_paragraphs = TagAdapted.objects.filter(
+            Q(tag_page_learning_object__page_learning_object__learning_object__id=instance.id) & Q(type='p')).count()
+        count_adap_videos = TagAdapted.objects.filter(
+            Q(tag_page_learning_object__page_learning_object__learning_object__id=instance.id) & Q(
+                type='video')).count()
+        count_adap_audios = TagAdapted.objects.filter(
+            Q(tag_page_learning_object__page_learning_object__learning_object__id=instance.id) & Q(
+                type='audio')).count()
+
+        data = {
+            "id": instance.id,
+            "oa_detail": {
+                "title": instance.title,
+            },
+            "created_at": instance.created_at,
+            "expires_at": instance.expires_at,
+            "preview_origin": instance.preview_origin,
+            "preview_adapted": instance.preview_adapted,
+            "file_detail": {
+                "pages": count_pages,
+                "images": count_images,
+                "paragraphs": count_paragraphs,
+                "videos": count_videos,
+                "audios": count_audios
+            },
+            "adapted_detail": {
+                "images": count_adap_images,
+                "paragraphs": count_adap_paragraphs,
+                "videos": count_adap_videos,
+                "audios": count_adap_audios
+            },
+            "config_adaptability": config_adaptability.data
+            # "file_download": None
+        }
+        return data
