@@ -1,5 +1,7 @@
 import json
 import re
+from zipfile import ZipFile
+
 import webvtt
 from unipath import Path
 from django.core.files.storage import FileSystemStorage
@@ -12,7 +14,7 @@ from vtt_to_srt.vtt_to_srt import vtt_to_srt
 
 import shutil
 import os
-from os import remove
+from os import remove, listdir
 from gtts import gTTS
 import speech_recognition as sr
 from pydub import AudioSegment
@@ -328,7 +330,7 @@ def convert_str_to_json(srt_string, path_adapted, file_name):
                 idx = idx + 1
             try:
                 pos = re.search(r'\d+:\d+:\d+,\d+ --> \d+:\d+:\d+,\d+', line).span()
-                content = line[pos[1] + 1:]
+                content = re.sub('\r?\n', ' ', line[pos[1] + 1:])
             except:
                 pass
             try:
@@ -352,9 +354,62 @@ def convert_str_to_json(srt_string, path_adapted, file_name):
 
     return path_json
 
+
 def save_file_on_system(file, path):
     with open(path, 'wb+', ) as file_destination:
         for chunk in file.chunks():
             file_destination.write(chunk)
+
+
 def download_subtitles():
     pass
+
+
+def check_files(directory_name):
+    """
+        Chequea si un directorio
+        :param directory_name:
+        :return 1 or 0:
+        """
+    if len(listdir(directory_name)) > 1:
+        return 1
+    elif len(listdir(directory_name)) == 1:
+        return 0
+
+
+def extract_zip_file(path, file_name, file):
+    """
+        Extrae un archivo zip en una ruta determinada
+        :param path:
+        :param file_name:
+        :param file:
+        :return:
+        """
+    var_name = os.path.join(path, file_name)
+    if var_name.find('.zip.zip') >= 0:
+        test_file_aux = file_name.split('.')[0]
+        test_file_aux = test_file_aux.rstrip(".zip")
+    else:
+        test_file_aux = file_name.split('.')[0]
+
+    directory_origin = os.path.join(path, file_name.split('.')[0], test_file_aux + "_origin")
+
+    with ZipFile(file, 'r') as zip_file:
+        # zip.printdir()
+        zip_file.extractall(directory_origin)
+
+    if check_files(directory_origin) == 0:
+        aux_path_o = os.path.join(directory_origin, listdir(directory_origin)[0])
+        source = aux_path_o
+        destination = directory_origin
+        files = os.listdir(source)
+        for file in files:
+            new_path = shutil.move(f"{source}/{file}", destination)
+            # print(new_path)
+        os.rmdir(aux_path_o)
+        # print("directory_name", str(directory_origin))
+
+    directory_adapted = os.path.join(path, file_name.split('.')[0], test_file_aux + "_adapted")
+    shutil.copytree(directory_origin, directory_adapted)
+
+    return directory_origin, directory_adapted

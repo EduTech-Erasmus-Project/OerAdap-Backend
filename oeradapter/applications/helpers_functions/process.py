@@ -8,3 +8,5 @@ def easy_reading(text_content):
     text_content = "<p>hola mundo, como estan hoy.</p>"
 
     return text_content
+
+
