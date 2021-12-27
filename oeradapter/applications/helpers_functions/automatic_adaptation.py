@@ -25,6 +25,8 @@ def paragraph_adaptation(learning_object, request):
 
 
 def audio_adaptation(learning_object):
+
+
     print("audio method")
 
 

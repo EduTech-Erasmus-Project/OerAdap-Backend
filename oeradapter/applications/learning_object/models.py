@@ -78,6 +78,9 @@ class TagAdapted(models.Model):
     path_preview = models.URLField(max_length=255, null=True)
     button_text_id = models.CharField(max_length=20, null=True)
     button_audio_id = models.CharField(max_length=20, null=True)
+    text_table = models.TextField(null=True, blank=True)
+    text_column = models.TextField(null=True, blank=True)
+    text_row = models.TextField(null=True, blank=True)
     tag_page_learning_object = models.OneToOneField(
         TagPageLearningObject,
         related_name="tags_adapted",
