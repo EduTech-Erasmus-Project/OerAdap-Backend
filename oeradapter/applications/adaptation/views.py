@@ -88,6 +88,7 @@ class ImageView(RetrieveAPIView):
 
         """WebScraping"""
         html_img_code = file_html.find_all(class_=tag_class_ref)
+
         text_update = request.data['text'];
         alt_db_aux = bsd.convertElementBeautifulSoup(str(tag_adapted_learning_object.html_text))
         alt_db_aux = alt_db_aux.img
@@ -100,16 +101,22 @@ class ImageView(RetrieveAPIView):
 
             adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)
             if adapted_serializer.is_valid():
-                print(request.data['text'])
+                print(request.data['method'])
 
-                html_img_code[0]['alt'] = text_update;
+                if str(request.data['method']) == 'img-alt':
+                    html_img_code[0]['alt'] = text_update;
+                elif str(request.data['method']) == 'transform-table':
+                    print('hOLA')
+
                 """Revisar si el elemento ya esta envuelto por el elemto figure"""
+                """
                 if html_img_code[0].parent.name != 'figure':
                     replace_html_code = bsd.templateAdaptionImage(html_img_code, tag_learning_object.id_class_ref)
                     html_img_code[0].replace_with(replace_html_code)
                 else:
                     replace_description = bsd.convertElementBeautifulSoup('<em>' + text_update + "</em>")
-                    html_img_code[0].parent.em.replace_with(replace_description.em)
+                    html_img_code[0].parent.em.replace_with(replace_description.em)"""
+
                 print('path', page_learning_object.preview_path)
                 bsd.generate_new_htmlFile(file_html, page_learning_object.path)
                 adapted_serializer.save()
@@ -791,13 +798,18 @@ def button_api_view(request, pk=None):
 
 
 class comprimeFileZip(RetrieveAPIView):
+    def get_queryset(self):
+        page_learning_object = PageLearningObject.objects.all()
+        return page_learning_object
+
     def post(self, request, pk):
         """Recibe latitud, longitud y user_agend """
         """generamos le zip del nuevo objeto de aprendizaje adaptado"""
         learning_object = LearningObject.objects.get(pk=pk)
+        
         page_learning_object = PageLearningObject.objects.filter(learning_object_id=learning_object.id)
         count_images_count, count_paragraphs_count, count_videos_count, count_audios_count = self.dev_count(
-            page_learning_object)
+            learning_object.id)
 
         laltitud = str(request.data['latitude'])
         longitud = str(request.data['longitude'])
@@ -824,27 +836,20 @@ class comprimeFileZip(RetrieveAPIView):
 
         return Response({'path': new_path, 'status': 'create zip'}, status=status.HTTP_200_OK)
 
-    def dev_count(self, page_learning_object):
+
+    def dev_count(self,id):
+
         count_images_count = 0
         count_paragraphs_count = 0
         count_videos_count = 0
         count_audios_count = 0
-        for i in range(len(page_learning_object)):
-            count_images = TagPageLearningObject.objects.filter(
-                Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='img')).count()
-            count_images_count = count_images + count_images_count
 
-            count_paragraphs = TagPageLearningObject.objects.filter(
-                Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='p')).count()
-            count_paragraphs_count = count_paragraphs_count + count_paragraphs
+        tag_Adapted = TagAdapted.objects.filter(tag_page_learning_object__page_learning_object__learning_object_id=id)
+        count_images_count = tag_Adapted.objects.filter(type='img').count;
+        count_audios_count = tag_Adapted.objects.filter(type='audio').count;
+        count_paragraphs_count = tag_Adapted.objects.filter(type='p').count;
+        count_videos_count = tag_Adapted.objects.filter(Q(type='iframe') | Q(type='video')).count;
 
-            count_videos = TagPageLearningObject.objects.filter(
-                Q(page_learning_object_id=page_learning_object[i].id) & (Q(tag='iframe') | Q(tag='video'))).count()
-            count_videos_count = count_videos_count + count_videos
-
-            count_audios = TagPageLearningObject.objects.filter(
-                Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='audio')).count()
-            count_audios_count = count_audios_count + count_audios
 
         return count_images_count, count_paragraphs_count, count_videos_count, count_audios_count
 
