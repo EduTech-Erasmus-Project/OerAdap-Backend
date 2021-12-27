@@ -1,5 +1,8 @@
 import json
+import re
+from zipfile import ZipFile
 
+import webvtt
 from unipath import Path
 from django.core.files.storage import FileSystemStorage
 from . import beautiful_soup_data as bsd
@@ -7,10 +10,11 @@ from youtube_dl import YoutubeDL
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import JSONFormatter
 from youtube_transcript_api.formatters import WebVTTFormatter
+from vtt_to_srt.vtt_to_srt import vtt_to_srt
 
 import shutil
 import os
-from os import remove
+from os import remove, listdir
 from gtts import gTTS
 import speech_recognition as sr
 from pydub import AudioSegment
@@ -201,16 +205,19 @@ def download_video_youtubedl(video_url, directory_adapted, request):
     try:
         with YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=True)
+            filename = ydl.prepare_filename(info_dict)
+            print("filename")
+            print(filename)
             video_title = info_dict.get('title', None)
-            path_system = os.path.join(BASE_DIR, directory_adapted, 'oer_resources', video_title + ".mp4")
+            path_system = filename
             path_preview = os.path.join(request._current_scheme_host, directory_adapted, 'oer_resources',
-                                        video_title + ".mp4").replace(
+                                        video_title + '.' + filename.split(".")[-1]).replace(
                 "\\", "/")
 
             if PROD['PROD']:
                 path_preview = path_preview.replace("http://", "https://")
 
-            path_src = 'oer_resources/' + video_title + ".mp4"
+            path_src = 'oer_resources/' + video_title + '.' + filename.split(".")[-1]
             return path_system, path_preview, path_src, video_title
     except Exception as e:
         return None, None, None, None
@@ -294,5 +301,136 @@ def save_transcript(transcript, path_adapted, video_title, transcripts, captions
     return transcripts, captions
 
 
+def get_object_captions_transcripts(json_src, vtt_src, language_code, language, source, json_system, vtt_system):
+    transcript = {
+        "src": json_src,
+        "type": "JSONcc",
+        "srclang": language_code,
+        "label": language,
+        "source": source,
+        "path_system": json_system,
+    }
+    caption = {
+        "src": vtt_src,
+        "type": "text/vtt",
+        "srclang": language_code,
+        "label": language,
+        "source": source,
+        "path_system": vtt_system
+    }
+    return transcript, caption
+
+
+def convert_str_to_vtt(path_str):
+    webvttF = webvtt.from_srt(path_str)
+    webvttF.save()
+    return webvttF.file
+
+
+def convert_vtt_to_str(path_vtt):
+    vtt_to_srt(path_vtt)
+    return path_vtt.replace(".vtt", ".srt")
+
+
+def convert_str_to_json(srt_string, path_adapted, file_name):
+    srt_list = []
+
+    path_json = os.path.join(BASE_DIR, path_adapted, "oer_resources", file_name.split(".")[-2] + ".json")
+    srt_string = open(srt_string, 'r', encoding="utf8").read()
+    idx = 1
+
+    for line in srt_string.split('\n\n'):
+        if line != '':
+            try:
+                index = int(re.match(r'\d+', line).group())
+                if index == 0:
+                    index = idx
+                    idx = idx + 1
+            except:
+                index = idx
+                idx = idx + 1
+            try:
+                pos = re.search(r'\d+:\d+:\d+,\d+ --> \d+:\d+:\d+,\d+', line).span()
+                content = re.sub('\r?\n', ' ', line[pos[1] + 1:])
+            except:
+                pass
+            try:
+                start_time_string = re.findall(r'(\d+:\d+:\d+,\d+) --> \d+:\d+:\d+,\d+', line)[0]
+                end_time_string = re.findall(r'\d+:\d+:\d+,\d+ --> (\d+:\d+:\d+,\d+)', line)[0]
+                start_time = start_time_string
+                end_time = end_time_string
+            except:
+                pass
+
+            srt_list.append({
+                'index': index,
+                'inTime': start_time,
+                'outTime': end_time,
+                'transcript': content
+            })
+
+    json_object = json.dumps(srt_list, indent=2, sort_keys=False, ensure_ascii=False)
+    with open(path_json, "w", encoding="utf8") as outfile:
+        outfile.write(json_object)
+
+    return path_json
+
+
+def save_file_on_system(file, path):
+    with open(path, 'wb+', ) as file_destination:
+        for chunk in file.chunks():
+            file_destination.write(chunk)
+
+
 def download_subtitles():
     pass
+
+
+def check_files(directory_name):
+    """
+        Chequea si un directorio
+        :param directory_name:
+        :return 1 or 0:
+        """
+    if len(listdir(directory_name)) > 1:
+        return 1
+    elif len(listdir(directory_name)) == 1:
+        return 0
+
+
+def extract_zip_file(path, file_name, file):
+    """
+        Extrae un archivo zip en una ruta determinada
+        :param path:
+        :param file_name:
+        :param file:
+        :return:
+        """
+    var_name = os.path.join(path, file_name)
+    if var_name.find('.zip.zip') >= 0:
+        test_file_aux = file_name.split('.')[0]
+        test_file_aux = test_file_aux.rstrip(".zip")
+    else:
+        test_file_aux = file_name.split('.')[0]
+
+    directory_origin = os.path.join(path, file_name.split('.')[0], test_file_aux + "_origin")
+
+    with ZipFile(file, 'r') as zip_file:
+        # zip.printdir()
+        zip_file.extractall(directory_origin)
+
+    if check_files(directory_origin) == 0:
+        aux_path_o = os.path.join(directory_origin, listdir(directory_origin)[0])
+        source = aux_path_o
+        destination = directory_origin
+        files = os.listdir(source)
+        for file in files:
+            new_path = shutil.move(f"{source}/{file}", destination)
+            # print(new_path)
+        os.rmdir(aux_path_o)
+        # print("directory_name", str(directory_origin))
+
+    directory_adapted = os.path.join(path, file_name.split('.')[0], test_file_aux + "_adapted")
+    shutil.copytree(directory_origin, directory_adapted)
+
+    return directory_origin, directory_adapted

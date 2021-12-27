@@ -2,9 +2,11 @@ def easy_reading(text_content):
     """
     Metodo para adaptacion de lectura facil.
     :param text_content: Parrafo en formato html.
-    :return: Retorno de una variable de contenido de texto.
+    :return: Retorno un string de una etiqueta parrafo en html.
     """
 
-    text_content = "hola mundo"
+    text_content = "<p>hola mundo, como estan hoy.</p>"
 
     return text_content
+
+
