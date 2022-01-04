@@ -12,20 +12,44 @@ PROD = None
 with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
     PROD = json.loads(f.read())
 
+def get_directory_resource(page):
+    dir = "";
+    if(page.len_paths > 0):
+        for i in range(page.len_paths):
+            dir += dir + '../'
+    return dir
+
 
 def read_html_files(directory):
     """Lectura de archivos html
     return :
     """
-    files = []
-    for entry in os.scandir(directory):
+    files_vect = []
+    """for entry in os.scandir(directory):
         if entry.path.endswith(".html"):
             # print(entry.name)
             files.append({
                 "file": entry.path,
                 "file_name": entry.name
-            })
-    return files
+            })"""
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".html"):
+                aux = os.path.join(root, file);
+                aux_path = aux.replace(directory,'')
+                aux_path = aux_path[1:]
+
+                aux_path_len = root.replace(directory, '')
+                aux_path_len_vect = aux_path_len.split('/')
+                aux_path_len_vect = aux_path_len_vect[1:]
+
+                files_vect.append({
+                    "file": aux,
+                    "file_name": aux_path,
+                    "dir_len": len(aux_path_len_vect)
+                })
+
+    return files_vect
 
 
 def getUUID():
@@ -53,9 +77,10 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
     """
     pages_convert = []
 
-    # print(files_name)
+
 
     for file in files:
+
         # page_object = PageLearningObject.objects.get(
         # pk=page.id)  # refactirizar sin hacer peticion a la base de datos
         # print("Objeto"+str(Page_object))
@@ -63,6 +88,7 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
 
         directory_file = os.path.join(BASE_DIR, directory, file['file'])
         preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
+
         if PROD['PROD']:
             preview_path = preview_path.replace("http://", "https://")
 
@@ -74,7 +100,9 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
             title=soup_data.find('title').text,
             path=directory_file,
             preview_path=preview_path,
-            learning_object=learningObject)
+            learning_object=learningObject,
+            len_paths = file['dir_len']
+        )
 
         directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
         preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
@@ -86,7 +114,9 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
             title=soup_data.find('title').text,
             path=directory_file_origin,
             preview_path=preview_path_origin,
-            learning_object=learningObject)
+            learning_object=learningObject
+
+        )
 
         # Se procesa las etiquetas html
         web_scraping_p(soup_data, page_adapted, file['file'])

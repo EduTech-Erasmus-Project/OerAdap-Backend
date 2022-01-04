@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view
 from unipath import Path
 from . import serializers
 from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagsVideoSerializer, TagAdaptedVideoSerializer, \
-    TagAdaptedAudioSerializer, TagAdaptedSerializerNew
+    TagAdaptedAudioSerializer, TagAdaptedSerializerNew, LearningObjectSerializerAdaptation
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject, \
     DataAttribute, Transcript, MetadataInfo
 from django.db.models import Q
@@ -21,6 +21,7 @@ from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 import shutil
 from geopy.geocoders import Nominatim
+from bs4 import BeautifulSoup
 
 # Conversion de audio a texto
 
@@ -89,24 +90,31 @@ class ImageView(RetrieveAPIView):
         """WebScraping"""
         html_img_code = file_html.find_all(class_=tag_class_ref)
 
-        text_update = request.data['text'];
-        alt_db_aux = bsd.convertElementBeautifulSoup(str(tag_adapted_learning_object.html_text))
-        alt_db_aux = alt_db_aux.img
-        alt_db_aux['alt'] = text_update
-        tag_adapted_learning_object.html_text = str(alt_db_aux)
-
-        """Validacion de envio de datos, para realizar la actualizacion """
-        if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
-            """ Guardar en la base de datos"""
-
-            adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)
-            if adapted_serializer.is_valid():
-                print(request.data['method'])
-
+        adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)
+        if adapted_serializer.is_valid():
                 if str(request.data['method']) == 'img-alt':
-                    html_img_code[0]['alt'] = text_update;
+                    """Validacion de envio de datos, para realizar la actualizacion """
+                    if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
+                        """ Guardar en la base de datos"""
+                        text_update = request.data['text'];
+                        alt_db_aux = bsd.convertElementBeautifulSoup(str(tag_adapted_learning_object.html_text))
+                        alt_db_aux = alt_db_aux.img
+                        alt_db_aux['alt'] = text_update
+                        tag_adapted_learning_object.html_text = str(alt_db_aux)
+
+                        html_img_code[0]['alt'] = text_update;
+
                 elif str(request.data['method']) == 'transform-table':
-                    print('hOLA')
+                    html_change = BeautifulSoup(str(request.data['text_table']), 'html.parser')
+                    html_change_border = html_change.find_all('table')
+                    html_change_border[0]['border'] = '1'
+
+                    html_img_code[0].replace_with(html_change)
+
+                elif str(request.data['method'] =='update-table'):
+                    html_change = BeautifulSoup(str(request.data['text_table']), 'html.parser')
+                    table_update = file_html.find_all('figure', class_="table")
+                    table_update[0].replace_with(html_change)
 
                 """Revisar si el elemento ya esta envuelto por el elemto figure"""
                 """
@@ -806,7 +814,7 @@ class comprimeFileZip(RetrieveAPIView):
         """Recibe latitud, longitud y user_agend """
         """generamos le zip del nuevo objeto de aprendizaje adaptado"""
         learning_object = LearningObject.objects.get(pk=pk)
-        
+
         page_learning_object = PageLearningObject.objects.filter(learning_object_id=learning_object.id)
         count_images_count, count_paragraphs_count, count_videos_count, count_audios_count = self.dev_count(
             learning_object.id)
@@ -833,6 +841,8 @@ class comprimeFileZip(RetrieveAPIView):
             new_path = new_path.replace("http://", "https://")
 
         # print("Creado el archivo:", new_path)
+        learning_object.file_adapted = new_path
+        learning_object.save();
 
         return Response({'path': new_path, 'status': 'create zip'}, status=status.HTTP_200_OK)
 
@@ -845,14 +855,42 @@ class comprimeFileZip(RetrieveAPIView):
         count_audios_count = 0
 
         tag_Adapted = TagAdapted.objects.filter(tag_page_learning_object__page_learning_object__learning_object_id=id)
-        count_images_count = tag_Adapted.objects.filter(type='img').count;
-        count_audios_count = tag_Adapted.objects.filter(type='audio').count;
-        count_paragraphs_count = tag_Adapted.objects.filter(type='p').count;
-        count_videos_count = tag_Adapted.objects.filter(Q(type='iframe') | Q(type='video')).count;
-
+        for tag in tag_Adapted:
+            if(str(tag.type) == 'img'):
+                count_images_count += 1;
+            if (str(tag.type) == 'audio'):
+                count_audios_count += 1;
+            if (str(tag.type) == 'p'):
+                count_paragraphs_count += 1;
+            if (str(tag.type) == 'video') or (str(tag.type) == 'iframe'):
+                count_videos_count += 1;
 
         return count_images_count, count_paragraphs_count, count_videos_count, count_audios_count
 
+class returnObjectsAdapted(RetrieveAPIView):
+    def get(self,request,pk):
+        count_images_count = 0
+        count_paragraphs_count = 0
+        count_videos_count = 0
+        count_audios_count = 0
+
+        tag_Adapted = TagAdapted.objects.filter(tag_page_learning_object__page_learning_object__learning_object_id=pk)
+        for tag in tag_Adapted:
+            if (str(tag.type) == 'img'):
+                count_images_count += 1;
+            if (str(tag.type) == 'audio'):
+                count_audios_count += 1;
+            if (str(tag.type) == 'p'):
+                count_paragraphs_count += 1;
+            if (str(tag.type) == 'video') or (str(tag.type) == 'iframe'):
+                count_videos_count += 1;
+        tag_objects={
+        'images': count_images_count,
+        'audios': count_audios_count,
+        'videos': count_videos_count,
+        'paragraphs': count_paragraphs_count,
+        };
+        return Response({'tag_adapted':tag_objects})
 
 
 
