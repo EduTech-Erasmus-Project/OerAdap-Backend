@@ -3,7 +3,6 @@ from .models import LearningObject, AdaptationLearningObject, PageLearningObject
     TagAdapted
 from django.db.models import Q
 
-
 class LearningObjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearningObject
@@ -90,12 +89,24 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
             "file_adapted": None
         }
 
-        pages_adapted = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)
+        page_lea_ob = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)
+
+        for page in page_lea_ob:
+            tag_adap = TagPageLearningObject.objects.filter(page_learning_object_id=page.id)
+            if (tag_adap):
+                pass
+            else:
+                page.disabled = True;
+                page.save();
+
+        pages_adapted = PageLearningObject.objects.filter(Q(learning_object_id=instance.id) & Q(disabled=False) & Q(type='adapted'));
+
         pages_adapted = PagesSerializer(pages_adapted, many=True)
 
         data['pages_adapted'] = pages_adapted.data
 
         pages_origin = PageLearningObject.objects.filter(type='origin', learning_object=instance.id)
+
         pages_origin = PagesSerializer(pages_origin, many=True)
 
         data['pages_origin'] = pages_origin.data

@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view
 from unipath import Path
 from . import serializers
 from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagsVideoSerializer, TagAdaptedVideoSerializer, \
-    TagAdaptedAudioSerializer, TagAdaptedSerializerNew
+    TagAdaptedAudioSerializer, TagAdaptedSerializerNew, LearningObjectSerializerAdaptation
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject, \
     DataAttribute, Transcript, MetadataInfo
 from django.db.models import Q
@@ -21,6 +21,7 @@ from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 import shutil
 from geopy.geocoders import Nominatim
+from bs4 import BeautifulSoup
 
 # Conversion de audio a texto
 
@@ -88,28 +89,42 @@ class ImageView(RetrieveAPIView):
 
         """WebScraping"""
         html_img_code = file_html.find_all(class_=tag_class_ref)
-        text_update = request.data['text'];
-        alt_db_aux = bsd.convertElementBeautifulSoup(str(tag_adapted_learning_object.html_text))
-        alt_db_aux = alt_db_aux.img
-        alt_db_aux['alt'] = text_update
-        tag_adapted_learning_object.html_text = str(alt_db_aux)
 
-        """Validacion de envio de datos, para realizar la actualizacion """
-        if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
-            """ Guardar en la base de datos"""
+        adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)
+        if adapted_serializer.is_valid():
+                if str(request.data['method']) == 'img-alt':
+                    """Validacion de envio de datos, para realizar la actualizacion """
+                    if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
+                        """ Guardar en la base de datos"""
+                        text_update = request.data['text'];
+                        alt_db_aux = bsd.convertElementBeautifulSoup(str(tag_adapted_learning_object.html_text))
+                        alt_db_aux = alt_db_aux.img
+                        alt_db_aux['alt'] = text_update
+                        tag_adapted_learning_object.html_text = str(alt_db_aux)
 
-            adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)
-            if adapted_serializer.is_valid():
-                print(request.data['text'])
+                        html_img_code[0]['alt'] = text_update;
 
-                html_img_code[0]['alt'] = text_update;
+                elif str(request.data['method']) == 'transform-table':
+                    html_change = BeautifulSoup(str(request.data['text_table']), 'html.parser')
+                    html_change_border = html_change.find_all('table')
+                    html_change_border[0]['border'] = '1'
+
+                    html_img_code[0].replace_with(html_change)
+
+                elif str(request.data['method'] =='update-table'):
+                    html_change = BeautifulSoup(str(request.data['text_table']), 'html.parser')
+                    table_update = file_html.find_all('figure', class_="table")
+                    table_update[0].replace_with(html_change)
+
                 """Revisar si el elemento ya esta envuelto por el elemto figure"""
+                """
                 if html_img_code[0].parent.name != 'figure':
                     replace_html_code = bsd.templateAdaptionImage(html_img_code, tag_learning_object.id_class_ref)
                     html_img_code[0].replace_with(replace_html_code)
                 else:
                     replace_description = bsd.convertElementBeautifulSoup('<em>' + text_update + "</em>")
-                    html_img_code[0].parent.em.replace_with(replace_description.em)
+                    html_img_code[0].parent.em.replace_with(replace_description.em)"""
+
                 print('path', page_learning_object.preview_path)
                 bsd.generate_new_htmlFile(file_html, page_learning_object.path)
                 adapted_serializer.save()
@@ -805,13 +820,18 @@ def button_api_view(request, pk=None):
 
 
 class comprimeFileZip(RetrieveAPIView):
+    def get_queryset(self):
+        page_learning_object = PageLearningObject.objects.all()
+        return page_learning_object
+
     def post(self, request, pk):
         """Recibe latitud, longitud y user_agend """
         """generamos le zip del nuevo objeto de aprendizaje adaptado"""
         learning_object = LearningObject.objects.get(pk=pk)
+
         page_learning_object = PageLearningObject.objects.filter(learning_object_id=learning_object.id)
         count_images_count, count_paragraphs_count, count_videos_count, count_audios_count = self.dev_count(
-            page_learning_object)
+            learning_object.id)
 
         laltitud = str(request.data['latitude'])
         longitud = str(request.data['longitude'])
@@ -835,29 +855,58 @@ class comprimeFileZip(RetrieveAPIView):
             new_path = new_path.replace("http://", "https://")
 
         # print("Creado el archivo:", new_path)
+        learning_object.file_adapted = new_path
+        learning_object.save();
 
         return Response({'path': new_path, 'status': 'create zip'}, status=status.HTTP_200_OK)
 
-    def dev_count(self, page_learning_object):
+
+    def dev_count(self,id):
+
         count_images_count = 0
         count_paragraphs_count = 0
         count_videos_count = 0
         count_audios_count = 0
-        for i in range(len(page_learning_object)):
-            count_images = TagPageLearningObject.objects.filter(
-                Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='img')).count()
-            count_images_count = count_images + count_images_count
 
-            count_paragraphs = TagPageLearningObject.objects.filter(
-                Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='p')).count()
-            count_paragraphs_count = count_paragraphs_count + count_paragraphs
-
-            count_videos = TagPageLearningObject.objects.filter(
-                Q(page_learning_object_id=page_learning_object[i].id) & (Q(tag='iframe') | Q(tag='video'))).count()
-            count_videos_count = count_videos_count + count_videos
-
-            count_audios = TagPageLearningObject.objects.filter(
-                Q(page_learning_object_id=page_learning_object[i].id) & Q(tag='audio')).count()
-            count_audios_count = count_audios_count + count_audios
+        tag_Adapted = TagAdapted.objects.filter(tag_page_learning_object__page_learning_object__learning_object_id=id)
+        for tag in tag_Adapted:
+            if(str(tag.type) == 'img'):
+                count_images_count += 1;
+            if (str(tag.type) == 'audio'):
+                count_audios_count += 1;
+            if (str(tag.type) == 'p'):
+                count_paragraphs_count += 1;
+            if (str(tag.type) == 'video') or (str(tag.type) == 'iframe'):
+                count_videos_count += 1;
 
         return count_images_count, count_paragraphs_count, count_videos_count, count_audios_count
+
+
+class returnObjectsAdapted(RetrieveAPIView):
+    def get(self,request,pk):
+        count_images_count = 0
+        count_paragraphs_count = 0
+        count_videos_count = 0
+        count_audios_count = 0
+
+        tag_Adapted = TagAdapted.objects.filter(tag_page_learning_object__page_learning_object__learning_object_id=pk)
+        for tag in tag_Adapted:
+            if (str(tag.type) == 'img'):
+                count_images_count += 1;
+            if (str(tag.type) == 'audio'):
+                count_audios_count += 1;
+            if (str(tag.type) == 'p'):
+                count_paragraphs_count += 1;
+            if (str(tag.type) == 'video') or (str(tag.type) == 'iframe'):
+                count_videos_count += 1;
+        tag_objects={
+        'images': count_images_count,
+        'audios': count_audios_count,
+        'videos': count_videos_count,
+        'paragraphs': count_paragraphs_count,
+        };
+        return Response({'tag_adapted':tag_objects})
+
+
+
+

@@ -34,6 +34,7 @@ def paragraph_adaptation(learning_object, request):
         th2.join()
         print("tag iterator")
 
+
         # print(page_learning_object)
 
     print("paragraph method")
@@ -45,7 +46,9 @@ def paragraph_adaptation(learning_object, request):
     return "success"
 
 
+
 def audio_adaptation(learning_object, request):
+
     print("audio method")
 
 

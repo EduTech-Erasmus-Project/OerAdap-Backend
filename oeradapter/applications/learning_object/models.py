@@ -31,6 +31,7 @@ class LearningObject(models.Model):
     file_adapted = models.URLField(null=True)
 
 
+
 class AdaptationLearningObject(models.Model):
     class Meta:
         db_table = 'adaptations_learning_objects'
@@ -50,9 +51,9 @@ class PageLearningObject(models.Model):
     path = models.TextField()
     title = models.CharField(max_length=200, null=True)
     preview_path = models.URLField(null=True)
-    learning_object = models.ForeignKey(LearningObject, related_name="page_learning_object", on_delete=models.CASCADE,
-                                        parent_link=True)
-
+    learning_object = models.ForeignKey(LearningObject, related_name="page_learning_object", on_delete=models.CASCADE)
+    disabled = models.BooleanField(default=False)
+    len_paths = models.IntegerField(default=0)
 
 class TagPageLearningObject(models.Model):
     class Meta:
@@ -80,6 +81,7 @@ class TagAdapted(models.Model):
     path_preview = models.URLField(max_length=255, null=True)
     button_text_id = models.CharField(max_length=20, null=True)
     button_audio_id = models.CharField(max_length=20, null=True)
+    text_table = models.TextField(null=True, blank=True)
     tag_page_learning_object = models.OneToOneField(
         TagPageLearningObject,
         related_name="tags_adapted",
