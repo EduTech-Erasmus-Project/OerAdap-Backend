@@ -28,7 +28,6 @@ def paragraph_adaptation(learning_object, request):
         threads.append(threading.Thread(target=text_to_audio, args=(tag, page_learning_object, learning_object, request)))
         threads.append(threading.Thread(target=text_easy_reading, args=(tag, page_learning_object)))
 
-
         # print(page_learning_object)
 
     print("paragraph method")

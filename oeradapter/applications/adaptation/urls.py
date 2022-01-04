@@ -9,6 +9,8 @@ urlpatterns = [
     path('page/audio/<int:pk>', views.AudioView.as_view()),
     path('page/audio', views.AudioviewCreate.as_view()),
 
+    path('adapted/tag/<int:pk>', views.returnObjectsAdapted.as_view()),
+
     path('compress/learningObject/<int:pk>',views.comprimeFileZip().as_view()),
     path('convert/paragraph/<int:pk>', views.CovertTextToAudioRetrieveAPIView.as_view()),
 
