@@ -1,5 +1,6 @@
 import json
 import re
+import time
 from zipfile import ZipFile
 
 import webvtt
@@ -127,6 +128,7 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
         path_preview = path_preview.replace("http://", "https://")
 
     s.save(path_system)
+    time.sleep(10)
     return path_src, path_system, path_preview
 
 
@@ -144,6 +146,7 @@ def convertAudio_Text(path_init):
         text_new = r.recognize_google(info_audio, language="es-ES")
 
     remove(audio)
+    #time.sleep(10)
     return text_new
 
 
@@ -177,16 +180,14 @@ def download_video_youtubedl(video_url, directory_adapted, request):
     path_system = os.path.join(BASE_DIR, directory_adapted, 'oer_resources')
     ydl_opts = {
         'outtmpl': path_system + '/%(title)s.%(ext)s'.strip(),
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
         'noplaylist': True,
         'extract-audio': True,
     }
-
     try:
         with YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=True)
             filename = ydl.prepare_filename(info_dict)
-            print("filename")
-            print(filename)
             video_title = info_dict.get('title', None)
             path_system = filename
             path_preview = os.path.join(request._current_scheme_host, directory_adapted, 'oer_resources',
@@ -227,8 +228,6 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request):
             transcript_es = get_transcript_youtube(transcript_list, 'es')
             transcript_en = get_transcript_youtube(transcript_list, 'en')
 
-        print(transcript_es)
-        print(transcript_en)
         transcripts, captions = save_transcript(transcript_es, path_adapted, video_title, transcripts, captions,
                                                 "automatic/youtube", request)
         transcripts, captions = save_transcript(transcript_en, path_adapted, video_title, transcripts, captions,
@@ -243,20 +242,21 @@ def get_transcript_youtube(transcript_list, lang):
 
 
 def save_transcript(transcript, path_adapted, video_title, transcripts, captions, source, request):
-    json_formatted = JSONFormatter().format_transcript(transcript.fetch())
     vtt_formatterd = WebVTTFormatter().format_transcript(transcript.fetch())
-    json_system = os.path.join(BASE_DIR, path_adapted, "oer_resources",
-                               video_title + "_" + transcript.language_code + ".json")
+
     vtt_system = os.path.join(BASE_DIR, path_adapted, "oer_resources",
                               video_title + "_" + transcript.language_code + ".vtt")
 
     json_path = 'oer_resources/' + video_title + "_" + transcript.language_code + ".json"
     vtt_path = 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
 
-    with open(json_system, 'w', encoding='utf-8') as json_file:
-        json_file.write(json_formatted)
     with open(vtt_system, 'w', encoding='utf-8') as json_file:
         json_file.write(vtt_formatterd)
+
+    srt_file = convert_vtt_to_str(vtt_system)
+    json_system = convert_str_to_json(srt_file, path_adapted, video_title + "_" + transcript.language_code)
+
+    print("json_system ", json_system)
 
     transcripts_obj = {
         "src": json_path,
@@ -314,7 +314,7 @@ def convert_vtt_to_str(path_vtt):
 def convert_str_to_json(srt_string, path_adapted, file_name):
     srt_list = []
 
-    path_json = os.path.join(BASE_DIR, path_adapted, "oer_resources", file_name.split(".")[-2] + ".json")
+    path_json = os.path.join(BASE_DIR, path_adapted, "oer_resources", file_name + ".json")
     srt_string = open(srt_string, 'r', encoding="utf8").read()
     idx = 1
 
@@ -336,8 +336,8 @@ def convert_str_to_json(srt_string, path_adapted, file_name):
             try:
                 start_time_string = re.findall(r'(\d+:\d+:\d+,\d+) --> \d+:\d+:\d+,\d+', line)[0]
                 end_time_string = re.findall(r'\d+:\d+:\d+,\d+ --> (\d+:\d+:\d+,\d+)', line)[0]
-                start_time = start_time_string
-                end_time = end_time_string
+                start_time = start_time_string.replace(",", ".")
+                end_time = end_time_string.replace(",", ".")
             except:
                 pass
 

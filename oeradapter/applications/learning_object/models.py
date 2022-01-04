@@ -1,15 +1,16 @@
+from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from datetime import datetime
-from datetime import timedelta
-from pytz import utc
-from .manager import LearningObjectManager
 import os
 
 
 def directory_path(instance, filename):
     path = "uploads/" + filename.split('.')[0]
     return os.path.join(path, filename)
+
+
+def one_day_hence():
+    return timezone.now() + timezone.timedelta(days=1)
 
 
 # Create your models here.
@@ -21,16 +22,13 @@ class LearningObject(models.Model):
     path_origin = models.TextField()
     path_adapted = models.TextField()
     user_ref = models.CharField(max_length=100)
-    # file = models.FileField(upload_to=directory_path)
     file_folder = models.TextField()
     preview_origin = models.URLField(null=True)
     preview_adapted = models.URLField(null=True)
-    created_at = models.DateTimeField(default=datetime.now().replace(tzinfo=utc))
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    expires_at = models.DateTimeField(default=(datetime.now() + timedelta(days=1)).replace(tzinfo=utc))
+    expires_at = models.DateTimeField(default=one_day_hence)
     file_adapted = models.URLField(null=True)
-
-    objects = LearningObjectManager()
 
 
 class AdaptationLearningObject(models.Model):
@@ -39,8 +37,9 @@ class AdaptationLearningObject(models.Model):
 
     method = models.CharField(max_length=10)
     areas = ArrayField(models.CharField(max_length=10, blank=True), size=6)
-    learning_object = models.ForeignKey(LearningObject, related_name="adaptation_learning_object",
-                                        on_delete=models.CASCADE)
+    learning_object = models.ForeignKey(LearningObject,
+                                        related_name="adaptation_learning_object",
+                                        on_delete=models.CASCADE, parent_link=True)
 
 
 class PageLearningObject(models.Model):
@@ -51,7 +50,8 @@ class PageLearningObject(models.Model):
     path = models.TextField()
     title = models.CharField(max_length=200, null=True)
     preview_path = models.URLField(null=True)
-    learning_object = models.ForeignKey(LearningObject, related_name="page_learning_object", on_delete=models.CASCADE)
+    learning_object = models.ForeignKey(LearningObject, related_name="page_learning_object", on_delete=models.CASCADE,
+                                        parent_link=True)
 
 
 class TagPageLearningObject(models.Model):
@@ -63,7 +63,7 @@ class TagPageLearningObject(models.Model):
     html_text = models.TextField(null=True, blank=True)
     id_class_ref = models.CharField(max_length=20)
     page_learning_object = models.ForeignKey(PageLearningObject, related_name="tag_page_learning_object",
-                                             on_delete=models.CASCADE)
+                                             on_delete=models.CASCADE, parent_link=True)
 
 
 class TagAdapted(models.Model):
@@ -84,7 +84,8 @@ class TagAdapted(models.Model):
         TagPageLearningObject,
         related_name="tags_adapted",
         on_delete=models.CASCADE,
-        null=True
+        null=True,
+        parent_link=True
     )
 
 
@@ -103,7 +104,8 @@ class Transcript(models.Model):
         TagAdapted,
         related_name="transcript",
         on_delete=models.CASCADE,
-        null=True
+        null=True,
+        parent_link=True
     )
 
 
@@ -118,7 +120,7 @@ class DataAttribute(models.Model):
     path_preview = models.URLField(max_length=255, null=True)
     source = models.CharField(max_length=20, null=True)
     tag_page_learning_object = models.ForeignKey(TagPageLearningObject, related_name="attributes",
-                                                 on_delete=models.CASCADE)
+                                                 on_delete=models.CASCADE, parent_link=True)
 
 
 class MetadataInfo(models.Model):
@@ -141,5 +143,5 @@ class RequestApi(models.Model):
     institution = models.CharField(max_length=100, null=True, blank=True)
     purpose_use = models.TextField()
     api_key = models.TextField()
-    created_at = models.DateTimeField(default=datetime.now().replace(tzinfo=utc))
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

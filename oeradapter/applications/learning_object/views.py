@@ -60,14 +60,12 @@ def get_learning_objects_by_token(user_ref):
     for item in data:
         expired_on = item.expires_at.replace(tzinfo=utc)
         checked_on = datetime.now().replace(tzinfo=utc)
-        # print(expired_on)
-        # print(checked_on)
         if expired_on <= checked_on:
             ba.remove_folder(os.path.join(BASE_DIR, item.file_folder))
             excludes.append(item.id)
             item.delete()
     data = data.exclude(id__in=excludes)
-    serializer = LearningObjectSerializer(data, many=True)
+    serializer = ApiLearningObjectDetailSerializer(data, many=True)
     return serializer
 
 
@@ -117,14 +115,14 @@ def create_learning_object(request, user_token, Serializer, areas, method):
 
 def automatic_adaptation(areas, request, learning_object):
     paragraph_th = None
-    video_th = None
-    audio_th = None
-    image_th = None
+    threads = list()
 
     if 'paragraph' in areas:
-        # aa.paragraph_adaptation(learning_object, request)
-        paragraph_th = threading.Thread(name="paragraph", target=aa.paragraph_adaptation,
-                                        args=(learning_object, request))
+        aa.paragraph_adaptation(learning_object, request)
+        #th = threading.Thread(name="paragraph", target=aa.paragraph_adaptation, args=(learning_object, request))
+        #threads.append(th)
+        #th.start()
+
 
     if 'audio' in areas:
         audio_th = None
@@ -133,20 +131,14 @@ def automatic_adaptation(areas, request, learning_object):
         image_th = None
         aa.image_adaptation(learning_object, request)
     if 'video' in areas:
-        # aa.video_adaptation(learning_object, request)
-        video_th = threading.Thread(name="video", target=aa.video_adaptation,
-                                    args=(learning_object, request))
+        aa.video_adaptation(learning_object, request)
+        #th = threading.Thread(name="video", target=aa.video_adaptation, args=(learning_object, request))
+        #threads.append(th)
+        #th.start()
 
-    if paragraph_th is not None:
-        paragraph_th.start()
-    if video_th is not None:
-        video_th.start()
 
-    if paragraph_th is not None:
-        paragraph_th.join()
-    if video_th is not None:
-        video_th.join()
-
+    for th in threads:
+        th.join()
     # aa.adaptation(areas, files, request)
     # Response().write(self, {"state": "process"})
     # Response({"state": "process"})
