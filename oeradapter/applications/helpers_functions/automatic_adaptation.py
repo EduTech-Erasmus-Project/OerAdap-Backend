@@ -6,7 +6,7 @@ from pytz import unicode
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 from ..helpers_functions import process as process
-from ..learning_object.models import TagPageLearningObject, PageLearningObject, TagAdapted
+from ..learning_object.models import TagPageLearningObject, PageLearningObject, TagAdapted, DataAttribute, Transcript
 
 
 def adaptation(areas=None, files=None, request=None):
@@ -16,17 +16,24 @@ def adaptation(areas=None, files=None, request=None):
 
 def paragraph_adaptation(learning_object, request):
     tag_page_learning_object = TagPageLearningObject.objects.filter(
-        Q(page_learning_object__learning_object_id=learning_object.id) & Q(tag='p'))
+        Q(page_learning_object__learning_object_id=learning_object.id) & (Q(tag='p') | Q(tag='span') | Q(tag='li')))
 
     threads = []
 
     for tag in tag_page_learning_object:
         page_learning_object = tag.page_learning_object
-        # text_to_audio(tag, page_learning_object, learning_object, request)
-        #threading.Thread(target=text_to_audio, args=(tag, page_learning_object, learning_object, request)).start()
-        #threading.Thread(target=text_easy_reading, args=(tag, page_learning_object)).start()
-        threads.append(threading.Thread(target=text_to_audio, args=(tag, page_learning_object, learning_object, request)))
-        threads.append(threading.Thread(target=text_easy_reading, args=(tag, page_learning_object)))
+
+        #threads.append(threading.Thread(target=text_to_audio, args=(tag, page_learning_object, learning_object, request)))
+        #threads.append(threading.Thread(target=text_easy_reading, args=(tag, page_learning_object)))
+
+        th1 = threading.Thread(target=text_to_audio, args=(tag, page_learning_object, learning_object, request))
+        th1.start()
+        th2 = threading.Thread(target=text_easy_reading, args=(tag, page_learning_object))
+        th2.start()
+        th1.join()
+        th2.join()
+        print("tag iterator")
+
 
         # print(page_learning_object)
 
@@ -49,8 +56,113 @@ def image_adaptation(learning_object, request):
     print("image method")
 
 
+def save_transcript(transcript, tag_adapted):
+    Transcript.objects.create(
+        src=transcript['src'],
+        type=transcript['type'],
+        srclang=transcript['srclang'],
+        label=transcript['label'],
+        source=transcript['source'],
+        path_system=transcript['path_system'],
+        tag_adapted=tag_adapted,
+    )
+
+
+def save_tag_adapted(uid, tittle, path_src, path_preview, path_system, tag):
+    tag_adapted = TagAdapted.objects.create(
+        type="video",
+        id_ref=uid,
+        text=tittle,
+        path_src=path_src,
+        path_preview=path_preview,
+        path_system=path_system,
+        tag_page_learning_object=tag,
+    )
+    return tag_adapted
+
+
+def convert_video(tag, learning_object, request):
+    page_learning_object = tag.page_learning_object
+    data_attribute = DataAttribute.objects.get(tag_page_learning_object_id=tag.id)
+    uid = bsd.getUUID()
+    transcripts = []
+    captions = []
+    tittle = data_attribute.data_attribute.split(".")[-2]
+    path_src = data_attribute.data_attribute
+    path_preview = data_attribute.path_system
+    path_system = data_attribute.path_preview
+    tag_adapted = None
+
+    if data_attribute.source == 'local':
+        # Traducir automaticamnete
+        tag_adapted = save_tag_adapted(uid, tittle, path_src, path_preview, path_system, tag)
+        # return
+    else:
+        # descargar el video
+        path_system, path_preview, path_src, tittle = ba.download_video(data_attribute.data_attribute,
+                                                                        data_attribute.type,
+                                                                        data_attribute.source,
+                                                                        learning_object.path_adapted, request)
+        if path_system is None and path_preview is None:
+            return
+
+        # guardar el video como adaptado
+        tag_adapted = save_tag_adapted(uid, tittle, path_src, path_preview, path_system, tag)
+
+        if data_attribute.source.find("youtube") > -1:
+            # descargar subtitulos de youtube
+            transcripts, captions = ba.generate_transcript_youtube(data_attribute.data_attribute, tittle,
+                                                                   learning_object.path_adapted, request)
+            print("transcripts", transcripts)
+            print("captions", captions)
+
+            for transcript in transcripts:
+                save_transcript(transcript, tag_adapted)
+
+            for caption in captions:
+                save_transcript(caption, tag_adapted)
+
+        else:
+            # traducir automaticamente
+            pass
+
+        data_attribute.source = "local"
+        data_attribute.data_attribute = path_src
+        data_attribute.path_system = path_system
+        data_attribute.path_preview = path_preview
+        data_attribute.save()
+
+    # gurdar el html
+    video_template = bsd.templateVideoAdaptation(path_src, "video/mp4", tittle, captions,
+                                                 transcripts, uid)
+
+    file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+    tag_adaptation = file_html.find(tag.tag, tag.id_class_ref)
+    tag_adaptation.replace_with(video_template)
+    bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+    return 'success'
+
+
 def video_adaptation(learning_object, request):
+    tag_page_learning_object = TagPageLearningObject.objects.filter(
+        Q(page_learning_object__learning_object_id=learning_object.id) & (Q(tag='iframe') | Q(tag='video')))
+
+    threads = list()
+    for tag in tag_page_learning_object:
+        # th = threads.append(threading.Thread(target=convert_video, args=(tag, learning_object, request)))
+
+        th = threading.Thread(target=convert_video, args=(tag, learning_object, request))
+        #threads.append(th)
+        th.start()
+        th.join()
+
     print("video method")
+
+    print(threads)
+    for th in threads:
+        th.join()
+
+    return "success"
 
 
 def text_easy_reading(tag_page_learning_object, page_learning_object):
@@ -62,21 +174,24 @@ def text_easy_reading(tag_page_learning_object, page_learning_object):
     print(str(text_content_bsd.get_text()))
 
     div_soup_data, id_ref = bsd.templateAdaptationTag(tag_page_learning_object.id_class_ref)
-    file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
-    tag = file_html.find('p', tag_page_learning_object.id_class_ref)
 
     button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(tag_page_learning_object.id_class_ref,
                                                                          text_content)
 
     tag_adapted, created = TagAdapted.objects.get_or_create(tag_page_learning_object_id=tag_page_learning_object.id,
                                                             defaults={
-                                                                "text": unicode(text_content_bsd.get_text()),
-                                                                "html_text": unicode(str(text_content_bsd)),
+                                                                "text": text_content_bsd.get_text(),
+                                                                "html_text": str(text_content_bsd),
                                                                 "type": "p",
                                                                 "id_ref": id_ref,
                                                                 "tag_page_learning_object": tag_page_learning_object
                                                             })
+    tag_adapted.text = text_content_bsd.get_text()
+    tag_adapted.html_text = str(text_content_bsd)
+    tag_adapted.save()
 
+    file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+    tag = file_html.find(tag_page_learning_object.tag, tag_page_learning_object.id_class_ref)
     if created:
         tag.append(div_soup_data)
         div_soup_data = tag.find(id=id_ref)
@@ -95,10 +210,6 @@ def text_easy_reading(tag_page_learning_object, page_learning_object):
                 tag_text.decompose()
             tag_adaptation.insert(1, button_text_data)
 
-        tag_adapted.text = unicode(text_content_bsd.get_text())
-        tag_adapted.html_text = unicode(str(text_content_bsd))
-        tag_adapted.save()
-
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
 
 
@@ -109,9 +220,6 @@ def text_to_audio(tag_page_learning_object, page_learning_object, learning_objec
                                                                learning_object.path_adapted,
                                                                tag_page_learning_object.id_class_ref, request)
 
-    file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
-
-    tag = file_html.find('p', tag_page_learning_object.id_class_ref)
     div_soup_data, id_ref = bsd.templateAdaptationTag(tag_page_learning_object.id_class_ref)
 
     button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
@@ -127,6 +235,13 @@ def text_to_audio(tag_page_learning_object, page_learning_object, learning_objec
                                                                 "tag_page_learning_object": tag_page_learning_object
                                                             })
 
+    tag_adapted.path_src = path_src,
+    tag_adapted.path_preview = path_preview,
+    tag_adapted.path_system = path_system,
+    tag_adapted.save()
+
+    file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+    tag = file_html.find('p', tag_page_learning_object.id_class_ref)
     if created:
         tag.append(div_soup_data)
         div_soup_data = tag.find(id=id_ref)
@@ -144,11 +259,6 @@ def text_to_audio(tag_page_learning_object, page_learning_object, learning_objec
             if tag_audio is not None:
                 tag_audio.decompose()
             tag_adaptation.insert(len(tag_adaptation) - 1, button_audio_data)
-
-        tag_adapted.path_src = path_src,
-        tag_adapted.path_preview = path_preview,
-        tag_adapted.path_system = path_system,
-        tag_adapted.save()
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
 

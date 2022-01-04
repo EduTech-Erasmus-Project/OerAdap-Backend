@@ -34,6 +34,7 @@ class AdaptationLearningObjectSerializer(serializers.ModelSerializer):
         model = AdaptationLearningObject
         fields = ('id', 'method', 'areas')
 
+
 def count_data(instance):
     # count_pages = PageLearningObject.objects.filter(learning_object=instance.id).count()
     count_pages = PageLearningObject.objects.filter(Q(learning_object=instance.id) & Q(type='adapted')).count()
@@ -42,12 +43,13 @@ def count_data(instance):
     count_images = TagPageLearningObject.objects.filter(
         Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
     count_paragraphs = TagPageLearningObject.objects.filter(
-        Q(page_learning_object__learning_object__id=instance.id) & Q(tag='p')).count()
+        Q(page_learning_object__learning_object__id=instance.id) & (Q(tag='p') | Q(tag='span') | Q(tag='li'))).count()
     count_videos = TagPageLearningObject.objects.filter(
         Q(page_learning_object__learning_object__id=instance.id) & (Q(tag='iframe') | Q(tag='video'))).count()
     count_audios = TagPageLearningObject.objects.filter(
         Q(page_learning_object__learning_object__id=instance.id) & Q(tag='audio')).count()
     return count_pages, count_images, count_paragraphs, count_videos, count_audios
+
 
 class LearningObjectDetailSerializer(serializers.ModelSerializer):
     class Meta:

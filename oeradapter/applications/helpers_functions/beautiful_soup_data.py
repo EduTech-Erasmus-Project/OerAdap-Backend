@@ -4,6 +4,7 @@ from unipath import Path
 from bs4 import BeautifulSoup
 import os
 import shortuuid
+import magic
 from ..learning_object.models import PageLearningObject, TagPageLearningObject, DataAttribute, TagAdapted
 
 BASE_DIR = Path(__file__).ancestor(3)
@@ -63,10 +64,22 @@ def generateBeautifulSoupFile(html_doc):
     :param html_doc:
     :return BeautifulSoup Data:
     """
-    with open(html_doc, encoding='utf8') as file:
+
+    blob = open(html_doc, 'rb').read()
+    m = magic.Magic(mime_encoding=True)
+    encoding = m.from_buffer(blob)
+    if encoding == 'binary':
+        encoding = 'utf-8'
+
+    with open(html_doc, encoding=encoding) as file:
+        #try:
         soup_data = BeautifulSoup(file, "html.parser")
         file.close()
         return soup_data
+        #except Exception as e:
+            #print(e)
+            #return None
+
 
 
 def save_filesHTML_db(files, learningObject, directory, directory_origin, request_host):
@@ -127,33 +140,43 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
         webs_craping_iframe(soup_data, page_adapted, file['file'])
 
 
+def save_paragraph(tag_identify, p_text, page_id, class_uuid):
+    if len(p_text.get('class', [])) > 0:
+        p_text['class'].append(class_uuid)
+    else:
+        p_text['class'] = class_uuid
+
+    tag_page = TagPageLearningObject.objects.create(tag=tag_identify,
+                                                    text=str(p_text.string),
+                                                    html_text=str(p_text),
+                                                    page_learning_object=page_id,
+                                                    id_class_ref=class_uuid)
+    # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+
 def web_scraping_p(aux_text, page_id, file):
     """ Exatraccion de los parrafos de cada pagina html,
     se crea un ID unico, para identificar cada elemento
     """
-    # print(file_beautiful_soup)
-    tag_identify = "p"
 
-    # Reducir la lista con el criterio de que la longitud de texto sea > 2 para evitar que recorra todos los
-    for p_text in aux_text.find_all(tag_identify):
+    length_text = 300
+    for p_text in aux_text.find_all("p"):
         if p_text.string:
-            if len(p_text.string) >= 150:
-                # uuid = str(shortuuid.ShortUUID().random(length=8))
-                class_uuid = tag_identify + '-' + getUUID()
-                if len(p_text.get('class', [])) > 0:
-                    p_text['class'].append(class_uuid)
-                else:
-                    p_text['class'] = class_uuid
+            if len(p_text.string) >= length_text:
+                class_uuid = "p-" + getUUID()
+                save_paragraph("p", p_text, page_id, class_uuid)
 
-                tag_page = TagPageLearningObject.objects.create(tag=tag_identify,
-                                                                text=str(p_text.string),
-                                                                html_text=str(p_text),
-                                                                page_learning_object=page_id,
-                                                                id_class_ref=class_uuid)
-                # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
-        elif not p_text.string:
-            # print("Parrafo vacio")
-            pass
+    for p_text in aux_text.find_all('span'):
+        if p_text.string:
+            if len(p_text.string) >= length_text:
+                class_uuid = 'span-' + getUUID()
+                save_paragraph("span", p_text, page_id, class_uuid)
+
+    for p_text in aux_text.find_all('li'):
+        if p_text.string:
+            if len(p_text.string) >= length_text:
+                class_uuid = 'li-' + getUUID()
+                save_paragraph("li", p_text, page_id, class_uuid)
+
     generate_new_htmlFile(aux_text, file)
 
 
@@ -311,7 +334,9 @@ def webs_craping_iframe(file_beautiful_soup, page_id, file):
 
     for tag in file_beautiful_soup.find_all(tag_identify):
 
-        #print(tag)
+        # print(tag)
+        if '.com' not in str(tag.get('src')):
+            continue
 
         class_uuid = tag_identify + '-' + getUUID()
 
@@ -628,7 +653,7 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                             transcripts: [
     """
     for transcript in transcripts:
-        #print(transcript['src'])
+        # print(transcript['src'])
         video_bsd = video_bsd + """ 
                                                                 {
                                                                     src: "%s",
