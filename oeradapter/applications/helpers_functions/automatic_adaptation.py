@@ -176,7 +176,7 @@ def text_easy_reading(tag_page_learning_object, page_learning_object):
     div_soup_data, id_ref = bsd.templateAdaptationTag(tag_page_learning_object.id_class_ref)
 
     button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(tag_page_learning_object.id_class_ref,
-                                                                         text_content)
+                                                                         text_content, page_learning_object.dir_len)
 
     tag_adapted, created = TagAdapted.objects.get_or_create(tag_page_learning_object_id=tag_page_learning_object.id,
                                                             defaults={
@@ -223,7 +223,7 @@ def text_to_audio(tag_page_learning_object, page_learning_object, learning_objec
     div_soup_data, id_ref = bsd.templateAdaptationTag(tag_page_learning_object.id_class_ref)
 
     button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
-        tag_page_learning_object.id_class_ref, path_src)
+        tag_page_learning_object.id_class_ref, path_src, page_learning_object.dir_len)
 
     tag_adapted, created = TagAdapted.objects.get_or_create(tag_page_learning_object_id=tag_page_learning_object.id,
                                                             defaults={

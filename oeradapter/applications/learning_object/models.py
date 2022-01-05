@@ -29,7 +29,12 @@ class LearningObject(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     expires_at = models.DateTimeField(default=one_day_hence)
     file_adapted = models.URLField(null=True)
-
+    complete_adaptation = models.BooleanField(default=False, null=True)
+    button_adaptation = models.BooleanField(default=False, null=True)
+    audio_adaptation = models.BooleanField(default=False, null=True)
+    image_adaptation = models.BooleanField(default=False, null=True)
+    paragraph_adaptation = models.BooleanField(default=False, null=True)
+    video_adaptation = models.BooleanField(default=False, null=True)
 
 
 class AdaptationLearningObject(models.Model):
@@ -40,7 +45,7 @@ class AdaptationLearningObject(models.Model):
     areas = ArrayField(models.CharField(max_length=10, blank=True), size=6)
     learning_object = models.ForeignKey(LearningObject,
                                         related_name="adaptation_learning_object",
-                                        on_delete=models.CASCADE, parent_link=True)
+                                        on_delete=models.CASCADE)
 
 
 class PageLearningObject(models.Model):
@@ -51,9 +56,10 @@ class PageLearningObject(models.Model):
     path = models.TextField()
     title = models.CharField(max_length=200, null=True)
     preview_path = models.URLField(null=True)
-    learning_object = models.ForeignKey(LearningObject, related_name="page_learning_object", on_delete=models.CASCADE)
     disabled = models.BooleanField(default=False)
-    len_paths = models.IntegerField(default=0)
+    dir_len = models.IntegerField(default=0)
+    learning_object = models.ForeignKey(LearningObject, related_name="page_learning_object", on_delete=models.CASCADE)
+
 
 class TagPageLearningObject(models.Model):
     class Meta:
@@ -64,7 +70,7 @@ class TagPageLearningObject(models.Model):
     html_text = models.TextField(null=True, blank=True)
     id_class_ref = models.CharField(max_length=20)
     page_learning_object = models.ForeignKey(PageLearningObject, related_name="tag_page_learning_object",
-                                             on_delete=models.CASCADE, parent_link=True)
+                                             on_delete=models.CASCADE)
 
 
 class TagAdapted(models.Model):
@@ -74,7 +80,6 @@ class TagAdapted(models.Model):
     type = models.CharField(max_length=20)
     text = models.TextField(null=True, blank=True)
     html_text = models.TextField(null=True, blank=True)
-    # html_text_inyection = models.TextField(null=True, blank=True)
     id_ref = models.CharField(max_length=20, null=True)
     path_src = models.TextField(null=True, blank=True)
     path_system = models.TextField(null=True, blank=True)
@@ -86,8 +91,7 @@ class TagAdapted(models.Model):
         TagPageLearningObject,
         related_name="tags_adapted",
         on_delete=models.CASCADE,
-        null=True,
-        parent_link=True
+        null=True
     )
 
 
@@ -106,8 +110,7 @@ class Transcript(models.Model):
         TagAdapted,
         related_name="transcript",
         on_delete=models.CASCADE,
-        null=True,
-        parent_link=True
+        null=True
     )
 
 
@@ -122,7 +125,7 @@ class DataAttribute(models.Model):
     path_preview = models.URLField(max_length=255, null=True)
     source = models.CharField(max_length=20, null=True)
     tag_page_learning_object = models.ForeignKey(TagPageLearningObject, related_name="attributes",
-                                                 on_delete=models.CASCADE, parent_link=True)
+                                                 on_delete=models.CASCADE)
 
 
 class MetadataInfo(models.Model):

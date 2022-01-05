@@ -2,25 +2,19 @@ import json
 import re
 import time
 from zipfile import ZipFile
-
 import webvtt
 from unipath import Path
-from django.core.files.storage import FileSystemStorage
 from . import beautiful_soup_data as bsd
 from youtube_dl import YoutubeDL
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import JSONFormatter
 from youtube_transcript_api.formatters import WebVTTFormatter
 from vtt_to_srt.vtt_to_srt import vtt_to_srt
-
 import shutil
 import os
 from os import remove, listdir
 from gtts import gTTS
 import speech_recognition as sr
 from pydub import AudioSegment
-
-import pathlib
 
 
 BASE_DIR = Path(__file__).ancestor(3)
@@ -58,24 +52,6 @@ def remove_uploaded_file(path_system):
 def copy_folder(path_origin, path_src):
     return shutil.copytree(path_origin, path_src)
 
-def copy_folder_2(path_origin, path_src):
-    directorio_Raiz = path_origin
-    new_direction  =path_src
-    contenidos = os.listdir(directorio_Raiz)
-    for elemento in contenidos:
-        try:
-            #print(f"Copiando {elemento} --> {new_direction} ... ", end="")
-            extension = pathlib.Path(elemento)
-            # print("\n Extencion del elemento:", extension.suffix)
-            if (extension.suffix != ".html"):
-                src = os.path.join(directorio_Raiz, elemento)  # origen
-                dst = os.path.join(new_direction, elemento)  # destino
-                shutil.copy2(src, dst)
-                #print("Correcto")
-            return 'Se copio exitosamente'
-        except:
-           return 'Nose copiaron los datos'
-
 
 def remove_folder(path):
     """Delete folder"""
@@ -92,7 +68,7 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
         """Add button adaptability on pages of learning objects"""
         path_origin = os.path.join(BASE_DIR, 'resources', 'uiAdaptability')
         path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'uiAdaptability')
-        path_save = copy_folder_2(path_origin, path_src)
+        path_save = copy_folder(path_origin, path_src)
         # print("path_save move folder", str(path_save))
 
     if paragraph_script:
@@ -104,22 +80,25 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
 
     for file in html_files:
         # directory_file = os.path.join(BASE_DIR, directory, file['file'])
+
         soup_file = bsd.generateBeautifulSoupFile(file['file'])
+        #print("file directory ", file['file'])
+        #print("soup_file ", soup_file)
 
         if button or video:
-            headInfusion = bsd.templateInfusion()
+            headInfusion = bsd.templateInfusion(file['dir_len'])
             soup_file.head.insert(len(soup_file.head) - 1, headInfusion)
 
         if button:
-            bodyInfusion = bsd.templateBodyButtonInfusion()
+            bodyInfusion = bsd.templateBodyButtonInfusion(file['dir_len'])
             soup_file.body.insert(1, bodyInfusion)
 
         if video and button == False:
-            bodyInfusion = bsd.templateBodyVideoInfusion()
+            bodyInfusion = bsd.templateBodyVideoInfusion(file['dir_len'])
             soup_file.body.insert(1, bodyInfusion)
 
         if paragraph_script:
-            head_adaptation, body_adaptation = bsd.templateTextAdaptation()
+            head_adaptation, body_adaptation = bsd.templateTextAdaptation(file['dir_len'])
             soup_file.head.insert(len(soup_file.head) - 1, head_adaptation)
             soup_file.body.insert(len(soup_file.head) - 1, body_adaptation)
 
@@ -167,7 +146,7 @@ def convertAudio_Text(path_init):
         text_new = r.recognize_google(info_audio, language="es-ES")
 
     remove(audio)
-    #time.sleep(10)
+    # time.sleep(10)
     return text_new
 
 
