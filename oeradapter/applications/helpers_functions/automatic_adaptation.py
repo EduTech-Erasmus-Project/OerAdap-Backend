@@ -13,6 +13,39 @@ def adaptation(areas=None, files=None, request=None):
     print(areas)
     print(request)
 
+def convertAudioToText(tag,page,learning_object, request):
+    # print(request.data['path_system'])
+    file_html = bsd.generateBeautifulSoupFile(page.path)
+    tag = file_html.find('audio', tag.id_class_ref)
+    tag_aux = str(tag)
+    div_soup_data, id_ref = bsd.templateAdaptationTag(tag.id_class_ref)
+
+    data_atribute = DataAttribute.objects.filter(tag_page_learning_object_id = tag.id)
+    new_text = ba.convertAudio_Text(data_atribute.path_system)
+    button_text_data = bsd.templateAudioTextButton(
+        tag.id_class_ref,
+        new_text)
+
+    TagAdapted_create = TagAdapted.objects.create(
+        tag_page_learning_object_id=tag.id,
+        path_system=data_atribute.path_system,
+        id_ref=tag.id_class_ref,
+        type='audio',
+        html_text=tag.html_text,
+        path_src=data_atribute.data_atribute,
+        text=new_text
+    )
+
+    button_text_data = bsd.templateAudioTextButton(
+                    tag.id_class_ref,
+                    new_text)
+    div_soup_data = tag.find(id=id_ref)
+    div_soup_data.insert(1, button_text_data)
+    tag_audio_div = bsd.templateAdaptedAudio(tag_aux, tag.id_class_ref)
+    tag_audio_div.append(div_soup_data)
+    tag.replace_with(tag_audio_div)
+    bsd.generate_new_htmlFile(file_html, page.path)
+
 
 def paragraph_adaptation(learning_object, request):
     tag_page_learning_object = TagPageLearningObject.objects.filter(
@@ -49,7 +82,16 @@ def paragraph_adaptation(learning_object, request):
 
 def audio_adaptation(learning_object, request):
 
+    tag_page_learning_object = TagPageLearningObject.objects.filter(  Q(page_learning_object__learning_object_id=learning_object.id) & Q(tag='audio') )
+
+    for tag in tag_page_learning_object:
+        page_learning_object = tag.page_learning_object
+        th = threading.Thread(target= convertAudioToText , args=(tag, page_learning_object, learning_object, request))
+        th.start()
+        th.join()
     print("audio method")
+
+    return "success"
 
 
 def image_adaptation(learning_object, request):
