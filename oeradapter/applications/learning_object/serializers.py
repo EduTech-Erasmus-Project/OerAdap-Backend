@@ -3,6 +3,7 @@ from .models import LearningObject, AdaptationLearningObject, PageLearningObject
     TagAdapted
 from django.db.models import Q
 
+
 class LearningObjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearningObject
@@ -99,7 +100,8 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
                 page.disabled = True;
                 page.save();
 
-        pages_adapted = PageLearningObject.objects.filter(Q(learning_object_id=instance.id) & Q(disabled=False) & Q(type='adapted'));
+        pages_adapted = PageLearningObject.objects.filter(
+            Q(learning_object_id=instance.id) & Q(disabled=False) & Q(type='adapted'));
 
         pages_adapted = PagesSerializer(pages_adapted, many=True)
 
@@ -167,7 +169,13 @@ class ApiLearningObjectDetailSerializer(serializers.ModelSerializer):
                 "videos": count_adap_videos,
                 "audios": count_adap_audios
             },
-            "config_adaptability": config_adaptability.data
+            "config_adaptability": config_adaptability.data,
+            "complete_adaptation": instance.complete_adaptation,
+            "button_adaptation": instance.button_adaptation,
+            "audio_adaptation": instance.audio_adaptation,
+            "image_adaptation": instance.image_adaptation,
+            "paragraph_adaptation": instance.paragraph_adaptation,
+            "video_adaptation": instance.video_adaptation,
             # "file_download": None
         }
         return data

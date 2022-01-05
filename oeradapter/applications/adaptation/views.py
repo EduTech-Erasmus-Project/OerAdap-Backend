@@ -184,7 +184,7 @@ class AudioviewCreate(RetrieveAPIView):
 
                     button_text_data = bsd.templateAudioTextButton(
                         tag_learning_object.id_class_ref,
-                        request.data['text'])
+                        request.data['text'], page_learning_object.dir_len)
                     div_soup_data = tag.find(id=id_ref)
                     div_soup_data.insert(1, button_text_data)
                     tag_audio_div = bsd.templateAdaptedAudio(tag_aux, tag_learning_object.id_class_ref)
@@ -213,7 +213,7 @@ class AudioviewCreate(RetrieveAPIView):
 
                 button_text_data = bsd.templateAudioTextButton(
                     tag_learning_object.id_class_ref,
-                    new_text)
+                    new_text, page_learning_object.dir_len)
                 div_soup_data = tag.find(id=id_ref)
                 div_soup_data.insert(1, button_text_data)
                 tag_audio_div = bsd.templateAdaptedAudio(tag_aux, tag_learning_object.id_class_ref)
@@ -304,7 +304,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                 if request.data['text'] != '':
                     button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
                         tag_page_learning_object.id_class_ref,
-                        request.data['text'])
+                        request.data['text'], page_learning_object.dir_len)
                     tag_text = tag_adaptation.find('div', class_="tooltip text-container")
                     if tag_text is not None:
                         tag_text.decompose()
@@ -323,7 +323,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                 path_preview, path_system = ba.save_uploaded_file(path, file, learning_object.path_adapted, request)
 
                 button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
-                    tag_page_learning_object.id_class_ref, path_src)
+                    tag_page_learning_object.id_class_ref, path_src, page_learning_object.dir_len)
 
                 tag_audio = tag_adaptation.find('div', class_="tooltip audio-container")
                 if tag_audio is not None:
@@ -349,7 +349,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                 if request.data['text'] != '':
                     button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
                         tag_page_learning_object.id_class_ref,
-                        request.data['text'])
+                        request.data['text'], page_learning_object.dir_len)
                     div_soup_data = tag.find(id=id_ref)
                     # div_soup_data.append(button_text_data)
                     div_soup_data.insert(1, button_text_data)
@@ -368,7 +368,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                 path_preview, path_system = ba.save_uploaded_file(path, file, learning_object.path_adapted, request)
 
                 button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
-                    tag_page_learning_object.id_class_ref, path_src)
+                    tag_page_learning_object.id_class_ref, path_src, page_learning_object.dir_len)
                 div_soup_data = tag.find(id=id_ref)
                 # div_soup_data.append(button_audio_data)
                 div_soup_data.insert(len(div_soup_data) - 1, button_audio_data)
@@ -428,7 +428,7 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
             tag.append(div_soup_data)
 
             button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
-                tag_page_learning_object.id_class_ref, path_src)
+                tag_page_learning_object.id_class_ref, path_src, page_learning_object.dir_len)
             div_soup_data = tag.find(id=id_ref)
             div_soup_data.insert(len(div_soup_data) - 1, button_audio_data)
 
@@ -444,7 +444,7 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
         else:
             tag_adaptation = file_html.find(id=tag_adapted.id_ref)
             button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
-                tag_page_learning_object.id_class_ref, path_src)
+                tag_page_learning_object.id_class_ref, path_src, page_learning_object.dir_len)
 
             tag_audio = tag_adaptation.find('div', class_="tooltip audio-container")
             if tag_audio is not None:

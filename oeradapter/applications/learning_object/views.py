@@ -1,6 +1,4 @@
-import threading
 from datetime import datetime
-
 from pytz import utc
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -9,9 +7,6 @@ from rest_framework.response import Response
 from . import serializers
 import shortuuid
 import json
-from zipfile import ZipFile
-from os import listdir, rmdir
-import shutil
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, TagAdapted, \
@@ -110,32 +105,35 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     files = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
     adaptation_settings(areas, files, directory_adapted)
     bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
+    learning_object.button_adaptation = True
+    learning_object.save()
     return serializer, learning_object
 
 
 def automatic_adaptation(areas, request, learning_object):
-    paragraph_th = None
     threads = list()
-
     if 'paragraph' in areas:
         aa.paragraph_adaptation(learning_object, request)
         #th = threading.Thread(name="paragraph", target=aa.paragraph_adaptation, args=(learning_object, request))
         #threads.append(th)
         #th.start()
-
-
+        learning_object.paragraph_adaptation = True
+        learning_object.save()
     if 'audio' in areas:
-        audio_th = None
         aa.audio_adaptation(learning_object, request)
+        learning_object.audio_adaptation = True
+        learning_object.save()
     if 'image' in areas:
-        image_th = None
         aa.image_adaptation(learning_object, request)
+        learning_object.image_adaptation = True
+        learning_object.save()
     if 'video' in areas:
         aa.video_adaptation(learning_object, request)
         #th = threading.Thread(name="video", target=aa.video_adaptation, args=(learning_object, request))
         #threads.append(th)
         #th.start()
-
+        learning_object.video_adaptation = True
+        learning_object.save()
 
     for th in threads:
         th.join()
@@ -143,7 +141,10 @@ def automatic_adaptation(areas, request, learning_object):
     # Response().write(self, {"state": "process"})
     # Response({"state": "process"})
     # Response({"state": "done"})
-    return True
+    learning_object.complete_adaptation = True
+    learning_object.save()
+    serializer = ApiLearningObjectDetailSerializer(learning_object)
+    return Response(serializer.data)
 
 
 class LearningObjectCreateApiView(generics.GenericAPIView):
