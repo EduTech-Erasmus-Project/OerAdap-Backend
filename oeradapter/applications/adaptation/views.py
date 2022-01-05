@@ -171,7 +171,7 @@ class AudioviewCreate(RetrieveAPIView):
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find('audio', tag_learning_object.id_class_ref)
         # tag['pTooltip']= 'Ver descripción visual de audio'
-        print(tag)
+
         tag_aux = str(tag)
         tag.insert(1, div_soup_data)
 
@@ -259,6 +259,7 @@ class AudioView(RetrieveAPIView):
         ref_change = file_html.find_all('div', id=str(tag_class_ref))
         text_adapted = request.data['text']
         onChange_ref = """textAdaptationEvent('""" + str(text_adapted) + """', '""" + tag_class_ref + """', this)"""
+
         """Validacion de envio de datos, para realizar la actualizacion """
         if ((not request.data['text'].isspace()) & (request.data['text'] != "")):
             """ Guardar en la base de datos"""
