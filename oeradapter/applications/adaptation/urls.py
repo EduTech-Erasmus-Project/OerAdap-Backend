@@ -11,7 +11,7 @@ urlpatterns = [
 
     path('adapted/tag/<int:pk>', views.returnObjectsAdapted.as_view()),
 
-    path('compress/learningObject/<int:pk>',views.comprimeFileZip().as_view()),
+    path('compress/learningObject/<int:pk>', views.comprimeFileZip().as_view()),
     path('convert/paragraph/<int:pk>', views.CovertTextToAudioRetrieveAPIView.as_view()),
 
     path('adapter/image/<int:pk>', views.AdapatedImageView.as_view()),

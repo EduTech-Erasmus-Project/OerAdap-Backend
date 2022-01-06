@@ -12,7 +12,7 @@ from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, TagAdapted, \
     RequestApi
 from .permission import IsPermissionToken
-from .serializers import LearningObjectSerializer, ApiLearningObjectDetailSerializer
+from .serializers import LearningObjectSerializer, ApiLearningObjectDetailSerializer, LearningObjectDetailSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 from ..helpers_functions import automatic_adaptation as aa
@@ -60,7 +60,7 @@ def get_learning_objects_by_token(user_ref):
             excludes.append(item.id)
             item.delete()
     data = data.exclude(id__in=excludes)
-    serializer = ApiLearningObjectDetailSerializer(data, many=True)
+    serializer = LearningObjectDetailSerializer(data, many=True)
     return serializer
 
 
@@ -109,6 +109,24 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     learning_object.save()
     return serializer, learning_object
 
+def dev_count(id):
+    count_images_count = 0
+    count_paragraphs_count = 0
+    count_videos_count = 0
+    count_audios_count = 0
+
+    tag_Adapted = TagAdapted.objects.filter(tag_page_learning_object__page_learning_object__learning_object_id=id)
+    for tag in tag_Adapted:
+        if str(tag.type) == 'img':
+            count_images_count += 1
+        if str(tag.type) == 'audio':
+            count_audios_count += 1
+        if str(tag.type) == 'p':
+            count_paragraphs_count += 1
+        if (str(tag.type) == 'video') or (str(tag.type) == 'iframe'):
+            count_videos_count += 1
+
+    return count_images_count, count_paragraphs_count, count_videos_count, count_audios_count
 
 def automatic_adaptation(areas, request, learning_object):
     threads = list()
@@ -137,10 +155,14 @@ def automatic_adaptation(areas, request, learning_object):
 
     for th in threads:
         th.join()
-    # aa.adaptation(areas, files, request)
-    # Response().write(self, {"state": "process"})
-    # Response({"state": "process"})
-    # Response({"state": "done"})
+
+    count_images_count, count_paragraphs_count, count_videos_count, count_audios_count = dev_count(
+        learning_object.id)
+
+    new_path = ba.compress_file(request, learning_object, count_images_count,
+                                count_paragraphs_count, count_videos_count, count_audios_count)
+
+    learning_object.file_adapted = new_path
     learning_object.complete_adaptation = True
     learning_object.save()
     serializer = ApiLearningObjectDetailSerializer(learning_object)
