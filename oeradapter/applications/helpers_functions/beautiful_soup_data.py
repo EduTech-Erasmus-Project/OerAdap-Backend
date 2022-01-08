@@ -15,7 +15,7 @@ with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
 
 
 def get_directory_resource(dir_len):
-    dir_path = "";
+    dir_path = ""
     if dir_len > 0:
         for i in range(dir_len):
             dir_path += dir_path + '../'
@@ -605,7 +605,7 @@ def templateAudioTextButton(id_class_ref, text, dir_len):
 
 
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
-    class_aux = 'class="' + id_class_ref + '"'
+    class_aux = 'class="' + str(id_class_ref) + '"'
     tag_figure_new = """<div """ + class_aux + """id="ref_adapted" style="text-align: justify;">""" + str(
         original_tag_audio) + """
        </div>"""

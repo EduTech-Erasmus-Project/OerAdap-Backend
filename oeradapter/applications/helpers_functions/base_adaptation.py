@@ -15,7 +15,7 @@ from os import remove, listdir
 from gtts import gTTS
 import speech_recognition as sr
 from pydub import AudioSegment
-
+import pathlib
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -52,6 +52,23 @@ def remove_uploaded_file(path_system):
 def copy_folder(path_origin, path_src):
     return shutil.copytree(path_origin, path_src)
 
+def copy_folder_2(path_origin, path_src):
+    directorio_Raiz = path_origin
+    new_direction  =path_src
+    contenidos = os.listdir(directorio_Raiz)
+    for elemento in contenidos:
+        try:
+            #print(f"Copiando {elemento} --> {new_direction} ... ", end="")
+            extension = pathlib.Path(elemento)
+            # print("\n Extencion del elemento:", extension.suffix)
+            if (extension.suffix != ".html"):
+                src = os.path.join(directorio_Raiz, elemento)  # origen
+                dst = os.path.join(new_direction, elemento)  # destino
+                shutil.copy2(src, dst)
+                #print("Correcto")
+            return 'Se copio exitosamente'
+        except:
+           return 'Nose copiaron los datos'
 
 def remove_folder(path):
     """Delete folder"""
@@ -68,7 +85,7 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
         """Add button adaptability on pages of learning objects"""
         path_origin = os.path.join(BASE_DIR, 'resources', 'uiAdaptability')
         path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'uiAdaptability')
-        path_save = copy_folder(path_origin, path_src)
+        path_save = copy_folder_2(path_origin, path_src)
         # print("path_save move folder", str(path_save))
 
     if paragraph_script:
