@@ -85,9 +85,9 @@ class ImageView(RetrieveAPIView):
         tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object=tag_learning_object.id);
 
         tag_class_ref = tag_adapted_learning_object.id_ref
-        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
 
         """WebScraping"""
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         html_img_code = file_html.find_all(class_=tag_class_ref)
 
         adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)

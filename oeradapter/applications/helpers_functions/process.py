@@ -9,4 +9,6 @@ def easy_reading(text_content):
 
     return text_content
 
-
+def image_description(nose_sabe_todavia):
+    img_desciption = "automatic description"
+    return img_desciption

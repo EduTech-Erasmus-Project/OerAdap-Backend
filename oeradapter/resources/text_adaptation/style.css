@@ -48,3 +48,11 @@
   visibility: visible;
   opacity: 1;
 }
+
+.table table{
+      border-collapse: collapse;
+}
+
+.table table th, td {
+padding : 5px;
+}
