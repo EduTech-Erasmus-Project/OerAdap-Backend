@@ -9,6 +9,7 @@ from youtube_dl import YoutubeDL
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import WebVTTFormatter
 from vtt_to_srt.vtt_to_srt import vtt_to_srt
+from geopy.geocoders import Nominatim
 import shutil
 import os
 from os import remove, listdir
@@ -16,6 +17,7 @@ from gtts import gTTS
 import speech_recognition as sr
 from pydub import AudioSegment
 import pathlib
+from ..learning_object.models import MetadataInfo
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -99,8 +101,8 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
         # directory_file = os.path.join(BASE_DIR, directory, file['file'])
 
         soup_file = bsd.generateBeautifulSoupFile(file['file'])
-        #print("file directory ", file['file'])
-        #print("soup_file ", soup_file)
+        # print("file directory ", file['file'])
+        # print("soup_file ", soup_file)
 
         if button or video:
             headInfusion = bsd.templateInfusion(file['dir_len'])
@@ -430,3 +432,38 @@ def extract_zip_file(path, file_name, file):
     shutil.copytree(directory_origin, directory_adapted)
 
     return directory_origin, directory_adapted
+
+
+def compress_file(request, learning_object, count_images_count, count_paragraphs_count, count_videos_count, count_audios_count):
+    location = "Private request Api"
+    browser = "Request Api"
+    try:
+        browser = str(request.data['browser'])
+        laltitud = str(request.data['latitude'])
+        longitud = str(request.data['longitude'])
+        geolocator = Nominatim(user_agent="geoapiExercises")
+        location = str(geolocator.reverse(laltitud + "," + longitud))
+    except Exception as e:
+        print(e)
+
+    metadataInfo = MetadataInfo.objects.create(
+        browser=browser,
+        country=location,
+        text_number=count_paragraphs_count,
+        video_number=count_videos_count,
+        audio_number=count_audios_count,
+        img_number=count_images_count,
+    )
+
+    path_folder = os.path.join(BASE_DIR, learning_object.path_adapted)
+    archivo_zip = shutil.make_archive(path_folder, "zip", path_folder)
+    new_path = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip').replace(
+                "\\", "/")
+
+    if PROD['PROD']:
+        new_path = new_path.replace("http://", "https://")
+
+    # print("Creado el archivo:", new_path)
+
+    return new_path
+

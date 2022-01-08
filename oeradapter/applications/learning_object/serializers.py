@@ -87,7 +87,13 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
             "config_adaptability": config_adaptability.data[0],
             # "pages_adapted": pages_adapted.data,
             # "pages_origin": pages_origin.data,
-            "file_adapted": None
+            "file_download": instance.file_adapted,
+            "complete_adaptation": instance.complete_adaptation,
+            "button_adaptation": instance.button_adaptation,
+            "audio_adaptation": instance.audio_adaptation,
+            "image_adaptation": instance.image_adaptation,
+            "paragraph_adaptation": instance.paragraph_adaptation,
+            "video_adaptation": instance.video_adaptation,
         }
 
         page_lea_ob = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)
@@ -169,13 +175,13 @@ class ApiLearningObjectDetailSerializer(serializers.ModelSerializer):
                 "videos": count_adap_videos,
                 "audios": count_adap_audios
             },
-            "config_adaptability": config_adaptability.data,
+            "config_adaptability": config_adaptability.data[0],
             "complete_adaptation": instance.complete_adaptation,
             "button_adaptation": instance.button_adaptation,
             "audio_adaptation": instance.audio_adaptation,
             "image_adaptation": instance.image_adaptation,
             "paragraph_adaptation": instance.paragraph_adaptation,
             "video_adaptation": instance.video_adaptation,
-            # "file_download": None
+            "file_download": instance.file_adapted
         }
         return data
