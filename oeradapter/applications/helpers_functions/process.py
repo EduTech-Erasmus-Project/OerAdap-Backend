@@ -10,3 +10,8 @@ def easy_reading(text_content):
     return text_content
 
 
+def video_transcript(path_video):
+    transcripts = []
+    captions = []
+
+    return transcripts, captions
