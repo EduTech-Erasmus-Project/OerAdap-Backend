@@ -6,7 +6,10 @@ from pytz import unicode
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 from ..helpers_functions import process as process
+
 from ..learning_object.models import TagPageLearningObject, PageLearningObject, TagAdapted, DataAttribute, Transcript
+
+
 
 
 def adaptation(areas=None, files=None, request=None):
@@ -184,7 +187,13 @@ def convert_video(tag, learning_object, request):
     if data_attribute.source == 'local':
         # Traducir automaticamnete
         tag_adapted = save_tag_adapted(uid, tittle, path_src, path_preview, path_system, tag)
+        transcripts, captions = process.video_transcript(path_system)
+        for transcript in transcripts:
+            save_transcript(transcript, tag_adapted)
+        for caption in captions:
+            save_transcript(caption, tag_adapted)
         # return
+
     else:
         # descargar el video
         path_system, path_preview, path_src, tittle = ba.download_video(data_attribute.data_attribute,
@@ -212,6 +221,12 @@ def convert_video(tag, learning_object, request):
 
         else:
             # traducir automaticamente
+            transcripts, captions = process.video_transcript(path_system)
+            for transcript in transcripts:
+                save_transcript(transcript, tag_adapted)
+            for caption in captions:
+                save_transcript(caption, tag_adapted)
+            # return
             pass
 
         data_attribute.source = "local"

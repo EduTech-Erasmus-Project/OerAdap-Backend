@@ -1,0 +1,104 @@
+{
+        "audio": [
+            {
+                "property": "accessibilityFeature",
+                "type": "transcript"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "ttsMarkup"
+            },
+            {
+                "property": "accessMode",
+                "type": "textual"
+            }
+        ],
+        "button": [
+            {
+                "property": "accessibilityFeature",
+                "type": "displayTransformability/background-color"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "displayTransformability/font-family"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "displayTransformability/font-size"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "displayTransformability/color"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "displayTransformability/word-spacing"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "displayTransformability/line-height"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "captions"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "synchronizedAudioText"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "highContrastDisplay"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "transcript"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "structuralNavigation"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "readingOrder"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "tableOfContents"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "index"
+            }
+        ],
+        "image": [
+            {
+                "property": "accessibilityFeature",
+                "type": "alternativeText"
+            }
+        ],
+        "paragraph": [
+            {
+                "property": "alignmentType",
+                "type": "textComplexity"
+            },
+            {
+                "property": "alignmentType",
+                "type": "readingLevel"
+            },
+            {
+                "property": "accessMode",
+                "type": "auditory"
+            }
+        ],
+        "video": [
+            {
+                "property": "accessibilityFeature",
+                "type": "caption"
+            },
+            {
+                "property": "accessibilityFeature",
+                "type": "synchronizedAudioText"
+            }
+        ]
+    }

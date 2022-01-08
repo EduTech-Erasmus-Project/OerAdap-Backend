@@ -1,9 +1,5 @@
 from django.db.models import Prefetch
 import json
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from pyparsing import unicode
 from rest_framework.generics import RetrieveAPIView, CreateAPIView, RetrieveUpdateAPIView, GenericAPIView
 from rest_framework.decorators import api_view
 from unipath import Path
@@ -11,7 +7,7 @@ from . import serializers
 from .serializers import TagAdaptedSerializer, PagesDetailSerializer, TagsVideoSerializer, TagAdaptedVideoSerializer, \
     TagAdaptedAudioSerializer, TagAdaptedSerializerNew, LearningObjectSerializerAdaptation
 from ..learning_object.models import TagPageLearningObject, TagAdapted, PageLearningObject, LearningObject, \
-    DataAttribute, Transcript, MetadataInfo
+    DataAttribute, Transcript
 from django.db.models import Q
 import os
 from django.shortcuts import get_object_or_404
@@ -19,11 +15,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
-import shutil
-from geopy.geocoders import Nominatim
 from bs4 import BeautifulSoup
-
-# Conversion de audio a texto
 
 BASE_DIR = Path(__file__).ancestor(3)
 
