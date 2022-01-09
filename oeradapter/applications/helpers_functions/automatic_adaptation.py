@@ -200,6 +200,9 @@ def convert_video(tag, learning_object, request):
                                                                         data_attribute.type,
                                                                         data_attribute.source,
                                                                         learning_object.path_adapted, request)
+
+        path_src = bsd.get_directory_resource(page_learning_object.dir_len) + path_src
+
         if path_system is None and path_preview is None:
             return
 
@@ -209,7 +212,7 @@ def convert_video(tag, learning_object, request):
         if data_attribute.source.find("youtube") > -1:
             # descargar subtitulos de youtube
             transcripts, captions = ba.generate_transcript_youtube(data_attribute.data_attribute, tittle,
-                                                                   learning_object.path_adapted, request)
+                                                                   learning_object.path_adapted, request, page_learning_object.dir_len)
             print("transcripts", transcripts)
             print("captions", captions)
 
