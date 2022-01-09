@@ -519,17 +519,21 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                 return Response({"message": "Local translations under development", "code": "developing"},
                                 status=status.HTTP_200_OK)
             else:
+                page_learning_object = tag.page_learning_object
+
                 path_system, path_preview, path_src, tittle = ba.download_video(data_attribute.data_attribute,
                                                                                 data_attribute.type,
                                                                                 data_attribute.source,
                                                                                 learning_object.path_adapted, request)
+
+                path_src = bsd.get_directory_resource(page_learning_object.dir_len) + path_src
 
                 if path_system is None and path_preview is None:
                     return Response({"status": False, "code": "video_not_found",
                                      "message": "The source does not allow video download"},
                                     status=status.HTTP_406_NOT_ACCEPTABLE)
                 else:
-                    page_learning_object = tag.page_learning_object
+
                     file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
                     tag_adaptation = file_html.find(tag.tag, tag.id_class_ref)
 
@@ -547,7 +551,7 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                     if data_attribute.source.find("youtube") > -1:
 
                         transcripts, captions = ba.generate_transcript_youtube(data_attribute.data_attribute, tittle,
-                                                                               learning_object.path_adapted, request)
+                                                                               learning_object.path_adapted, request, page_learning_object.dir_len)
                         print("transcripts", transcripts)
                         print("captions", captions)
 

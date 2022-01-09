@@ -80,15 +80,16 @@ def remove_folder(path):
         print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def add_files_adaptation(html_files, directory, button=False, paragraph_script=False, video=False):
+def add_files_adaptation(html_files, directory, button=False, paragraph_script=False, video=False, root_dirs=None):
     """Add essential files of adaptation on learning object"""
 
     if button or video:
         """Add button adaptability on pages of learning objects"""
-        path_origin = os.path.join(BASE_DIR, 'resources', 'uiAdaptability')
-        path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'uiAdaptability')
-        path_save = copy_folder_2(path_origin, path_src)
-        # print("path_save move folder", str(path_save))
+        for dir in root_dirs:
+            path_origin = os.path.join(BASE_DIR, 'resources', 'uiAdaptability')
+            path_src = os.path.join(dir, 'uiAdaptability')
+            path_save = copy_folder(path_origin, path_src)
+            # print("path_save move folder", str(path_save))
 
     if paragraph_script:
         """Add paragraph script on pages of learning object"""
@@ -222,7 +223,7 @@ def download_video_youtubedl(video_url, directory_adapted, request):
         return None, None, None, None
 
 
-def generate_transcript_youtube(video_url, video_title, path_adapted, request):
+def generate_transcript_youtube(video_url, video_title, path_adapted, request, dir_len):
     with YoutubeDL({}) as ydl:
         transcripts = []
         captions = []
@@ -238,7 +239,7 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request):
         try:
             transcript = transcript_list.find_manually_created_transcript(['es', 'en'])
             transcripts, captions = save_transcript(transcript, path_adapted, video_title, transcripts, captions,
-                                                    "manual", request)
+                                                    "manual", request, dir_len)
             if transcript.language_code != 'es':
                 transcript_es = get_transcript_youtube(transcript_list, 'es')
             elif transcript.language_code != 'en':
@@ -248,9 +249,9 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request):
             transcript_en = get_transcript_youtube(transcript_list, 'en')
 
         transcripts, captions = save_transcript(transcript_es, path_adapted, video_title, transcripts, captions,
-                                                "automatic/youtube", request)
+                                                "automatic/youtube", request, dir_len)
         transcripts, captions = save_transcript(transcript_en, path_adapted, video_title, transcripts, captions,
-                                                "automatic/youtube", request)
+                                                "automatic/youtube", request, dir_len)
 
         return transcripts, captions
 
@@ -260,14 +261,14 @@ def get_transcript_youtube(transcript_list, lang):
     return transcript.translate(lang)
 
 
-def save_transcript(transcript, path_adapted, video_title, transcripts, captions, source, request):
+def save_transcript(transcript, path_adapted, video_title, transcripts, captions, source, request, dir_len):
     vtt_formatterd = WebVTTFormatter().format_transcript(transcript.fetch())
 
     vtt_system = os.path.join(BASE_DIR, path_adapted, "oer_resources",
                               video_title + "_" + transcript.language_code + ".vtt")
 
-    json_path = 'oer_resources/' + video_title + "_" + transcript.language_code + ".json"
-    vtt_path = 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
+    json_path = bsd.get_directory_resource(dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".json"
+    vtt_path = bsd.get_directory_resource(dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
 
     with open(vtt_system, 'w', encoding='utf-8') as json_file:
         json_file.write(vtt_formatterd)

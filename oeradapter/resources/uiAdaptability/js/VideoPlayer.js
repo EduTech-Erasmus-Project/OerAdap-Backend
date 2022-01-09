@@ -286,7 +286,7 @@ var fluid_1_5 = fluid_1_5 || {};
         templates: {
             videoPlayer: {
                 forceCache: true,
-                href: "oer_resources/uiAdaptability/html/videoPlayer_template.html"
+                href: "uiAdaptability/html/videoPlayer_template.html"
             }
         },
         videoTitle: "unnamed video",

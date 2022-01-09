@@ -26,7 +26,7 @@ with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
     PROD = json.loads(f.read())
 
 
-def adaptation_settings(areas, files, directory):
+def adaptation_settings(areas, files, directory, root_dirs):
     button = False
     paragraph_script = False
     video = False
@@ -46,7 +46,7 @@ def adaptation_settings(areas, files, directory):
         paragraph_script = True
         pass
     # pass
-    ba.add_files_adaptation(files, directory, button, paragraph_script, video)
+    ba.add_files_adaptation(files, directory, button, paragraph_script, video, root_dirs)
 
 
 def get_learning_objects_by_token(user_ref):
@@ -102,8 +102,8 @@ def create_learning_object(request, user_token, Serializer, areas, method):
         learning_object=learning_object
     )
 
-    files = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
-    adaptation_settings(areas, files, directory_adapted)
+    files, root_dirs = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+    adaptation_settings(areas, files, directory_adapted, root_dirs)
     bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
     learning_object.button_adaptation = True
     learning_object.save()
