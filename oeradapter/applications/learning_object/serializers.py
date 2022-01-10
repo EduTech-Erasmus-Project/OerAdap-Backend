@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, RequestApi, \
     TagAdapted
 from django.db.models import Q
+from ..helpers_functions import metadata as metadata
 
 
 class LearningObjectSerializer(serializers.ModelSerializer):
@@ -67,6 +68,8 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         count_pages, count_images, count_paragraphs, count_videos, count_audios = count_data(instance)
         # print(test)
 
+        print(metadata.get_metadata(config_adaptability.data[0]["areas"]))
+
         data = {
             "id": instance.id,
             "oa_detail": {
@@ -94,6 +97,7 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
             "image_adaptation": instance.image_adaptation,
             "paragraph_adaptation": instance.paragraph_adaptation,
             "video_adaptation": instance.video_adaptation,
+            "metadata": metadata.get_metadata(config_adaptability.data[0]["areas"])
         }
 
         page_lea_ob = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)
@@ -182,6 +186,8 @@ class ApiLearningObjectDetailSerializer(serializers.ModelSerializer):
             "image_adaptation": instance.image_adaptation,
             "paragraph_adaptation": instance.paragraph_adaptation,
             "video_adaptation": instance.video_adaptation,
+            "metadata": metadata.get_metadata(config_adaptability.data[0]["areas"]),
             "file_download": instance.file_adapted
+
         }
         return data
