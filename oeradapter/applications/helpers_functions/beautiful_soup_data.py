@@ -1,6 +1,7 @@
 import json
 from urllib.parse import urlparse
 from unipath import Path
+import pathlib
 from bs4 import BeautifulSoup
 import os
 import shortuuid
@@ -13,6 +14,20 @@ PROD = None
 with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
     PROD = json.loads(f.read())
 
+def split_path(preview_path):
+    path = os.path.normpath(preview_path)
+    path_split = path.split(os.sep)
+    path_split = path_split[:-1]
+    return path_split
+
+def get_path_preview(src, path_split):
+    attribute_src_text = str(src)
+    attribute_src_split = attribute_src_text.split("/")
+    vec_filter = list(filter(lambda x: '..' in x, attribute_src_split))
+    if len(vec_filter) > 0:
+        path_split = path_split[:-len(vec_filter)]
+    path_preview = ("/".join(path_split) + "/" + attribute_src_split[-1]).replace("http:/", "http://")
+    return path_preview
 
 def get_directory_resource(dir_len):
     dir_path = ""
@@ -34,14 +49,16 @@ def read_html_files(directory):
                 "file": entry.path,
                 "file_name": entry.name
             })"""
+    root_dirs = list()
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".html"):
+                root_dirs.append(root)
                 aux = os.path.join(root, file);
 
                 tag = generateBeautifulSoupFile(aux)
                 if "oeradapter-edutech" in tag.body.get('class', []):
-                    return files_vect, True
+                    return files_vect, root_dirs,True
                 elif(tag.body.get('class', []) == []):
                     tag.body['class'] = "oeradapter-edutech"
                 else:
@@ -60,10 +77,11 @@ def read_html_files(directory):
                 files_vect.append({
                     "file": aux,
                     "file_name": aux_path,
-                    "dir_len": len(aux_path_len_vec)
+                    "dir_len": len(aux_path_len_vec),
                 })
 
-    return files_vect, False
+    return files_vect, root_dirs,False
+
 
 
 def getUUID():
@@ -193,6 +211,8 @@ def web_scraping_p(aux_text, page_id, file):
 
 def webs_craping_img(aux_text, page_id, file, directory, request_host):
     """Vamos a extraer el alt de las imagenes y crear clases en las imagenes"""
+    path_split = split_path(page_id.preview_path)
+
     tag_identify = "img"
     attribute_img = "src"
     text_alt = ""
@@ -228,10 +248,11 @@ def webs_craping_img(aux_text, page_id, file, directory, request_host):
         else:
             data_attribute_path = str(os.path.join(request_host, directory, tag.get('src', [])))
 
+        path_preview = get_path_preview(tag.get('src', []), path_split)
 
         data_attribute = DataAttribute(
             attribute=attribute_img,
-            data_attribute=data_attribute_path,
+            data_attribute=path_preview,
             tag_page_learning_object=tag_page,
             type=tag_identify
         )
@@ -251,6 +272,9 @@ def webs_craping_img(aux_text, page_id, file, directory, request_host):
 
 def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, directory):
     """Vamos a extraer el el src de los videos y audios"""
+
+    path_split = split_path(page_id.preview_path)
+
     attribute_src = "src"
 
     for tag in aux_text.find_all(tag_identify):
@@ -260,23 +284,20 @@ def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, dire
         else:
             tag['class'] = class_uuid
 
-        # directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
-        # preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
-
         tag_page = TagPageLearningObject.objects.create(
             tag=tag_identify,
             html_text=str(tag),
             page_learning_object=page_id,
             id_class_ref=class_uuid
         )
-        # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
-        # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
-        # peticion a la base de datos
         subtag = tag.find_all('source')
         subtag = subtag[0]
-        # print(tag.find_all('source'))
-        path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
+
+
+        path_preview = get_path_preview(subtag.get('src'), path_split)
+
+        # path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
 
         if PROD['PROD']:
             path_preview = path_preview.replace("http://", "https://")
@@ -300,6 +321,9 @@ def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, dire
 
 def webs_craping_audio(aux_text, page_id, file, tag_identify, request_host, directory):
     """Vamos a extraer el el src de los videos y audios"""
+
+    path_split = split_path(page_id.preview_path)
+
     attribute_src = "src"
 
     for tag in aux_text.find_all(tag_identify):
@@ -323,9 +347,11 @@ def webs_craping_audio(aux_text, page_id, file, tag_identify, request_host, dire
         # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
+        path_preview = get_path_preview(tag.get('src', []), path_split)
+
         data_attribute = DataAttribute(
             attribute=attribute_src,
-            data_attribute=str(os.path.join(request_host, directory, tag.get('src', []))),
+            data_attribute=path_preview,
             tag_page_learning_object=tag_page,
             type=tag_identify,
             path_system=str(os.path.join(BASE_DIR, directory, tag.get('src', []))),
@@ -414,41 +440,41 @@ def templateInfusion(dir_len):
     headInfusion = """
    <!---------------------------------------Begin infusion plugin adaptability------------------------------------------------------->
 
-    <link rel="stylesheet" type="text/css" href="{0}oer_resources/uiAdaptability/lib/infusion/framework/fss/css/fss-layout.css" />
-    <link rel="stylesheet" type="text/css" href="{0}oer_resources/uiAdaptability/lib/infusion/framework/fss/css/fss-text.css" />
-    <link rel="stylesheet" type="text/css" href="{0}oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-bw-uio.css" />
-    <link rel="stylesheet" type="text/css" href="{0}oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-wb-uio.css" />
-    <link rel="stylesheet" type="text/css" href="{0}oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-by-uio.css" />
-    <link rel="stylesheet" type="text/css" href="{0}oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-yb-uio.css" />
-    <link rel="stylesheet" type="text/css" href="{0}oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-text-uio.css" />
-    <link rel="stylesheet" type="text/css" href="{0}oer_resources/uiAdaptability/lib/infusion/components/uiOptions/css/FatPanelUIOptions.css" />
+    <link rel="stylesheet" type="text/css" href="uiAdaptability/lib/infusion/framework/fss/css/fss-layout.css" />
+    <link rel="stylesheet" type="text/css" href="uiAdaptability/lib/infusion/framework/fss/css/fss-text.css" />
+    <link rel="stylesheet" type="text/css" href="uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-bw-uio.css" />
+    <link rel="stylesheet" type="text/css" href="uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-wb-uio.css" />
+    <link rel="stylesheet" type="text/css" href="uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-by-uio.css" />
+    <link rel="stylesheet" type="text/css" href="uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-theme-yb-uio.css" />
+    <link rel="stylesheet" type="text/css" href="uiAdaptability/lib/infusion/components/uiOptions/css/fss/fss-text-uio.css" />
+    <link rel="stylesheet" type="text/css" href="uiAdaptability/lib/infusion/components/uiOptions/css/FatPanelUIOptions.css" />
 
-    <link type="text/css" href="{0}oer_resources/uiAdaptability/lib/jquery-ui/css/ui-lightness/jquery-ui-1.8.14.custom.css" rel="stylesheet" />
-    <link type="text/css" href="{0}oer_resources/uiAdaptability/css/VideoPlayer.css" rel="stylesheet" />
-    <link type="text/css" href="{0}oer_resources/uiAdaptability/lib/captionator/css/captions.css" rel="stylesheet" />
+    <link type="text/css" href="uiAdaptability/lib/jquery-ui/css/ui-lightness/jquery-ui-1.8.14.custom.css" rel="stylesheet" />
+    <link type="text/css" href="uiAdaptability/css/VideoPlayer.css" rel="stylesheet" />
+    <link type="text/css" href="uiAdaptability/lib/captionator/css/captions.css" rel="stylesheet" />
 
 
     <!-- Fluid and jQuery Dependencies -->
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/lib/infusion/MyInfusion.js"></script>
+    <script type="text/javascript" src="uiAdaptability/lib/infusion/MyInfusion.js"></script>
     <!-- Utils -->
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/lib/jquery-ui/js/jquery.ui.button.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/lib/captionator/js/captionator.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/lib/mediaelement/js/mediaelement.js"></script>
+    <script type="text/javascript" src="uiAdaptability/lib/jquery-ui/js/jquery.ui.button.js"></script>
+    <script type="text/javascript" src="uiAdaptability/lib/captionator/js/captionator.js"></script>
+    <script type="text/javascript" src="uiAdaptability/lib/mediaelement/js/mediaelement.js"></script>
     <!--[if lt IE 9]>
        <script type="text/javascript" src="../lib/html5shiv/js/html5shiv.js"></script>
     <![endif]-->
     <!-- VideoPlayer dependencies -->
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer_framework.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer_showHide.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer_html5Captionator.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer_controllers.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/ToggleButton.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/MenuButton.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer_media.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer_transcript.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer_intervalEventsConductor.js"></script>
-    <script type="text/javascript" src="{0}oer_resources/uiAdaptability/js/VideoPlayer_uiOptions.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer_framework.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer_showHide.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer_html5Captionator.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer_controllers.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/ToggleButton.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/MenuButton.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer_media.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer_transcript.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer_intervalEventsConductor.js"></script>
+    <script type="text/javascript" src="uiAdaptability/js/VideoPlayer_uiOptions.js"></script>
 
     <!---------------------------------------End infusion plugin adaptability------------------------------------------------------->
         """.format(get_directory_resource(dir_len))
@@ -465,7 +491,7 @@ def templateBodyButtonInfusion(dir_len):
              <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
         <script>
             fluid.pageEnhancer({
-                tocTemplate: "%soer_resources/uiAdaptability/lib/infusion/components/tableOfContents/html/TableOfContents.html"
+                tocTemplate: "uiAdaptability/lib/infusion/components/tableOfContents/html/TableOfContents.html"
             });
         </script>
 
@@ -481,7 +507,7 @@ def templateBodyButtonInfusion(dir_len):
         <!---------------------------------------Begin infusion video script adaptability------------------------------------------------------->
            <script>
             var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
-                prefix: "%soer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
+                prefix: "uiAdaptability/lib/infusion/components/uiOptions/html/",
                 components: {
                     relay: {
                         type: "fluid.videoPlayer.relay"
@@ -490,14 +516,14 @@ def templateBodyButtonInfusion(dir_len):
                 templateLoader: {
                     options: {
                         templates: {
-                            mediaControls: "%soer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
+                            mediaControls: "uiAdaptability/html/UIOptionsTemplate-media.html"
                         }
                     }
                 }
             });
            </script>
            <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
-        """ % (get_directory_resource(dir_len), get_directory_resource(dir_len), get_directory_resource(dir_len))
+        """
     bodyInfusion = BeautifulSoup(bodyInfusion, 'html.parser')
     return bodyInfusion
 
@@ -507,7 +533,7 @@ def templateBodyVideoInfusion(dir_len):
                 <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
            <script>
                fluid.pageEnhancer({
-                   tocTemplate: "%oer_resources/uiAdaptability/lib/infusion/components/tableOfContents/html/TableOfContents.html"
+                   tocTemplate: "uiAdaptability/lib/infusion/components/tableOfContents/html/TableOfContents.html"
                });
            </script>
 
@@ -521,7 +547,7 @@ def templateBodyVideoInfusion(dir_len):
            <!---------------------------------------Begin infusion video script adaptability------------------------------------------------------->
            <script>
             var uiOptions = fluid.uiOptions.fatPanel.withMediaPanel(".flc-uiOptions", {
-                prefix: "%oer_resources/uiAdaptability/lib/infusion/components/uiOptions/html/",
+                prefix: "uiAdaptability/lib/infusion/components/uiOptions/html/",
                 components: {
                     relay: {
                         type: "fluid.videoPlayer.relay"
@@ -530,14 +556,14 @@ def templateBodyVideoInfusion(dir_len):
                 templateLoader: {
                     options: {
                         templates: {
-                            mediaControls: "%oer_resources/uiAdaptability/html/UIOptionsTemplate-media.html"
+                            mediaControls: "uiAdaptability/html/UIOptionsTemplate-media.html"
                         }
                     }
                 }
             });
            </script>
            <!---------------------------------------End infusion video script adaptability------------------------------------------------------->
-           """ % (get_directory_resource(dir_len), get_directory_resource(dir_len), get_directory_resource(dir_len))
+           """
     bodyInfusion = BeautifulSoup(bodyInfusion, 'html.parser')
     return bodyInfusion
 
