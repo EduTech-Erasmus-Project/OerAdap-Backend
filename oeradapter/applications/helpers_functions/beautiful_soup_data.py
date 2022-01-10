@@ -54,7 +54,17 @@ def read_html_files(directory):
         for file in files:
             if file.endswith(".html"):
                 root_dirs.append(root)
-                aux = os.path.join(root, file)
+                aux = os.path.join(root, file);
+
+                tag = generateBeautifulSoupFile(aux)
+                if "oeradapter-edutech" in tag.body.get('class', []):
+                    return files_vect, root_dirs,True
+                elif(tag.body.get('class', []) == []):
+                    tag.body['class'] = "oeradapter-edutech"
+                else:
+                    tag.body['class'].append("oeradapter-edutech")
+
+                generate_new_htmlFile(tag, aux)
 
                 aux_path = aux.replace(directory, '')
                 aux_path = aux_path[1:]
@@ -70,7 +80,8 @@ def read_html_files(directory):
                     "dir_len": len(aux_path_len_vec),
                 })
 
-    return files_vect, root_dirs
+    return files_vect, root_dirs,False
+
 
 
 def getUUID():
@@ -231,6 +242,12 @@ def webs_craping_img(aux_text, page_id, file, directory, request_host):
         # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
         # peticion a la base de datos
 
+        link_img = tag.get('src', [])
+        if "https://" in str(link_img) or "http://" in str(link_img):
+            data_attribute_path = str(tag.get('src', []))
+        else:
+            data_attribute_path = str(os.path.join(request_host, directory, tag.get('src', [])))
+
         path_preview = get_path_preview(tag.get('src', []), path_split)
 
         data_attribute = DataAttribute(
@@ -246,7 +263,7 @@ def webs_craping_img(aux_text, page_id, file, directory, request_host):
             text=str(text_alt),
             html_text=str(tag),
             id_ref=class_uuid,
-            path_src=str(os.path.join(request_host, directory, tag.get('src', []))),
+            path_src=data_attribute_path,
             tag_page_learning_object=tag_page
         )
 

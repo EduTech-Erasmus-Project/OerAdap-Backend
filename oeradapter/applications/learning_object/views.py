@@ -85,6 +85,10 @@ def create_learning_object(request, user_token, Serializer, areas, method):
 
     soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
+    files,root_dirs,is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+    if is_adapted == True:
+        return None, None, is_adapted
+
     learning_object = LearningObject.objects.create(
         title=soup_data.find('title').text,
         path_origin=directory_origin,
@@ -102,12 +106,14 @@ def create_learning_object(request, user_token, Serializer, areas, method):
         learning_object=learning_object
     )
 
-    files, root_dirs = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+
+    files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
     adaptation_settings(areas, files, directory_adapted, root_dirs)
+
     bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
     learning_object.button_adaptation = True
     learning_object.save()
-    return serializer, learning_object
+    return serializer, learning_object, is_adapted
 
 def dev_count(id):
     count_images_count = 0
@@ -208,8 +214,10 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         # print(self.request)
         areas = request.data['areas'].split(sep=',')
         ## metodo par aguardar
-        serializer, learning_object = create_learning_object(request, user_token, LearningObjectSerializer, areas,
+        serializer, learning_object , is_adapted = create_learning_object(request, user_token, LearningObjectSerializer, areas,
                                                              request.data['method'])
+        if is_adapted:
+            return Response({"state": "learning_Object_Adapted"}, status=status.HTTP_400_BAD_REQUEST)
 
         if request.data['method'] == "handbook":
             return Response(serializer.data)
@@ -311,9 +319,12 @@ def api_upload(request):
         try:
             api_data = RequestApi.objects.get(api_key=request.GET.get('api_key', None))
             areas = request.GET.get('adaptation', None).split(sep=',')
-            serializer, learning_object = create_learning_object(request, api_data.api_key,
+            serializer, learning_object, is_adapted = create_learning_object(request, api_data.api_key,
                                                                  ApiLearningObjectDetailSerializer,
                                                                  areas, "automatic")
+            if is_adapted:
+                return Response({"state": "learning_Object_Adapted"}, status=status.HTTP_400_BAD_REQUEST)
+
             state = automatic_adaptation(areas, request, learning_object)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
