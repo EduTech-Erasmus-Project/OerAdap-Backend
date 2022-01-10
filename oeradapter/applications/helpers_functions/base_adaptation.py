@@ -54,23 +54,25 @@ def remove_uploaded_file(path_system):
 def copy_folder(path_origin, path_src):
     return shutil.copytree(path_origin, path_src)
 
+
 def copy_folder_2(path_origin, path_src):
     directorio_Raiz = path_origin
-    new_direction  =path_src
+    new_direction = path_src
     contenidos = os.listdir(directorio_Raiz)
     for elemento in contenidos:
         try:
-            #print(f"Copiando {elemento} --> {new_direction} ... ", end="")
+            # print(f"Copiando {elemento} --> {new_direction} ... ", end="")
             extension = pathlib.Path(elemento)
             # print("\n Extencion del elemento:", extension.suffix)
             if (extension.suffix != ".html"):
                 src = os.path.join(directorio_Raiz, elemento)  # origen
                 dst = os.path.join(new_direction, elemento)  # destino
                 shutil.copy2(src, dst)
-                #print("Correcto")
+                # print("Correcto")
             return 'Se copio exitosamente'
         except:
-           return 'Nose copiaron los datos'
+            return 'Nose copiaron los datos'
+
 
 def remove_folder(path):
     """Delete folder"""
@@ -88,7 +90,10 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
         for dir in root_dirs:
             path_origin = os.path.join(BASE_DIR, 'resources', 'uiAdaptability')
             path_src = os.path.join(dir, 'uiAdaptability')
-            path_save = copy_folder(path_origin, path_src)
+            try:
+                path_save = copy_folder(path_origin, path_src)
+            except:
+                pass
             # print("path_save move folder", str(path_save))
 
     if paragraph_script:
@@ -267,8 +272,10 @@ def save_transcript(transcript, path_adapted, video_title, transcripts, captions
     vtt_system = os.path.join(BASE_DIR, path_adapted, "oer_resources",
                               video_title + "_" + transcript.language_code + ".vtt")
 
-    json_path = bsd.get_directory_resource(dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".json"
-    vtt_path = bsd.get_directory_resource(dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
+    json_path = bsd.get_directory_resource(
+        dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".json"
+    vtt_path = bsd.get_directory_resource(
+        dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
 
     with open(vtt_system, 'w', encoding='utf-8') as json_file:
         json_file.write(vtt_formatterd)
@@ -435,7 +442,8 @@ def extract_zip_file(path, file_name, file):
     return directory_origin, directory_adapted
 
 
-def compress_file(request, learning_object, count_images_count, count_paragraphs_count, count_videos_count, count_audios_count):
+def compress_file(request, learning_object, count_images_count, count_paragraphs_count, count_videos_count,
+                  count_audios_count):
     location = "Private request Api"
     browser = "Request Api"
     try:
@@ -459,7 +467,7 @@ def compress_file(request, learning_object, count_images_count, count_paragraphs
     path_folder = os.path.join(BASE_DIR, learning_object.path_adapted)
     archivo_zip = shutil.make_archive(path_folder, "zip", path_folder)
     new_path = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip').replace(
-                "\\", "/")
+        "\\", "/")
 
     if PROD['PROD']:
         new_path = new_path.replace("http://", "https://")
@@ -467,4 +475,3 @@ def compress_file(request, learning_object, count_images_count, count_paragraphs
     # print("Creado el archivo:", new_path)
 
     return new_path
-

@@ -2,7 +2,7 @@ import json
 from urllib.parse import urlparse
 from unipath import Path
 import pathlib
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 import os
 import shortuuid
 import magic
@@ -123,6 +123,19 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
             preview_path = preview_path.replace("http://", "https://")
 
         soup_data = generateBeautifulSoupFile(directory_file)
+
+        comment = Comment("""
+        This learning object has been adapted with the OerAdap tool from the EduTech group.
+        License: MIT license
+        Attribution to EduTech Project: https://edutech-project.org/
+        Created by: 
+        Claudio Maldonado - https://www.linkedin.com/in/claudiomldo/
+        Edwin Márquez - https://www.linkedin.com/in/edwinFernandoMarquez/
+        """)
+
+        soup_data.insert(0, comment)
+        soup_data.insert(0, "")
+
         pages_convert.append(soup_data)
 
         page_adapted = PageLearningObject.objects.create(

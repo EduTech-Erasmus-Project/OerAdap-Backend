@@ -20,20 +20,16 @@ def find_xml_in_directory(directory):
                 file_path = os.path.join(root, file);
                 file_name = file_path.replace(directory, '')
                 file_name = file_name[1:]
-                print("file_path", file_path)
-                print("file_name", file_name)
-
-
 
 
 def get_metadata(areas):
     metadata_filter = list()
     for area in areas:
         metadata_filter.append({
-            area: metadata[area]
+            "area": area,
+            "metadata": metadata[area]
         })
-    #print(metadata_filter)
-
+    return metadata_filter
 
 
 def save_metadata_in_xml(path_directory, areas):
