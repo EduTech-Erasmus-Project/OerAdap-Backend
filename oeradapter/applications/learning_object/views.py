@@ -85,8 +85,9 @@ def create_learning_object(request, user_token, Serializer, areas, method):
 
     soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
-    files,root_dirs,is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
-    if is_adapted == True:
+    files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+
+    if is_adapted:
         return None, None, is_adapted
 
     learning_object = LearningObject.objects.create(
@@ -113,6 +114,9 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
     learning_object.button_adaptation = True
     learning_object.save()
+
+    bsd.save_metadata_in_xml(directory_adapted, areas)
+
     return serializer, learning_object, is_adapted
 
 def dev_count(id):
