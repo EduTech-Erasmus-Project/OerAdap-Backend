@@ -2,6 +2,7 @@ import json
 from urllib.parse import urlparse
 from unipath import Path
 import pathlib
+from . import metadata as meta
 from bs4 import BeautifulSoup, Comment
 import os
 import shortuuid
@@ -14,11 +15,13 @@ PROD = None
 with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
     PROD = json.loads(f.read())
 
+
 def split_path(preview_path):
     path = os.path.normpath(preview_path)
     path_split = path.split(os.sep)
     path_split = path_split[:-1]
     return path_split
+
 
 def get_path_preview(src, path_split):
     attribute_src_text = str(src)
@@ -28,6 +31,7 @@ def get_path_preview(src, path_split):
         path_split = path_split[:-len(vec_filter)]
     path_preview = ("/".join(path_split) + "/" + attribute_src_split[-1]).replace("http:/", "http://")
     return path_preview
+
 
 def get_directory_resource(dir_len):
     dir_path = ""
@@ -58,8 +62,8 @@ def read_html_files(directory):
 
                 tag = generateBeautifulSoupFile(aux)
                 if "oeradapter-edutech" in tag.body.get('class', []):
-                    return files_vect, root_dirs,True
-                elif(tag.body.get('class', []) == []):
+                    return files_vect, root_dirs, True
+                elif (tag.body.get('class', []) == []):
                     tag.body['class'] = "oeradapter-edutech"
                 else:
                     tag.body['class'].append("oeradapter-edutech")
@@ -80,8 +84,7 @@ def read_html_files(directory):
                     "dir_len": len(aux_path_len_vec),
                 })
 
-    return files_vect, root_dirs,False
-
+    return files_vect, root_dirs, False
 
 
 def getUUID():
@@ -307,7 +310,6 @@ def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, dire
         subtag = tag.find_all('source')
         subtag = subtag[0]
 
-
         path_preview = get_path_preview(subtag.get('src'), path_split)
 
         # path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
@@ -435,7 +437,6 @@ def webs_craping_iframe(file_beautiful_soup, page_id, file):
 def generate_new_htmlFile(file_beautiful_soup, path):
     """Genera un nuevo archivo con los atributos editados"""
     html = file_beautiful_soup.prettify('utf-8')
-    # print("utf:", html)
     new_direction = path
     if os.path.exists(new_direction):
         with open(new_direction, "wb") as file:
@@ -746,3 +747,109 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
     video_bsd = BeautifulSoup(video_bsd, 'html.parser')
 
     return video_bsd
+
+
+def find_xml_in_directory(directory):
+    file_xml = None
+    bs_data_xml = None
+    type_standard = ""
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".xml"):
+                file_path = os.path.join(root, file);
+                bs_data = generateBeautifulSoupFile(file_path)
+                data = bs_data.find("lom")
+                if data is not None:
+                    file_xml = file_path
+                    bs_data_xml = bs_data
+                    type_standard = "lom"
+                elif bs_data.find("lomes:lom"):
+                    file_xml = file_path
+                    bs_data_xml = bs_data
+                    type_standard = "lomes:lom"
+
+    return file_xml, bs_data_xml, type_standard
+
+
+def save_metadata_in_xml(path_directory, areas):
+    file_xml, bs_data_xml, type_standard = find_xml_in_directory(path_directory)
+    if file_xml is None and bs_data_xml is None:
+        return
+    metadata_filter = meta.get_metadata(areas)
+
+    if type_standard == "lom":
+        lom_data = bs_data_xml.find("lom")
+        for metadata in metadata_filter:
+            for data in metadata["metadata"]:
+                bs_data = lom_data.find("accesibility")
+                if bs_data is None:
+                    lom_data.insert(-1, BeautifulSoup("<accesibility></accesibility>", 'html.parser'))
+                    bs_data = lom_data.find("accesibility")
+
+                property_data = bs_data.find(data["property"].lower())
+                if property_data is None:
+                    bs_data.append(
+                        BeautifulSoup("<" + data["property"].lower() + "></" + data["property"].lower() + ">",
+                                      'html.parser'))
+                    property_data = bs_data.find(data["property"])
+
+                try:
+                    feature_data = property_data.find(data["feature"].lower())
+                    if feature_data is None:
+                        property_data.insert(0, BeautifulSoup(
+                            "<" + data["feature"].lower() + "></" + data["feature"].lower() + ">", 'html.parser'))
+                        feature_data = property_data.find(data["feature"].lower())
+
+                    if data["type"] not in str(feature_data):
+                        feature_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
+
+                except:
+                    if data["type"] not in str(property_data) and property_data is not None:
+                        property_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
+        #print(bs_data_xml)
+        generate_new_htmlFile(bs_data_xml, file_xml)
+        return True
+    elif type_standard == "lomes:lom":
+        lom_data = bs_data_xml.find("lomes:lom")
+        for metadata in metadata_filter:
+            # print("metadata", metadata["metadata"])
+            for data in metadata["metadata"]:
+                # print("property", data["property"].lower())
+                bs_data = lom_data.find("lomes:accesibility")
+                if bs_data is None:
+                    lom_data.insert(-1, BeautifulSoup("<lomes:accesibility></lomes:accesibility>", 'html.parser'))
+                    bs_data = lom_data.find("lomes:accesibility")
+                    # print("is none ", bs_data)
+
+                property_data = bs_data.find("lomes:" + data["property"].lower())
+                if property_data is None:
+                    bs_data.append(BeautifulSoup(
+                        "<lomes:" + data["property"].lower() + "></lomes:" + data["property"].lower() + ">",
+                        'html.parser'))
+                    property_data = bs_data.find("lomes:" + data["property"])
+                    # print("property_data", data["property"].lower())
+
+                try:
+                    # print("feature", property_data)
+                    feature_data = property_data.find("lomes:" + data["feature"].lower())
+                    # print("feature", feature_data)
+                    if feature_data is None:
+                        property_data.insert(0, BeautifulSoup(
+                            "<lomes:" + data["feature"].lower() + "></lomes:" + data["feature"].lower() + ">",
+                            'html.parser'))
+                        feature_data = property_data.find("lomes:" + data["feature"].lower())
+
+                    # print("feature", str(feature_data))
+                    if data["type"] not in str(feature_data):
+                        feature_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
+
+                except:
+                    if data["type"] not in str(property_data) and property_data is not None:
+                        # print("property_data", property_data)
+                        property_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
+
+                # print("data", str(bs_data))
+        #print(bs_data_xml)
+        #print("file_xml", file_xml)
+        generate_new_htmlFile(bs_data_xml, file_xml)
+        return True

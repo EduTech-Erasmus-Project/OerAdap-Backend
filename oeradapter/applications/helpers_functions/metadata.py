@@ -12,16 +12,6 @@ except:
     print("file metadata.json not found")
 
 
-def find_xml_in_directory(directory):
-    print(directory)
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".xml"):
-                file_path = os.path.join(root, file);
-                file_name = file_path.replace(directory, '')
-                file_name = file_name[1:]
-
-
 def get_metadata(areas):
     metadata_filter = list()
     for area in areas:
