@@ -201,10 +201,18 @@ def convert_video(tag, learning_object, request):
                                                                         data_attribute.source,
                                                                         learning_object.path_adapted, request)
 
-        path_src = bsd.get_directory_resource(page_learning_object.dir_len) + path_src
+        print('Path', path_src)
+        print('path-sys', path_system)
+        print('path-pre', path_preview)
+        print('Dir', page_learning_object.dir_len)
+
+        print('path', path_src)
 
         if path_system is None and path_preview is None:
+
             return
+
+        path_src = bsd.get_directory_resource(page_learning_object.dir_len) + path_src
 
         # guardar el video como adaptado
         tag_adapted = save_tag_adapted(uid, tittle, path_src, path_preview, path_system, tag)

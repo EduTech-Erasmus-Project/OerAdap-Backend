@@ -107,7 +107,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     )
 
 
-    files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+    #files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
     adaptation_settings(areas, files, directory_adapted, root_dirs)
 
     bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
