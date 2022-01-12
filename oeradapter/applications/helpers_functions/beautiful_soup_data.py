@@ -447,8 +447,8 @@ def generate_new_htmlFile(file_beautiful_soup, path):
 
 
 def templateInfusion(dir_len):
-    print("dir_len ", dir_len)
-    print("get_directory_resource ", get_directory_resource(dir_len))
+    #print("dir_len ", dir_len)
+    #print("get_directory_resource ", get_directory_resource(dir_len))
 
     headInfusion = """
    <!---------------------------------------Begin infusion plugin adaptability------------------------------------------------------->
@@ -498,8 +498,8 @@ def templateInfusion(dir_len):
 
 
 def templateBodyButtonInfusion(dir_len):
-    print("templateBodyButtonInfusion dir_len ", dir_len)
-    print("templateBodyButtonInfusion get_directory_resource ", get_directory_resource(dir_len))
+    #print("templateBodyButtonInfusion dir_len ", dir_len)
+    #print("templateBodyButtonInfusion get_directory_resource ", get_directory_resource(dir_len))
     bodyInfusion = """ 
              <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
         <script>

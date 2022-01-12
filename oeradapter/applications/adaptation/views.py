@@ -417,7 +417,7 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
         if tag_adapted is None:
 
             div_soup_data, id_ref = bsd.templateAdaptationTag(tag_page_learning_object.id_class_ref)
-            tag = file_html.find('p', tag_page_learning_object.id_class_ref)
+            tag = file_html.find(tag_page_learning_object.tag, tag_page_learning_object.id_class_ref)
             tag.append(div_soup_data)
 
             button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
@@ -426,7 +426,7 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
             div_soup_data.insert(len(div_soup_data) - 1, button_audio_data)
 
             data = TagAdapted.objects.create(
-                type="p",
+                type=tag_page_learning_object.tag,
                 id_ref=id_ref,
                 path_src=path_src,
                 path_preview=path_preview,

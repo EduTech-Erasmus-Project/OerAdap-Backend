@@ -18,6 +18,7 @@ import speech_recognition as sr
 from pydub import AudioSegment
 import pathlib
 from ..learning_object.models import MetadataInfo
+import pyttsx3
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -143,7 +144,7 @@ def remove_button_adaptation(html_files, directory):
 
 def convertText_Audio(texo_adaptar, directory, id_ref, request):
     # Conversion de texto a audio
-    s = gTTS(str(texo_adaptar), lang="es-us")
+    """s = gTTS(str(texo_adaptar), lang="es-us")
     path_src = 'oer_resources/' + id_ref + ".mp3"
     path_system = os.path.join(BASE_DIR, directory, 'oer_resources', id_ref + ".mp3")
     path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
@@ -153,7 +154,26 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
         path_preview = path_preview.replace("http://", "https://")
 
     s.save(path_system)
-    time.sleep(10)
+    time.sleep(10)"""
+
+
+
+    path_src = 'oer_resources/' + id_ref + ".mp3"
+    path_system = os.path.join(BASE_DIR, directory, 'oer_resources', id_ref + ".mp3")
+    path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
+        "\\", "/")
+
+    if PROD['PROD']:
+        path_preview = path_preview.replace("http://", "https://")
+
+    engine = pyttsx3.init()
+    # Control the rate. Higher rate = more speed
+    engine.setProperty("rate", 150)
+    text = str(texo_adaptar)
+    engine.save_to_file(text, path_system)
+    engine.runAndWait()
+
+
     return path_src, path_system, path_preview
 
 
