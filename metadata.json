@@ -12,7 +12,7 @@
             },
             {
                 "property": "accessMode",
-                "type": "textual",
+                "type": "textual"
             }
         ],
         "button": [
@@ -97,7 +97,7 @@
         "paragraph": [
             {
                 "property": "alignmentType",
-                "type": "textComplexity",
+                "type": "textComplexity"
 
             },
             {

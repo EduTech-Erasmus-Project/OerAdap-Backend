@@ -3,11 +3,11 @@ from .settings import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["https://oeradap.edutech-project.org"]
+ALLOWED_HOSTS = ["https://oeradap.edutech-project.org", "http://localhost"]
 
-CORS_ALLOWED_ORIGINS = ["https://oeradap.edutech-project.org"]
+CORS_ALLOWED_ORIGINS = ["https://oeradap.edutech-project.org", "http://localhost"]
 
-CSRF_TRUSTED_ORIGINS = ["https://oeradap.edutech-project.org"]
+CSRF_TRUSTED_ORIGINS = ["https://oeradap.edutech-project.org", "http://localhost"]
 
 
 # Database
