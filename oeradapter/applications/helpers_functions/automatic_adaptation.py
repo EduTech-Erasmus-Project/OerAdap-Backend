@@ -10,15 +10,11 @@ from ..helpers_functions import process as process
 from ..learning_object.models import TagPageLearningObject, PageLearningObject, TagAdapted, DataAttribute, Transcript
 
 
-
-
 def adaptation(areas=None, files=None, request=None):
-    print(areas)
-    print(request)
+    pass
 
-def convertAudioToText(tag_learning_object,page,learning_object, request):
-    # print(request.data['path_system'])
 
+def convertAudioToText(tag_learning_object, page, learning_object, request):
     data_attribute = DataAttribute.objects.get(tag_page_learning_object_id=tag_learning_object.id)
 
     """Web Scraping"""
@@ -53,6 +49,7 @@ def convertAudioToText(tag_learning_object,page,learning_object, request):
 
     bsd.generate_new_htmlFile(file_html, page.path)
 
+
 def paragraph_adaptation(learning_object, request):
     tag_page_learning_object = TagPageLearningObject.objects.filter(
         Q(page_learning_object__learning_object_id=learning_object.id) & (Q(tag='p') | Q(tag='span') | Q(tag='li')))
@@ -62,8 +59,8 @@ def paragraph_adaptation(learning_object, request):
     for tag in tag_page_learning_object:
         page_learning_object = tag.page_learning_object
 
-        #threads.append(threading.Thread(target=text_to_audio, args=(tag, page_learning_object, learning_object, request)))
-        #threads.append(threading.Thread(target=text_easy_reading, args=(tag, page_learning_object)))
+        # threads.append(threading.Thread(target=text_to_audio, args=(tag, page_learning_object, learning_object, request)))
+        # threads.append(threading.Thread(target=text_easy_reading, args=(tag, page_learning_object)))
 
         th1 = threading.Thread(target=text_to_audio, args=(tag, page_learning_object, learning_object, request))
         th1.start()
@@ -71,13 +68,7 @@ def paragraph_adaptation(learning_object, request):
         th2.start()
         th1.join()
         th2.join()
-        print("tag iterator")
 
-
-        # print(page_learning_object)
-
-    print("paragraph method")
-    print(threads)
     for th in threads:
         th.start()
         th.join()
@@ -86,42 +77,43 @@ def paragraph_adaptation(learning_object, request):
 
 
 def audio_adaptation(learning_object, request):
-    tag_page_learning_object = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object_id=learning_object.id) & Q(tag='audio'))
+    tag_page_learning_object = TagPageLearningObject.objects.filter(
+        Q(page_learning_object__learning_object_id=learning_object.id) & Q(tag='audio'))
     for tag in tag_page_learning_object:
         page_learning_object = tag.page_learning_object
         th = threading.Thread(target=convertAudioToText, args=(tag, page_learning_object, learning_object, request))
         th.start()
         th.join()
-    print("audio method")
+    # print("audio method")
 
     return "success"
 
-def alt_Image_adapted(tag, page, learning_object, request):
 
+def alt_Image_adapted(tag, page, learning_object, request):
     tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object=tag.id);
 
     file_html = bsd.generateBeautifulSoupFile(page.path)
     tag_class_ref = tag_adapted_learning_object.id_ref
 
     html_img_code = file_html.find_all(class_=tag_class_ref)
-    alt_description = html_img_code[0].get('alt',[])
-    if(alt_description):
-       if(html_img_code[0].get('alt', []).isspace() == False):
-           pass
-       else:
-           print("No tiene texto", "\n")
-           img_description = process.image_description('img_resourse')
-           text_update = img_description
-           alt_db_aux = bsd.convertElementBeautifulSoup(str(tag.html_text))
-           alt_db_aux = alt_db_aux.img
-           alt_db_aux['alt'] = text_update
-           tag.html_text = str(alt_db_aux)
-           tag.save()
-           html_img_code[0]['alt'] = text_update;
+    alt_description = html_img_code[0].get('alt', [])
+    if (alt_description):
+        if (html_img_code[0].get('alt', []).isspace() == False):
+            pass
+        else:
+            # print("No tiene texto", "\n")
+            img_description = process.image_description('img_resourse')
+            text_update = img_description
+            alt_db_aux = bsd.convertElementBeautifulSoup(str(tag.html_text))
+            alt_db_aux = alt_db_aux.img
+            alt_db_aux['alt'] = text_update
+            tag.html_text = str(alt_db_aux)
+            tag.save()
+            html_img_code[0]['alt'] = text_update;
 
-           bsd.generate_new_htmlFile(file_html, page.path)
+            bsd.generate_new_htmlFile(file_html, page.path)
     else:
-        print("No tiene alt", "\n")
+        # print("No tiene alt", "\n")
         img_description = process.image_description('img_resourse')
         text_update = img_description
         alt_db_aux = bsd.convertElementBeautifulSoup(str(tag.html_text))
@@ -135,6 +127,7 @@ def alt_Image_adapted(tag, page, learning_object, request):
 
     pass
 
+
 def image_adaptation(learning_object, request):
     tag_page_learning_object = TagPageLearningObject.objects.filter(
         Q(page_learning_object__learning_object_id=learning_object.id) & Q(tag='img'))
@@ -144,8 +137,9 @@ def image_adaptation(learning_object, request):
         th.start()
         th.join()
 
-    print("image method")
+    # print("image method")
     return "success"
+
 
 def save_transcript(transcript, tag_adapted):
     Transcript.objects.create(
@@ -201,15 +195,7 @@ def convert_video(tag, learning_object, request):
                                                                         data_attribute.source,
                                                                         learning_object.path_adapted, request)
 
-        print('Path', path_src)
-        print('path-sys', path_system)
-        print('path-pre', path_preview)
-        print('Dir', page_learning_object.dir_len)
-
-        print('path', path_src)
-
         if path_system is None and path_preview is None:
-
             return
 
         path_src = bsd.get_directory_resource(page_learning_object.dir_len) + path_src
@@ -220,9 +206,8 @@ def convert_video(tag, learning_object, request):
         if data_attribute.source.find("youtube") > -1:
             # descargar subtitulos de youtube
             transcripts, captions = ba.generate_transcript_youtube(data_attribute.data_attribute, tittle,
-                                                                   learning_object.path_adapted, request, page_learning_object.dir_len)
-            print("transcripts", transcripts)
-            print("captions", captions)
+                                                                   learning_object.path_adapted, request,
+                                                                   page_learning_object.dir_len)
 
             for transcript in transcripts:
                 save_transcript(transcript, tag_adapted)
@@ -266,13 +251,10 @@ def video_adaptation(learning_object, request):
         # th = threads.append(threading.Thread(target=convert_video, args=(tag, learning_object, request)))
 
         th = threading.Thread(target=convert_video, args=(tag, learning_object, request))
-        #threads.append(th)
+        # threads.append(th)
         th.start()
         th.join()
 
-    print("video method")
-
-    print(threads)
     for th in threads:
         th.join()
 
@@ -280,12 +262,8 @@ def video_adaptation(learning_object, request):
 
 
 def text_easy_reading(tag_page_learning_object, page_learning_object):
-    print("adapted text")
-    print(tag_page_learning_object.id)
     text_content = process.easy_reading(tag_page_learning_object.html_text)
     text_content_bsd = bsd.convertElementBeautifulSoup(text_content)
-
-    print(str(text_content_bsd.get_text()))
 
     div_soup_data, id_ref = bsd.templateAdaptationTag(tag_page_learning_object.id_class_ref)
 
@@ -328,8 +306,6 @@ def text_easy_reading(tag_page_learning_object, page_learning_object):
 
 
 def text_to_audio(tag_page_learning_object, page_learning_object, learning_object, request):
-    print("adapted audio")
-    print(tag_page_learning_object.id)
     path_src, path_system, path_preview = ba.convertText_Audio(tag_page_learning_object.text,
                                                                learning_object.path_adapted,
                                                                tag_page_learning_object.id_class_ref, request)

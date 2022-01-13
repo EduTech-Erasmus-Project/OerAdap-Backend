@@ -115,9 +115,6 @@ def generateBeautifulSoupFile(html_doc):
         soup_data = BeautifulSoup(file, "html.parser")
         file.close()
         return soup_data
-        # except Exception as e:
-        # print(e)
-        # return None
 
 
 def save_filesHTML_db(files, learningObject, directory, directory_origin, request_host):
@@ -135,12 +132,6 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
     pages_convert = []
 
     for file in files:
-
-        # page_object = PageLearningObject.objects.get(
-        # pk=page.id)  # refactirizar sin hacer peticion a la base de datos
-        # print("Objeto"+str(Page_object))
-        # print(file['file'])
-
         directory_file = os.path.join(BASE_DIR, directory, file['file'])
         preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
 
@@ -449,8 +440,6 @@ def webs_craping_iframe(file_beautiful_soup, page_id, file):
     text_title = ""
 
     for tag in file_beautiful_soup.find_all(tag_identify):
-
-        # print(tag)
         if '.com' not in str(tag.get('src')):
             continue
 
@@ -512,11 +501,6 @@ def generate_new_htmlFile(file_beautiful_soup, path):
 
 
 def templateInfusion(dir_len):
-
-    """ """
-    #print("dir_len ", dir_len)
-    #print("get_directory_resource ", get_directory_resource(dir_len))
-
     headInfusion = """
    <!---------------------------------------Begin infusion plugin adaptability------------------------------------------------------->
 
@@ -565,8 +549,6 @@ def templateInfusion(dir_len):
 
 
 def templateBodyButtonInfusion(dir_len):
-    #print("templateBodyButtonInfusion dir_len ", dir_len)
-    #print("templateBodyButtonInfusion get_directory_resource ", get_directory_resource(dir_len))
     bodyInfusion = """ 
              <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
         <script>
@@ -835,7 +817,6 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                             transcripts: [
     """
     for transcript in transcripts:
-        # print(transcript['src'])
         video_bsd = video_bsd + """ 
                                                                 {
                                                                     src: "%s",
@@ -918,20 +899,17 @@ def save_metadata_in_xml(path_directory, areas):
                 except:
                     if data["type"] not in str(property_data) and property_data is not None:
                         property_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
-        #print(bs_data_xml)
+
         generate_new_htmlFile(bs_data_xml, file_xml)
         return True
     elif type_standard == "lomes:lom":
         lom_data = bs_data_xml.find("lomes:lom")
         for metadata in metadata_filter:
-            # print("metadata", metadata["metadata"])
             for data in metadata["metadata"]:
-                # print("property", data["property"].lower())
                 bs_data = lom_data.find("lomes:accesibility")
                 if bs_data is None:
                     lom_data.insert(-1, BeautifulSoup("<lomes:accesibility></lomes:accesibility>", 'html.parser'))
                     bs_data = lom_data.find("lomes:accesibility")
-                    # print("is none ", bs_data)
 
                 property_data = bs_data.find("lomes:" + data["property"].lower())
                 if property_data is None:
@@ -939,29 +917,21 @@ def save_metadata_in_xml(path_directory, areas):
                         "<lomes:" + data["property"].lower() + "></lomes:" + data["property"].lower() + ">",
                         'html.parser'))
                     property_data = bs_data.find("lomes:" + data["property"])
-                    # print("property_data", data["property"].lower())
 
                 try:
-                    # print("feature", property_data)
                     feature_data = property_data.find("lomes:" + data["feature"].lower())
-                    # print("feature", feature_data)
                     if feature_data is None:
                         property_data.insert(0, BeautifulSoup(
                             "<lomes:" + data["feature"].lower() + "></lomes:" + data["feature"].lower() + ">",
                             'html.parser'))
                         feature_data = property_data.find("lomes:" + data["feature"].lower())
 
-                    # print("feature", str(feature_data))
                     if data["type"] not in str(feature_data):
                         feature_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
 
                 except:
                     if data["type"] not in str(property_data) and property_data is not None:
-                        # print("property_data", property_data)
                         property_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
 
-                # print("data", str(bs_data))
-        #print(bs_data_xml)
-        #print("file_xml", file_xml)
         generate_new_htmlFile(bs_data_xml, file_xml)
         return True

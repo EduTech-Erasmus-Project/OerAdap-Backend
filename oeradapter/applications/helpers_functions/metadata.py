@@ -13,6 +13,12 @@ except:
 
 
 def get_metadata(areas):
+    """ Obtener metadatos segun las areas
+
+    :param str[] areas: Array de areas
+    :return:
+        - object[] metadata_filter - Array de metadatos filtrados
+    """
     metadata_filter = list()
     for area in areas:
         metadata_filter.append({
