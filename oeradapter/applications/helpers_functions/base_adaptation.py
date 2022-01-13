@@ -1,19 +1,24 @@
 import json
-
+import re
+import time
+from zipfile import ZipFile
+import webvtt
 from unipath import Path
-from django.core.files.storage import FileSystemStorage
 from . import beautiful_soup_data as bsd
 from youtube_dl import YoutubeDL
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import JSONFormatter
 from youtube_transcript_api.formatters import WebVTTFormatter
-
+from vtt_to_srt.vtt_to_srt import vtt_to_srt
+from geopy.geocoders import Nominatim
 import shutil
 import os
-from os import remove
+from os import remove, listdir
 from gtts import gTTS
 import speech_recognition as sr
 from pydub import AudioSegment
+import pathlib
+from ..learning_object.models import MetadataInfo
+import pyttsx3
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -51,6 +56,23 @@ def copy_folder(path_origin, path_src):
     return shutil.copytree(path_origin, path_src)
 
 
+def copy_folder_2(path_origin, path_src):
+    directorio_Raiz = path_origin
+    new_direction = path_src
+    contenidos = os.listdir(directorio_Raiz)
+    for elemento in contenidos:
+        try:
+            extension = pathlib.Path(elemento)
+            if (extension.suffix != ".html"):
+                src = os.path.join(directorio_Raiz, elemento)  # origen
+                dst = os.path.join(new_direction, elemento)  # destino
+                shutil.copy2(src, dst)
+                # print("Correcto")
+            return 'Se copio exitosamente'
+        except:
+            return 'Nose copiaron los datos'
+
+
 def remove_folder(path):
     """Delete folder"""
     try:
@@ -59,46 +81,47 @@ def remove_folder(path):
         print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def add_files_adaptation(html_files, directory, button=False, paragraph_script=False, video=False):
+def add_files_adaptation(html_files, directory, button=False, paragraph_script=False, video=False, root_dirs=None):
     """Add essential files of adaptation on learning object"""
 
     if button or video:
         """Add button adaptability on pages of learning objects"""
-        path_origin = os.path.join(BASE_DIR, 'resources', 'uiAdaptability')
-        path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'uiAdaptability')
-        path_save = copy_folder(path_origin, path_src)
+        for dir in root_dirs:
+            path_origin = os.path.join(BASE_DIR, 'resources', 'uiAdaptability')
+            path_src = os.path.join(dir, 'uiAdaptability')
+            try:
+                path_save = copy_folder(path_origin, path_src)
+            except:
+                pass
 
-        # print("path_save move folder", str(path_save))
+
     if paragraph_script:
         """Add paragraph script on pages of learning object"""
         path_origin = os.path.join(BASE_DIR, 'resources', 'text_adaptation')
         path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'text_adaptation')
         path_save = copy_folder(path_origin, path_src)
-        # print("path_save move folder", str(path_save))
 
     for file in html_files:
-        # directory_file = os.path.join(BASE_DIR, directory, file['file'])
         soup_file = bsd.generateBeautifulSoupFile(file['file'])
 
         if button or video:
-            headInfusion = bsd.templateInfusion()
+            headInfusion = bsd.templateInfusion(file['dir_len'])
             soup_file.head.insert(len(soup_file.head) - 1, headInfusion)
 
         if button:
-            bodyInfusion = bsd.templateBodyButtonInfusion()
+            bodyInfusion = bsd.templateBodyButtonInfusion(file['dir_len'])
             soup_file.body.insert(1, bodyInfusion)
 
         if video and button == False:
-            bodyInfusion = bsd.templateBodyVideoInfusion()
+            bodyInfusion = bsd.templateBodyVideoInfusion(file['dir_len'])
             soup_file.body.insert(1, bodyInfusion)
 
         if paragraph_script:
-            head_adaptation, body_adaptation = bsd.templateTextAdaptation()
+            head_adaptation, body_adaptation = bsd.templateTextAdaptation(file['dir_len'])
             soup_file.head.insert(len(soup_file.head) - 1, head_adaptation)
             soup_file.body.insert(len(soup_file.head) - 1, body_adaptation)
 
         bsd.generate_new_htmlFile(soup_file, file['file'])
-        # print(soup_file)
 
 
 def remove_button_adaptation(html_files, directory):
@@ -113,7 +136,7 @@ def remove_button_adaptation(html_files, directory):
 
 def convertText_Audio(texo_adaptar, directory, id_ref, request):
     # Conversion de texto a audio
-    s = gTTS(str(texo_adaptar), lang="es-us")
+    """s = gTTS(str(texo_adaptar), lang="es-us")
     path_src = 'oer_resources/' + id_ref + ".mp3"
     path_system = os.path.join(BASE_DIR, directory, 'oer_resources', id_ref + ".mp3")
     path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
@@ -123,6 +146,26 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
         path_preview = path_preview.replace("http://", "https://")
 
     s.save(path_system)
+    time.sleep(10)"""
+
+
+
+    path_src = 'oer_resources/' + id_ref + ".mp3"
+    path_system = os.path.join(BASE_DIR, directory, 'oer_resources', id_ref + ".mp3")
+    path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
+        "\\", "/")
+
+    if PROD['PROD']:
+        path_preview = path_preview.replace("http://", "https://")
+
+    engine = pyttsx3.init()
+    # Control the rate. Higher rate = more speed
+    engine.setProperty("rate", 150)
+    text = str(texo_adaptar)
+    engine.save_to_file(text, path_system)
+    engine.runAndWait()
+
+
     return path_src, path_system, path_preview
 
 
@@ -140,6 +183,7 @@ def convertAudio_Text(path_init):
         text_new = r.recognize_google(info_audio, language="es-ES")
 
     remove(audio)
+    # time.sleep(10)
     return text_new
 
 
@@ -152,50 +196,38 @@ def remove_paragraph_script(html_files):
 
 
 def download_video(video_url, type_video, source, directory_adapted, request):
-    """
-    if source.find("youtube.") > -1:
-        print("youtube.")
-        path_system, path_preview = download_video_youtube(video_url, directory_adapted, request)
-        return path_system, path_preview
-    if source.find("vimeo") > -1:
-        print("vimeo")
-        path_system, path_preview = download_video_youtube(video_url, directory_adapted, request)
-        return path_system, path_preview
-    """
-
     path_system, path_preview, path_src, tittle = download_video_youtubedl(video_url, directory_adapted, request)
     return path_system, path_preview, path_src, tittle
-
-    # print("source "+str(source.find("Waldo")))
 
 
 def download_video_youtubedl(video_url, directory_adapted, request):
     path_system = os.path.join(BASE_DIR, directory_adapted, 'oer_resources')
     ydl_opts = {
         'outtmpl': path_system + '/%(title)s.%(ext)s'.strip(),
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
         'noplaylist': True,
         'extract-audio': True,
     }
-
     try:
         with YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=True)
+            filename = ydl.prepare_filename(info_dict)
             video_title = info_dict.get('title', None)
-            path_system = os.path.join(BASE_DIR, directory_adapted, 'oer_resources', video_title + ".mp4")
+            path_system = filename
             path_preview = os.path.join(request._current_scheme_host, directory_adapted, 'oer_resources',
-                                        video_title + ".mp4").replace(
+                                        video_title + '.' + filename.split(".")[-1]).replace(
                 "\\", "/")
 
             if PROD['PROD']:
                 path_preview = path_preview.replace("http://", "https://")
 
-            path_src = 'oer_resources/' + video_title + ".mp4"
+            path_src = 'oer_resources/' + video_title + '.' + filename.split(".")[-1]
             return path_system, path_preview, path_src, video_title
     except Exception as e:
         return None, None, None, None
 
 
-def generate_transcript_youtube(video_url, video_title, path_adapted, request):
+def generate_transcript_youtube(video_url, video_title, path_adapted, request, dir_len):
     with YoutubeDL({}) as ydl:
         transcripts = []
         captions = []
@@ -211,7 +243,7 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request):
         try:
             transcript = transcript_list.find_manually_created_transcript(['es', 'en'])
             transcripts, captions = save_transcript(transcript, path_adapted, video_title, transcripts, captions,
-                                                    "manual", request)
+                                                    "manual", request, dir_len)
             if transcript.language_code != 'es':
                 transcript_es = get_transcript_youtube(transcript_list, 'es')
             elif transcript.language_code != 'en':
@@ -220,12 +252,10 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request):
             transcript_es = get_transcript_youtube(transcript_list, 'es')
             transcript_en = get_transcript_youtube(transcript_list, 'en')
 
-        print(transcript_es)
-        print(transcript_en)
         transcripts, captions = save_transcript(transcript_es, path_adapted, video_title, transcripts, captions,
-                                                "automatic/youtube", request)
+                                                "automatic/youtube", request, dir_len)
         transcripts, captions = save_transcript(transcript_en, path_adapted, video_title, transcripts, captions,
-                                                "automatic/youtube", request)
+                                                "automatic/youtube", request, dir_len)
 
         return transcripts, captions
 
@@ -235,21 +265,24 @@ def get_transcript_youtube(transcript_list, lang):
     return transcript.translate(lang)
 
 
-def save_transcript(transcript, path_adapted, video_title, transcripts, captions, source, request):
-    json_formatted = JSONFormatter().format_transcript(transcript.fetch())
+def save_transcript(transcript, path_adapted, video_title, transcripts, captions, source, request, dir_len):
     vtt_formatterd = WebVTTFormatter().format_transcript(transcript.fetch())
-    json_system = os.path.join(BASE_DIR, path_adapted, "oer_resources",
-                               video_title + "_" + transcript.language_code + ".json")
+
     vtt_system = os.path.join(BASE_DIR, path_adapted, "oer_resources",
                               video_title + "_" + transcript.language_code + ".vtt")
 
-    json_path = 'oer_resources/' + video_title + "_" + transcript.language_code + ".json"
-    vtt_path = 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
+    json_path = bsd.get_directory_resource(
+        dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".json"
+    vtt_path = bsd.get_directory_resource(
+        dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
 
-    with open(json_system, 'w', encoding='utf-8') as json_file:
-        json_file.write(json_formatted)
     with open(vtt_system, 'w', encoding='utf-8') as json_file:
         json_file.write(vtt_formatterd)
+
+    srt_file = convert_vtt_to_str(vtt_system)
+    json_system = convert_str_to_json(srt_file, path_adapted, video_title + "_" + transcript.language_code)
+
+    print("json_system ", json_system)
 
     transcripts_obj = {
         "src": json_path,
@@ -273,5 +306,171 @@ def save_transcript(transcript, path_adapted, video_title, transcripts, captions
     return transcripts, captions
 
 
+def get_object_captions_transcripts(json_src, vtt_src, language_code, language, source, json_system, vtt_system):
+    transcript = {
+        "src": json_src,
+        "type": "JSONcc",
+        "srclang": language_code,
+        "label": language,
+        "source": source,
+        "path_system": json_system,
+    }
+    caption = {
+        "src": vtt_src,
+        "type": "text/vtt",
+        "srclang": language_code,
+        "label": language,
+        "source": source,
+        "path_system": vtt_system
+    }
+    return transcript, caption
+
+
+def convert_str_to_vtt(path_str):
+    webvttF = webvtt.from_srt(path_str)
+    webvttF.save()
+    return webvttF.file
+
+
+def convert_vtt_to_str(path_vtt):
+    vtt_to_srt(path_vtt)
+    return path_vtt.replace(".vtt", ".srt")
+
+
+def convert_str_to_json(srt_string, path_adapted, file_name):
+    srt_list = []
+
+    path_json = os.path.join(BASE_DIR, path_adapted, "oer_resources", file_name + ".json")
+    srt_string = open(srt_string, 'r', encoding="utf8").read()
+    idx = 1
+
+    for line in srt_string.split('\n\n'):
+        if line != '':
+            try:
+                index = int(re.match(r'\d+', line).group())
+                if index == 0:
+                    index = idx
+                    idx = idx + 1
+            except:
+                index = idx
+                idx = idx + 1
+            try:
+                pos = re.search(r'\d+:\d+:\d+,\d+ --> \d+:\d+:\d+,\d+', line).span()
+                content = re.sub('\r?\n', ' ', line[pos[1] + 1:])
+            except:
+                pass
+            try:
+                start_time_string = re.findall(r'(\d+:\d+:\d+,\d+) --> \d+:\d+:\d+,\d+', line)[0]
+                end_time_string = re.findall(r'\d+:\d+:\d+,\d+ --> (\d+:\d+:\d+,\d+)', line)[0]
+                start_time = start_time_string.replace(",", ".")
+                end_time = end_time_string.replace(",", ".")
+            except:
+                pass
+
+            srt_list.append({
+                'index': index,
+                'inTime': start_time,
+                'outTime': end_time,
+                'transcript': content
+            })
+
+    json_object = json.dumps(srt_list, indent=2, sort_keys=False, ensure_ascii=False)
+    with open(path_json, "w", encoding="utf8") as outfile:
+        outfile.write(json_object)
+
+    return path_json
+
+
+def save_file_on_system(file, path):
+    with open(path, 'wb+', ) as file_destination:
+        for chunk in file.chunks():
+            file_destination.write(chunk)
+
+
 def download_subtitles():
     pass
+
+
+def check_files(directory_name):
+    """
+        Chequea si un directorio
+        :param directory_name:
+        :return 1 or 0:
+        """
+    if len(listdir(directory_name)) > 1:
+        return 1
+    elif len(listdir(directory_name)) == 1:
+        return 0
+
+
+def extract_zip_file(path, file_name, file):
+    """
+        Extrae un archivo zip en una ruta determinada
+        :param path:
+        :param file_name:
+        :param file:
+        :return:
+        """
+    var_name = os.path.join(path, file_name)
+    if var_name.find('.zip.zip') >= 0:
+        test_file_aux = file_name.split('.')[0]
+        test_file_aux = test_file_aux.rstrip(".zip")
+    else:
+        test_file_aux = file_name.split('.')[0]
+
+    directory_origin = os.path.join(path, file_name.split('.')[0], test_file_aux + "_origin")
+
+    with ZipFile(file, 'r') as zip_file:
+        # zip.printdir()
+        zip_file.extractall(directory_origin)
+
+    if check_files(directory_origin) == 0:
+        aux_path_o = os.path.join(directory_origin, listdir(directory_origin)[0])
+        source = aux_path_o
+        destination = directory_origin
+        files = os.listdir(source)
+        for file in files:
+            new_path = shutil.move(f"{source}/{file}", destination)
+            # print(new_path)
+        os.rmdir(aux_path_o)
+        # print("directory_name", str(directory_origin))
+
+    directory_adapted = os.path.join(path, file_name.split('.')[0], test_file_aux + "_adapted")
+    shutil.copytree(directory_origin, directory_adapted)
+
+    return directory_origin, directory_adapted
+
+
+def compress_file(request, learning_object, count_images_count, count_paragraphs_count, count_videos_count,
+                  count_audios_count):
+    location = "Private request Api"
+    browser = "Request Api"
+    try:
+        browser = str(request.data['browser'])
+        laltitud = str(request.data['latitude'])
+        longitud = str(request.data['longitude'])
+        geolocator = Nominatim(user_agent="geoapiExercises")
+        location = str(geolocator.reverse(laltitud + "," + longitud))
+    except Exception as e:
+        print(e)
+
+    metadataInfo = MetadataInfo.objects.create(
+        browser=browser,
+        country=location,
+        text_number=count_paragraphs_count,
+        video_number=count_videos_count,
+        audio_number=count_audios_count,
+        img_number=count_images_count,
+    )
+
+    path_folder = os.path.join(BASE_DIR, learning_object.path_adapted)
+    archivo_zip = shutil.make_archive(path_folder, "zip", path_folder)
+    new_path = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip').replace(
+        "\\", "/")
+
+    if PROD['PROD']:
+        new_path = new_path.replace("http://", "https://")
+
+    # print("Creado el archivo:", new_path)
+
+    return new_path

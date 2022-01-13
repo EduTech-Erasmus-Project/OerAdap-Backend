@@ -8,8 +8,6 @@ import os
 from unipath import Path
 BASE_DIR = Path(__file__).ancestor(3)
 
-#print("base dir"+str(BASE_DIR))
-
 # SECURITY WARNING: keep the secret key used in production secret!
 with open(os.path.join("../", "config.json")) as f:
     secret = json.loads(f.read())

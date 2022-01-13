@@ -1,0 +1,124 @@
+{
+        "audio": [
+            {
+                "property": "accessibilityFeatures",
+                "type": "transcript",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "ttsMarkup",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessMode",
+                "type": "textual",
+            }
+        ],
+        "button": [
+            {
+                "property": "accessibilityFeatures",
+                "type": "displayTransformability/background-color",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "displayTransformability/font-family",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "displayTransformability/font-size",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "displayTransformability/color",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "displayTransformability/word-spacing",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "displayTransformability/line-height",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "captions",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "synchronizedAudioText",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "highContrastDisplay",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "transcript",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "structuralNavigation",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "readingOrder",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "tableOfContents",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "index",
+                "feature": "resourcecontent"
+            }
+        ],
+        "image": [
+            {
+                "property": "accessibilityFeatures",
+                "type": "alternativeText",
+                "feature": "resourcecontent"
+            }
+        ],
+        "paragraph": [
+            {
+                "property": "alignmentType",
+                "type": "textComplexity",
+
+            },
+            {
+                "property": "alignmentType",
+                "type": "readingLevel"
+            },
+            {
+                "property": "accessMode",
+                "type": "auditory"
+            }
+        ],
+        "video": [
+            {
+                "property": "accessibilityFeatures",
+                "type": "caption",
+                "feature": "resourcecontent"
+            },
+            {
+                "property": "accessibilityFeatures",
+                "type": "synchronizedAudioText",
+                "feature": "resourcecontent"
+            }
+        ]
+    }
