@@ -92,6 +92,7 @@ class ImageView(RetrieveAPIView):
                     alt_db_aux = bsd.convertElementBeautifulSoup(str(tag_adapted_learning_object.html_text))
                     alt_db_aux = alt_db_aux.img
                     alt_db_aux['alt'] = text_update
+
                     tag_adapted_learning_object.html_text = str(alt_db_aux)
 
                     html_img_code[0]['alt'] = text_update;

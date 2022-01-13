@@ -42,9 +42,14 @@ def get_directory_resource(dir_len):
 
 
 def read_html_files(directory):
-    """Lectura de archivos html
-    return :
+    """Lectura de archivos html del objeto de aprendizaje
+
+    :param srt directory: Directorio raiz donde se encuentra los archivos del objeto de aprendizaje
+
+    :return : tuple(str[], str[], boolean)
+
     """
+
     files_vect = []
     """for entry in os.scandir(directory):
         if entry.path.endswith(".html"):
@@ -116,10 +121,16 @@ def generateBeautifulSoupFile(html_doc):
 
 
 def save_filesHTML_db(files, learningObject, directory, directory_origin, request_host):
-    """Lectura de archivos html,
-    guardamos cada directorio
-    de cada archivo en la base
-    de datos
+    """
+    Lectura de archivos html, guardamos cada directorio
+    de cada archivo en la base de datos
+
+    :param object files: contiene informacion de los nombre de archivos y directorios
+    :param object learningObject: objeto de aprendizaje
+    :param path directory: directorio raiz
+    :param path directory_origin: directorio de origin donde se encuentra el objeto de aprendizaje
+    :param request_host: direccion del host
+
     """
     pages_convert = []
 
@@ -199,8 +210,14 @@ def save_paragraph(tag_identify, p_text, page_id, class_uuid):
 
 
 def web_scraping_p(aux_text, page_id, file):
-    """ Exatraccion de los parrafos de cada pagina html,
+    """
+    Exatraccion de los parrafos de cada pagina html,
     se crea un ID unico, para identificar cada elemento
+
+    :param str aux_text: contiene el codigo html de la pagina
+    :param int page_id: id de la pagina
+    :param str file: directorio de la pagina
+
     """
 
     length_text = 200
@@ -226,7 +243,16 @@ def web_scraping_p(aux_text, page_id, file):
 
 
 def webs_craping_img(aux_text, page_id, file, directory, request_host):
-    """Vamos a extraer el alt de las imagenes y crear clases en las imagenes"""
+    """
+    Vamos a extraer el alt de las imagenes y crear clases en las imagenes
+
+    :param aux_text: contiene el texto html generado por BeautifulSoup
+    :param page_id: id de la pagina
+    :param file: nombre del archivo
+    :param directory:  directorio del archivo
+    :param request_host: direccion del host
+
+    """
     path_split = split_path(page_id.preview_path)
 
     tag_identify = "img"
@@ -245,6 +271,8 @@ def webs_craping_img(aux_text, page_id, file, directory, request_host):
             text_alt = tag.get('alt')
         else:
             tag['alt'] = text_alt
+
+        tag['tabindex'] = "1"
 
         tag_page = TagPageLearningObject.objects.create(
             tag=tag_identify,
@@ -287,7 +315,17 @@ def webs_craping_img(aux_text, page_id, file, directory, request_host):
 
 
 def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, directory):
-    """Vamos a extraer el el src de los videos y audios"""
+    """
+    Vamos a extraer el el src de los videos y audios
+
+    :param aux_text: contiene el texto html generado por BeautifulSoup
+    :param page_id: id de la pagina
+    :param file: nombre del archivo
+    :param tag_identify: identificador para los elementos html
+    :param request_host: direccion del host
+    :param directory: directorio del archivo
+
+    """
 
     path_split = split_path(page_id.preview_path)
 
@@ -335,7 +373,17 @@ def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, dire
 
 
 def webs_craping_audio(aux_text, page_id, file, tag_identify, request_host, directory):
-    """Vamos a extraer el el src de los videos y audios"""
+    """
+    Vamos a extraer el el src de los videos y audios
+
+    :param aux_text: contiene el texto html generado por BeautifulSoup
+    :param page_id: id de la pagina
+    :param file: nombre del archivo
+    :param tag_identify: identificador para los elementos html
+    :param request_host: direccion del host
+    :param directory: directorio del archivo
+
+    """
 
     path_split = split_path(page_id.preview_path)
 
@@ -386,7 +434,16 @@ def webs_craping_audio(aux_text, page_id, file, tag_identify, request_host, dire
 
 
 def webs_craping_iframe(file_beautiful_soup, page_id, file):
-    """Vamos a extraer el src de los iframses incrustados de videos"""
+
+    """
+    Vamos a extraer el src de los iframses incrustados de videos
+
+    :param file_beautiful_soup: contiene el texto html generado por BeautifulSoup
+    :param page_id: id de la pagina
+    :param file: directorio del archivo
+
+    """
+
     tag_identify = "iframe"
     attribute_src = "src"
     text_title = ""
@@ -435,7 +492,14 @@ def webs_craping_iframe(file_beautiful_soup, page_id, file):
 
 
 def generate_new_htmlFile(file_beautiful_soup, path):
-    """Genera un nuevo archivo con los atributos editados"""
+    """
+    Genera un nuevo archivo con los atributos editados
+
+    :param file_beautiful_soup: archivo generado por BeautifulSoup
+    :param path: directorio en donde se encuentra ubicado el archivo
+
+    """
+
     html = file_beautiful_soup.prettify('utf-8')
     new_direction = path
     if os.path.exists(new_direction):
@@ -448,6 +512,8 @@ def generate_new_htmlFile(file_beautiful_soup, path):
 
 
 def templateInfusion(dir_len):
+
+    """ """
     #print("dir_len ", dir_len)
     #print("get_directory_resource ", get_directory_resource(dir_len))
 
@@ -617,6 +683,13 @@ def templateAdaptationTag(id_class_ref):
 
 
 def templateAdaptionImage(original_tag, id_class_ref):
+    """
+    Crea un nuevo template de la adapatacion de imagenes
+
+    :param original_tag: html obtenido por una filtracion con webscraping
+    :param id_class_ref: id de referencia donde para encontrar el elemento en HTML
+
+    """
     tag_figure_new = """<figure class="exe-figure exe-image float-left" style="margin: 0; padding: 10px;text-align: center;"> 
 
       </figure>"""
@@ -638,6 +711,15 @@ def templateAdaptionImage(original_tag, id_class_ref):
 
 
 def templateAdaptedTextButton(id_class_ref, text, dir_len):
+    """
+    Crea el template para generar el boton de adaptabilidad de lectura facil
+
+    :param id_class_ref:  id de referencia donde para encontrar el elemento en HTML
+    :param text: texto alternativo
+    :param dir_len: representacion de la logitud del directorio "../../"
+
+    """
+
     button_tag_id = getUUID()
     tag_button = """
      <div class="tooltip text-container" id="{0}">
@@ -651,6 +733,14 @@ def templateAdaptedTextButton(id_class_ref, text, dir_len):
 
 
 def templateAudioTextButton(id_class_ref, text, dir_len):
+    """
+    Crear template de conversion de audio a texto con webscraping
+
+    :param id_class_ref:  id de referencia donde para encontrar el elemento en HTML
+    :param text: texto alternativo
+    :param dir_len: representacion de la logitud del directorio "../../"
+    """
+
     button_tag_id = getUUID()
     tag_button = """
     <div class="tooltip text-container" id="{0}">
@@ -663,6 +753,14 @@ def templateAudioTextButton(id_class_ref, text, dir_len):
 
 
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
+
+    """
+    Crea un template que envuelve el audio en una clase para adaptarla al HTML
+
+    :param original_tag_audio: texto HTLM que contiene la etiqueta audio <audio>...</audio>
+    :param id_class_ref: id de referencia donde para encontrar el elemento en HTML
+
+    """
     class_aux = 'class="' + str(id_class_ref) + '"'
     tag_figure_new = """<div """ + class_aux + """id="ref_adapted" style="text-align: justify;">""" + str(
         original_tag_audio) + """
@@ -672,6 +770,14 @@ def templateAdaptedAudio(original_tag_audio, id_class_ref):
 
 
 def templateAdaptedAudioButton(id_class_ref, audio_src, dir_len):
+    """
+    Se crea un template para generar el boton de texto a audio
+
+    :param id_class_ref: id de referencia donde para encontrar el elemento en HTML
+    :param audio_src: path src donde se encuentra ubicado el audio
+    :param dir_len:  representacion de la logitud del directorio "../../"
+
+    """
     button_tag_id = getUUID()
     tag_audio = """
     <div class="tooltip audio-container" id="{0}">
@@ -684,6 +790,12 @@ def templateAdaptedAudioButton(id_class_ref, audio_src, dir_len):
 
 
 def convertElementBeautifulSoup(html_code):
+    """
+    Pasar codigo HTML con BeautifulSoup
+
+    :param html_code: texto en HTML para convertirlo con BeautifulSoup
+
+    """
     return BeautifulSoup(html_code, 'html.parser')
 
 
