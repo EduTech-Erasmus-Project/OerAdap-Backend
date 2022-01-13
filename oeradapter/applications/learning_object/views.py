@@ -119,6 +119,18 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     return serializer, learning_object, is_adapted
 
 def dev_count(id):
+    """
+    Devuelve el numero de elementos adaptados
+
+    :param entero id: el id del objeto de aprendizaje
+
+    :variable entera count_images_count: almacena el numero de imagenes adaptadas
+    :variable entera count_paragraphs_count: almacena el numero de parrafos adaptadas
+    :variable entera count_videos_count: almacena el numero de videos adaptadas
+    :variable entera count_audios_count: almacena el numero de audios adaptadas
+
+    :return : enteros
+    """
     count_images_count = 0
     count_paragraphs_count = 0
     count_videos_count = 0
