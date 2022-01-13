@@ -30,7 +30,6 @@ def adaptation_settings(areas, files, directory, root_dirs):
     button = False
     paragraph_script = False
     video = False
-    # print(areas)
     if 'image' in areas:
         pass
     if 'video' in areas:
@@ -215,7 +214,6 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         else:
             user_token = str(shortuuid.ShortUUID().random(length=64))
 
-        # print(self.request)
         areas = request.data['areas'].split(sep=',')
         ## metodo par aguardar
         serializer, learning_object , is_adapted = create_learning_object(request, user_token, LearningObjectSerializer, areas,
@@ -245,8 +243,6 @@ class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
 
     def get(self, request, pk=None):
         if 'HTTP_AUTHORIZATION' in request.META:
-            # print(request.META['HTTP_AUTHORIZATION'])
-            # data = LearningObject.objects.filter(user_ref=request.META['HTTP_AUTHORIZATION'], pk=pk)
             data = get_object_or_404(LearningObject, pk=pk, user_ref=request.META['HTTP_AUTHORIZATION'])
 
             expired_on = data.expires_at.replace(tzinfo=utc)

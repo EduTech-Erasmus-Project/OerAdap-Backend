@@ -62,9 +62,7 @@ def copy_folder_2(path_origin, path_src):
     contenidos = os.listdir(directorio_Raiz)
     for elemento in contenidos:
         try:
-            # print(f"Copiando {elemento} --> {new_direction} ... ", end="")
             extension = pathlib.Path(elemento)
-            # print("\n Extencion del elemento:", extension.suffix)
             if (extension.suffix != ".html"):
                 src = os.path.join(directorio_Raiz, elemento)  # origen
                 dst = os.path.join(new_direction, elemento)  # destino
@@ -95,21 +93,16 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
                 path_save = copy_folder(path_origin, path_src)
             except:
                 pass
-            # print("path_save move folder", str(path_save))
+
 
     if paragraph_script:
         """Add paragraph script on pages of learning object"""
         path_origin = os.path.join(BASE_DIR, 'resources', 'text_adaptation')
         path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'text_adaptation')
         path_save = copy_folder(path_origin, path_src)
-        # print("path_save move folder", str(path_save))
 
     for file in html_files:
-        # directory_file = os.path.join(BASE_DIR, directory, file['file'])
-
         soup_file = bsd.generateBeautifulSoupFile(file['file'])
-        # print("file directory ", file['file'])
-        # print("soup_file ", soup_file)
 
         if button or video:
             headInfusion = bsd.templateInfusion(file['dir_len'])
@@ -129,7 +122,6 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
             soup_file.body.insert(len(soup_file.head) - 1, body_adaptation)
 
         bsd.generate_new_htmlFile(soup_file, file['file'])
-        # print(soup_file)
 
 
 def remove_button_adaptation(html_files, directory):
@@ -204,21 +196,8 @@ def remove_paragraph_script(html_files):
 
 
 def download_video(video_url, type_video, source, directory_adapted, request):
-    """
-    if source.find("youtube.") > -1:
-        print("youtube.")
-        path_system, path_preview = download_video_youtube(video_url, directory_adapted, request)
-        return path_system, path_preview
-    if source.find("vimeo") > -1:
-        print("vimeo")
-        path_system, path_preview = download_video_youtube(video_url, directory_adapted, request)
-        return path_system, path_preview
-    """
-
     path_system, path_preview, path_src, tittle = download_video_youtubedl(video_url, directory_adapted, request)
     return path_system, path_preview, path_src, tittle
-
-    # print("source "+str(source.find("Waldo")))
 
 
 def download_video_youtubedl(video_url, directory_adapted, request):
