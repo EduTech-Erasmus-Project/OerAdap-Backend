@@ -760,6 +760,7 @@ def templateAdaptedAudioButton(id_class_ref, audio_src, dir_len):
     :param dir_len:  representacion de la logitud del directorio "../../"
 
     """
+    audio_src = get_directory_resource(dir_len)+audio_src
     button_tag_id = getUUID()
     tag_audio = """
     <div class="tooltip audio-container" id="{0}">

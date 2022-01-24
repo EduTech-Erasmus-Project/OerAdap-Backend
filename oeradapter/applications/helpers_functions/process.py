@@ -7,7 +7,7 @@ def easy_reading(text_content):
     :return: Retorno un string de una etiqueta parrafo en html.
     """
 
-    text_content = adaptar_texto(text_content)
+    text_content = "<p>hola mundo, como estan hoy.</p>"
 
     return text_content
 

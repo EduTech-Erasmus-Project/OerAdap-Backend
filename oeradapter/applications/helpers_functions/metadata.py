@@ -8,8 +8,8 @@ try:
     with open(os.path.join(Path(__file__).ancestor(4), "metadata.json")) as f:
         metadata = json.loads(f.read())
         f.close()
-except:
-    print("file metadata.json not found")
+except Exception as e:
+    print("file metadata.json not found", e)
 
 
 def get_metadata(areas):
@@ -19,8 +19,13 @@ def get_metadata(areas):
     :return:
         - object[] metadata_filter - Array de metadatos filtrados
     """
+    # print("areas", areas)
+    # print("metadata", metadata)
+
     metadata_filter = list()
     for area in areas:
+        # print("area", area)
+        # print("area in array", metadata[area])
         metadata_filter.append({
             "area": area,
             "metadata": metadata[area]
