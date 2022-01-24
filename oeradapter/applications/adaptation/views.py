@@ -131,7 +131,6 @@ class IframeView(RetrieveAPIView):
         pages = TagPageLearningObject.objects.filter(Q(page_learning_object_id=pk) & (Q(tag='iframe') | Q(tag='video')))
         pages = self.get_serializer(pages, many=True)
 
-
         return Response(pages.data)
 
 
@@ -286,7 +285,6 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                     tag_adapted.html_text = request.data['html_text']
             if 'file' in request.data:
                 if (tag_adapted.path_system != '') and (tag_adapted.path_system is not None):
-
                     ba.remove_uploaded_file(tag_adapted.path_system)
                 file = request.data['file']
                 file._name = file.name.replace(" ", "")
@@ -484,10 +482,14 @@ class VideoGenerateCreateAPIView(CreateAPIView):
 
             if data_attribute.source == "local":
                 # generar subtititulos automaticamente
+
                 return Response({"message": "Local translations under development", "code": "developing"},
                                 status=status.HTTP_200_OK)
             else:
                 page_learning_object = tag.page_learning_object
+
+                tag.adapting = True
+                tag.save()
 
                 path_system, path_preview, path_src, tittle = ba.download_video(data_attribute.data_attribute,
                                                                                 data_attribute.type,
@@ -497,6 +499,8 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                 path_src = bsd.get_directory_resource(page_learning_object.dir_len) + path_src
 
                 if path_system is None and path_preview is None:
+                    tag.adapting = False
+                    tag.save()
                     return Response({"status": False, "code": "video_not_found",
                                      "message": "The source does not allow video download"},
                                     status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -519,7 +523,8 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                     if data_attribute.source.find("youtube") > -1:
 
                         transcripts, captions = ba.generate_transcript_youtube(data_attribute.data_attribute, tittle,
-                                                                               learning_object.path_adapted, request, page_learning_object.dir_len)
+                                                                               learning_object.path_adapted, request,
+                                                                               page_learning_object.dir_len)
 
                         for transcript in transcripts:
                             save_transcript(transcript, tag_adapted)
@@ -536,6 +541,9 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                         serializer = TagsVideoSerializer(tag)
 
                         save_data_attribute(data_attribute, path_src, path_system, path_preview)
+
+                        tag.adapting = False
+                        tag.save()
 
                         if len(transcripts) > 0 and len(captions) > 0:
                             return Response({"data": serializer.data, "message": "Transcripts downloaded",
@@ -554,6 +562,10 @@ class VideoGenerateCreateAPIView(CreateAPIView):
                         tag_adaptation.replace_with(video_template)
                         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
                         serializer = TagsVideoSerializer(tag)
+
+                        tag.adapting = False
+                        tag.save()
+
                         return Response({"data": serializer.data, "message": "The source has no translations",
                                          "code": "no_suported_transcript"}, status=status.HTTP_200_OK)
 
@@ -716,7 +728,7 @@ class VideoGenericAPIView(GenericAPIView):
 
 @api_view(['GET'])
 def transcript_api_view(request, pk=None):
-    #print(request)
+    # print(request)
     if request.method == 'GET':
         transcript = get_object_or_404(Transcript, pk=pk)
 
@@ -725,12 +737,9 @@ def transcript_api_view(request, pk=None):
             return Response({"id": transcript.id, "transcript": data}, status=status.HTTP_200_OK)
 
 
-class comprimeFileZip(RetrieveAPIView):
-    def get_queryset(self):
-        page_learning_object = PageLearningObject.objects.all()
-        return page_learning_object
-
-    def post(self, request, pk):
+@api_view(['POST'])
+def comprimeFileZip(request, pk=None):
+    if request.method == 'POST':
         """Recibe latitud, longitud y user_agend """
         """generamos le zip del nuevo objeto de aprendizaje adaptado"""
         learning_object = LearningObject.objects.get(pk=pk)
@@ -739,7 +748,7 @@ class comprimeFileZip(RetrieveAPIView):
             learning_object.id)
 
         new_path = ba.compress_file(request, learning_object, count_images_count,
-                                                     count_paragraphs_count, count_videos_count, count_audios_count)
+                                    count_paragraphs_count, count_videos_count, count_audios_count)
         learning_object.file_adapted = new_path
         learning_object.save()
         return Response({'path': new_path, 'status': 'create zip'}, status=status.HTTP_200_OK)

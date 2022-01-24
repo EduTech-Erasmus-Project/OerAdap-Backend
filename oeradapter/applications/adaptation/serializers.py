@@ -110,7 +110,7 @@ class TagsVideoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TagPageLearningObject
-        fields = ['id', 'text', 'html_text', 'page_learning_object', 'attributes', 'tags_adapted', ]
+        fields = ['id', 'text', 'html_text', 'page_learning_object', 'adapting', 'attributes', 'tags_adapted', ]
 
 
 class LearningObjectSerializerAdaptation(serializers.ModelSerializer):

@@ -94,7 +94,6 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
             except:
                 pass
 
-
     if paragraph_script:
         """Add paragraph script on pages of learning object"""
         path_origin = os.path.join(BASE_DIR, 'resources', 'text_adaptation')
@@ -136,7 +135,7 @@ def remove_button_adaptation(html_files, directory):
 
 def convertText_Audio(texo_adaptar, directory, id_ref, request):
     # Conversion de texto a audio
-    """s = gTTS(str(texo_adaptar), lang="es-us")
+    s = gTTS(str(texo_adaptar), lang="es-us")
     path_src = 'oer_resources/' + id_ref + ".mp3"
     path_system = os.path.join(BASE_DIR, directory, 'oer_resources', id_ref + ".mp3")
     path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
@@ -146,10 +145,9 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
         path_preview = path_preview.replace("http://", "https://")
 
     s.save(path_system)
-    time.sleep(10)"""
+    # time.sleep(10)
 
-
-
+    """
     path_src = 'oer_resources/' + id_ref + ".mp3"
     path_system = os.path.join(BASE_DIR, directory, 'oer_resources', id_ref + ".mp3")
     path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
@@ -164,7 +162,7 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
     text = str(texo_adaptar)
     engine.save_to_file(text, path_system)
     engine.runAndWait()
-
+    """
 
     return path_src, path_system, path_preview
 
@@ -212,17 +210,20 @@ def download_video_youtubedl(video_url, directory_adapted, request):
         with YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=True)
             filename = ydl.prepare_filename(info_dict)
-            video_title = info_dict.get('title', None)
+            title = re.sub("[^A-Za-z0-9]", " ", info_dict.get('title', None))
             path_system = filename
+            path_split = path_system.split(os.sep)
+
             path_preview = os.path.join(request._current_scheme_host, directory_adapted, 'oer_resources',
-                                        video_title + '.' + filename.split(".")[-1]).replace(
+                                        path_split[-1]).replace(
                 "\\", "/")
 
             if PROD['PROD']:
                 path_preview = path_preview.replace("http://", "https://")
 
-            path_src = 'oer_resources/' + video_title + '.' + filename.split(".")[-1]
-            return path_system, path_preview, path_src, video_title
+            path_src = 'oer_resources/' + path_split[-1]
+
+            return path_system, path_preview, path_src, title
     except Exception as e:
         return None, None, None, None
 
@@ -276,7 +277,9 @@ def save_transcript(transcript, path_adapted, video_title, transcripts, captions
     vtt_path = bsd.get_directory_resource(
         dir_len) + 'oer_resources/' + video_title + "_" + transcript.language_code + ".vtt"
 
-    with open(vtt_system, 'w', encoding='utf-8') as json_file:
+    print("path", vtt_system)
+
+    with open(vtt_system, 'w+', encoding='utf-8') as json_file:
         json_file.write(vtt_formatterd)
 
     srt_file = convert_vtt_to_str(vtt_system)
