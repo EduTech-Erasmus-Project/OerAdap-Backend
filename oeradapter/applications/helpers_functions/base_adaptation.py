@@ -170,6 +170,23 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
 
 
 def convertAudio_Text(path_init):
+
+    #Verificar la extencion del archivo.
+    #import os
+
+    root, extension = os.path.splitext(path_init)
+    if extension == '.mp3':
+        print('Es MP3')
+    elif extension == '.webm':
+        print('Es WEBM')
+    elif extension == ".ogg":
+        print('Es OGG')
+    elif extension == ".wav":
+        print('Es WAV')
+    elif extension == ".flv":
+        print('Es FLV')
+
+
     audioI = path_init.replace('\\\\', '\\')
     audio = path_init + ".wav"
 
