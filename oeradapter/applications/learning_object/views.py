@@ -106,8 +106,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
         learning_object=learning_object
     )
 
-
-    #files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+    # files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
     adaptation_settings(areas, files, directory_adapted, root_dirs)
 
     bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
@@ -117,6 +116,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     bsd.save_metadata_in_xml(directory_adapted, areas)
 
     return serializer, learning_object, is_adapted
+
 
 def dev_count(id):
     """
@@ -149,13 +149,14 @@ def dev_count(id):
 
     return count_images_count, count_paragraphs_count, count_videos_count, count_audios_count
 
+
 def automatic_adaptation(areas, request, learning_object):
     threads = list()
     if 'paragraph' in areas:
         aa.paragraph_adaptation(learning_object, request)
-        #th = threading.Thread(name="paragraph", target=aa.paragraph_adaptation, args=(learning_object, request))
-        #threads.append(th)
-        #th.start()
+        # th = threading.Thread(name="paragraph", target=aa.paragraph_adaptation, args=(learning_object, request))
+        # threads.append(th)
+        # th.start()
         learning_object.paragraph_adaptation = True
         learning_object.save()
     if 'audio' in areas:
@@ -168,9 +169,9 @@ def automatic_adaptation(areas, request, learning_object):
         learning_object.save()
     if 'video' in areas:
         aa.video_adaptation(learning_object, request)
-        #th = threading.Thread(name="video", target=aa.video_adaptation, args=(learning_object, request))
-        #threads.append(th)
-        #th.start()
+        # th = threading.Thread(name="video", target=aa.video_adaptation, args=(learning_object, request))
+        # threads.append(th)
+        # th.start()
         learning_object.video_adaptation = True
         learning_object.save()
 
@@ -227,9 +228,14 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
             user_token = str(shortuuid.ShortUUID().random(length=64))
 
         areas = request.data['areas'].split(sep=',')
+
+        if len(areas) <= 0:
+            return Response({"state": "Array Areas Empty", "code": "areas_empty"}, status=status.HTTP_400_BAD_REQUEST)
+
         ## metodo par aguardar
-        serializer, learning_object , is_adapted = create_learning_object(request, user_token, LearningObjectSerializer, areas,
-                                                             request.data['method'])
+        serializer, learning_object, is_adapted = create_learning_object(request, user_token, LearningObjectSerializer,
+                                                                         areas,
+                                                                         request.data['method'])
         if is_adapted:
             return Response({"state": "learning_Object_Adapted"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -332,8 +338,8 @@ def api_upload(request):
             api_data = RequestApi.objects.get(api_key=request.GET.get('api_key', None))
             areas = request.GET.get('adaptation', None).split(sep=',')
             serializer, learning_object, is_adapted = create_learning_object(request, api_data.api_key,
-                                                                 ApiLearningObjectDetailSerializer,
-                                                                 areas, "automatic")
+                                                                             ApiLearningObjectDetailSerializer,
+                                                                             areas, "automatic")
             if is_adapted:
                 return Response({"state": "learning_Object_Adapted"}, status=status.HTTP_400_BAD_REQUEST)
 
