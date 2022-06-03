@@ -931,7 +931,7 @@ def save_metadata_in_xml(path_directory, areas):
                 elif not bs_data_descripcion == None and data["property"].lower() == "alignmenttype":
                     bs_data_descripcion_ux = bs_data_descripcion.find("purpose")
                     if bs_data_descripcion_ux is None :
-                        bs_data_classification.insert(0, BeautifulSoup(" <purpose uniqueElementName='purpose'></purpose>", 'html.parser'))
+                        bs_data_classification.insert(0, BeautifulSoup("<purpose uniqueElementName='purpose'></purpose>", 'html.parser'))
                         bs_data_descripcion = bs_data_classification
                         bs_data_descripcion.append("purpose")
                         bs_data_descripcion.append(
