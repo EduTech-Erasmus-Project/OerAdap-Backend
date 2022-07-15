@@ -48,10 +48,9 @@ pydub==0.25.1
 pyOpenSSL==22.0.0
 pyparsing==2.4.7
 pypiwin32==223
-python-magic-bin==0.4.14
+python-magic==0.4.24
 pyttsx3==2.90
 pytz==2021.1
-pywin32==304
 redis==4.3.4
 requests==2.26.0
 ruamel.yaml==0.17.16
