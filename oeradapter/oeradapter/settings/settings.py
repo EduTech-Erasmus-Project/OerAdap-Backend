@@ -46,6 +46,7 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'drf_yasg',
     'corsheaders',
+    'channels',
 ]
 
 INSTALLED_APPS = DJANGO_APPS+LOCAL_APPS+THIRD_PARTY_APPS
@@ -83,7 +84,17 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'oeradapter.wsgi.application'
+ASGI_APPLICATION = "oeradapter.asgi.application"
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(get_secret_config('REDIS_HOST'), get_secret_config('REDIS_PORT'))],
+        },
+    },
+}
 
 
 

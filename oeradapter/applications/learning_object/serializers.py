@@ -61,11 +61,13 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         # config_adaptability = AdaptationLearningObject.objects.get(pk=instance.id)
 
-        config_adaptability = AdaptationLearningObject.objects.filter(learning_object=instance.id)
-        config_adaptability = AdaptationLearningObjectSerializer(config_adaptability, many=True)
+        config_adaptability = AdaptationLearningObject.objects.get(learning_object=instance.id)
+        config_adaptability = AdaptationLearningObjectSerializer(config_adaptability)
 
         # count data
         count_pages, count_images, count_paragraphs, count_videos, count_audios = count_data(instance)
+
+        print("adap", config_adaptability.data["areas"])
 
         data = {
             "id": instance.id,
@@ -84,7 +86,7 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
                 "videos": count_videos,
                 "audios": count_audios
             },
-            "config_adaptability": config_adaptability.data[0],
+            "config_adaptability": config_adaptability.data,
             # "pages_adapted": pages_adapted.data,
             # "pages_origin": pages_origin.data,
             "file_download": instance.file_adapted,
@@ -94,7 +96,7 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
             "image_adaptation": instance.image_adaptation,
             "paragraph_adaptation": instance.paragraph_adaptation,
             "video_adaptation": instance.video_adaptation,
-            "metadata": metadata.get_metadata(config_adaptability.data[0]["areas"])
+            "metadata": metadata.get_metadata(config_adaptability.data["areas"])
         }
 
         page_lea_ob = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)
