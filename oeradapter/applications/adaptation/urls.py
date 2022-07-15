@@ -19,4 +19,5 @@ urlpatterns = [
     path('adapter/video/subtitle/generate/<int:pk>', views.VideoGenerateCreateAPIView.as_view()),
     path('adapter/video/subtitle/add/<int:pk>', views.VideoAddCreateAPIView.as_view()),
     path('adapter/gettranscript/<int:pk>', views.transcript_api_view),
+    path('adapter/updatetranscript/<int:pk>', views.update_transcript_api_view),
 ]
