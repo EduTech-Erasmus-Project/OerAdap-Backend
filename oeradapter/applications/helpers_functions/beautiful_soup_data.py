@@ -871,68 +871,230 @@ def save_metadata_in_xml(path_directory, areas):
         return
     metadata_filter = meta.get_metadata(areas)
 
-    if type_standard == "lom":
-        lom_data = bs_data_xml.find("lom")
+    if type_standard == "lom" or type_standard == "lomes:lom":
+        if type_standard =="lom":
+            lom_data = bs_data_xml.find("lom")
+        elif type_standard =="lomes:lom":
+            lom_data = bs_data_xml.find("lomes:lom")
+
         for metadata in metadata_filter:
             for data in metadata["metadata"]:
+
                 bs_data = lom_data.find("accesibility")
-                if bs_data is None:
+                if bs_data is None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     lom_data.insert(-1, BeautifulSoup("<accesibility></accesibility>", 'html.parser'))
                     bs_data = lom_data.find("accesibility")
 
+                    # Creacion de la descripcion de accesibilidad
+                    bs_data_descripcion = bs_data.find("description")
+                    if bs_data_descripcion is None:
+                        # Insertar la descripcion para la etiqueta de accesibilidad
+                        bs_data.insert(0, BeautifulSoup("<description language='es'> Adaptado para accesibilidad </description>", "html.parser"))
+
+                elif not bs_data == None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                    # Creacion de la descripcion de accesibilidad
+                    bs_data_descripcion = bs_data.find("description")
+                    if bs_data_descripcion is None:
+                        # Insertar la descripcion para la etiqueta de accesibilidad
+                        bs_data.insert(0, BeautifulSoup("<description language='es'> Adaptado para accesibilidad </description>", "html.parser"))
+
                 property_data = bs_data.find(data["property"].lower())
-                if property_data is None:
+                if property_data is None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     bs_data.append(
                         BeautifulSoup("<" + data["property"].lower() + "></" + data["property"].lower() + ">",
                                       'html.parser'))
-                    property_data = bs_data.find(data["property"])
+                elif not property_data == None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                    pass
 
                 try:
-                    feature_data = property_data.find(data["feature"].lower())
-                    if feature_data is None:
-                        property_data.insert(0, BeautifulSoup(
-                            "<" + data["feature"].lower() + "></" + data["feature"].lower() + ">", 'html.parser'))
-                        feature_data = property_data.find(data["feature"].lower())
-
-                    if data["type"] not in str(feature_data):
-                        feature_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
-
+                    feature_data = property_data.find(data["property"])
+                    if data["type"] not in str(feature_data)  and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                        feature_data.append(
+                            BeautifulSoup(""" <value uniqueElementName="value">%s</value>""" % data["type"],
+                                          'html.parser'))
                 except:
-                    if data["type"] not in str(property_data) and property_data is not None:
-                        property_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
+                    if data["type"] not in str(property_data) and property_data is not None  and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                        property_data.append(
+                            BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                          'html.parser'))
+
+                #Etiqueta classification
+                bs_data_descripcion = lom_data.find("classification")
+                if bs_data_descripcion is None and data["property"].lower() == "alignmenttype":
+                    lom_data.insert(-1,BeautifulSoup("<classification></classification>", 'html.parser'))
+                    bs_data_classification = lom_data.find("classification")
+                    bs_data_classification.insert(0,BeautifulSoup(" <purpose uniqueElementName='purpose'></purpose>", 'html.parser'))
+                    bs_data_purpose = bs_data_classification.find("purpose")
+                    bs_data_purpose.append(
+                        BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                      'html.parser'))
+                elif not bs_data_descripcion == None and data["property"].lower() == "alignmenttype":
+                    bs_data_descripcion_ux = bs_data_descripcion.find("purpose")
+                    if bs_data_descripcion_ux is None :
+                        bs_data_classification.insert(0, BeautifulSoup("<purpose uniqueElementName='purpose'></purpose>", 'html.parser'))
+                        bs_data_descripcion = bs_data_classification
+                        bs_data_descripcion.append("purpose")
+                        bs_data_descripcion.append(
+                            BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                          'html.parser'))
+                    else:
+                        bs_data_descripcion.append(
+                        BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                      'html.parser'))
+
+                #etiqueta annotation ?
+                bs_annotation = lom_data.find("annotation")
+                if bs_annotation is None and data["property"].lower() == "accessmode":
+                    lom_data.insert(-1, BeautifulSoup("<annotation></annotation>", 'html.parser'))
+                    bs_accessmode = lom_data.find("annotation")
+                    bs_accessmode_aux = bs_accessmode.find("accessmode")
+                    if bs_accessmode_aux is None:
+                        bs_accessmode.append(BeautifulSoup("<accessmode></accessmode>", 'html.parser'))
+                        bs_accessmode_ux = bs_accessmode.find("accessmode")
+                        bs_accessmode_ux.append(
+                            BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                          'html.parser')
+                        );
+                    else:
+                        bs_accessmode_ux.append(
+                            BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                          'html.parser')
+                        );
+                elif not bs_annotation == None and data["property"].lower() == "accessmode":
+                    bs_accessmode = bs_annotation.find("accessmode")
+                    if bs_accessmode is None:
+                        bs_annotation.append(BeautifulSoup("  <accessmode></accessmode>", 'html.parser'))
+                        bs_accessmode_ux = bs_annotation.find("accessmode")
+                        bs_accessmode_ux.append(
+                            BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                          'html.parser')
+                        );
+                    else:
+                        bs_accessmode_ux.append(
+                            BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                          'html.parser')
+                        );
 
         generate_new_htmlFile(bs_data_xml, file_xml)
         return True
-    elif type_standard == "lomes:lom":
+
+
+def codeAxuliarLomesRespla():
+       # elif type_standard == "lomes:lom":
+        bs_data_xml = ""
+        metadata_filter =""
         lom_data = bs_data_xml.find("lomes:lom")
         for metadata in metadata_filter:
             for data in metadata["metadata"]:
+
+                # Etoqueta accesibility
                 bs_data = lom_data.find("lomes:accesibility")
-                if bs_data is None:
+                if bs_data is None and (
+                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     lom_data.insert(-1, BeautifulSoup("<lomes:accesibility></lomes:accesibility>", 'html.parser'))
                     bs_data = lom_data.find("lomes:accesibility")
 
-                property_data = bs_data.find("lomes:" + data["property"].lower())
-                if property_data is None:
-                    bs_data.append(BeautifulSoup(
-                        "<lomes:" + data["property"].lower() + "></lomes:" + data["property"].lower() + ">",
-                        'html.parser'))
-                    property_data = bs_data.find("lomes:" + data["property"])
+                    # Creacion de la descripcion de accesibilidad
+                    bs_data_descripcion = bs_data.find("lomes:description")
+                    if bs_data_descripcion is None:
+                        # Insertar la descripcion para la etiqueta de accesibilidad
+                        bs_data.insert(0, BeautifulSoup(
+                            "<lomes:description language='es'> Adaptado para accesibilidad </lomes:description>",
+                            "html.parser"))
+
+                elif not bs_data == None and (
+                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                    # Creacion de la descripcion de accesibilidad
+                    bs_data_descripcion = bs_data.find("lomes:description")
+                    if bs_data_descripcion is None:
+                        # Insertar la descripcion para la etiqueta de accesibilidad
+                        bs_data.insert(0, BeautifulSoup(
+                            "<lomes:description language='es'> Adaptado para accesibilidad </lomes:description>",
+                            "html.parser"))
+
+                property_data = bs_data.find(data["property"].lower())
+                if property_data is None and (
+                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                    bs_data.append(
+                        BeautifulSoup(
+                            "<lomes:" + data["property"].lower() + "></lomes:" + data["property"].lower() + ">",
+                            'html.parser'))
+                elif not property_data == None and (
+                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                    pass
 
                 try:
-                    feature_data = property_data.find("lomes:" + data["feature"].lower())
-                    if feature_data is None:
-                        property_data.insert(0, BeautifulSoup(
-                            "<lomes:" + data["feature"].lower() + "></lomes:" + data["feature"].lower() + ">",
-                            'html.parser'))
-                        feature_data = property_data.find("lomes:" + data["feature"].lower())
-
-                    if data["type"] not in str(feature_data):
-                        feature_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
-
+                    feature_data = property_data.find(data["property"])
+                    if data["type"] not in str(feature_data) and (
+                            data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                        feature_data.append(
+                            BeautifulSoup(""" <lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                          'html.parser'))
                 except:
-                    if data["type"] not in str(property_data) and property_data is not None:
-                        property_data.append(BeautifulSoup("""<br>%s</br>""" % data["type"], 'html.parser'))
+                    if data["type"] not in str(property_data) and property_data is not None and (
+                            data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                        property_data.append(
+                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                          'html.parser'))
 
+                # Etiqueta classification
+                bs_data_descripcion = lom_data.find("lomes:classification")
+                if bs_data_descripcion is None and data["property"].lower() == "alignmenttype":
+                    lom_data.insert(-1, BeautifulSoup("<lomes:classification></lomes:classification>", 'html.parser'))
+                    bs_data_classification = lom_data.find("lomes:classification")
+                    bs_data_classification.insert(0, BeautifulSoup(
+                        " <lomes:purpose uniqueElementName='purpose'></lomes:purpose>", 'html.parser'))
+                    bs_data_purpose = bs_data_classification.find("lomes:purpose")
+                    bs_data_purpose.append(
+                        BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                      'html.parser'))
+                elif not bs_data_descripcion == None and data["property"].lower() == "alignmenttype":
+                    bs_data_descripcion_ux = bs_data_descripcion.find("lomes:purpose")
+                    if bs_data_descripcion_ux is None:
+                        bs_data_classification.insert(0, BeautifulSoup(
+                            "<lomes:purpose uniqueElementName='purpose'></lomes:purpose>", 'html.parser'))
+                        bs_data_descripcion = bs_data_classification
+                        bs_data_descripcion.append("lomes:purpose")
+                        bs_data_descripcion.append(
+                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                          'html.parser'))
+                    else:
+                        bs_data_descripcion.append(
+                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                          'html.parser'))
+
+                # etiqueta annotation ?
+                bs_annotation = lom_data.find("lomes:annotation")
+                if bs_annotation is None and data["property"].lower() == "accessmode":
+                    lom_data.insert(-1, BeautifulSoup("<lomes:annotation></lomes:annotation>", 'html.parser'))
+                    bs_accessmode = lom_data.find("lomes:annotation")
+                    bs_accessmode_aux = bs_accessmode.find("lomes:accessmode")
+                    if bs_accessmode_aux is None:
+                        bs_accessmode.append(BeautifulSoup("<lomes:accessmode></lomes:accessmode>", 'html.parser'))
+                        bs_accessmode_ux = bs_accessmode.find("lomes:accessmode")
+                        bs_accessmode_ux.append(
+                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                          'html.parser')
+                        );
+                    else:
+                        bs_accessmode_ux.append(
+                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                          'html.parser')
+                        );
+                elif not bs_annotation == None and data["property"].lower() == "accessmode":
+                    bs_accessmode = bs_annotation.find("lomes:accessmode")
+                    if bs_accessmode is None:
+                        bs_annotation.append(BeautifulSoup("<lomes:accessmode></lomes:accessmode>", 'html.parser'))
+                        bs_accessmode_ux = bs_annotation.find("lomes:accessmode")
+                        bs_accessmode_ux.append(
+                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                          'html.parser')
+                        );
+                    else:
+                        bs_accessmode_ux.append(
+                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                          'html.parser')
+                        );
+        file_xml=""
         generate_new_htmlFile(bs_data_xml, file_xml)
         return True
