@@ -11,7 +11,7 @@ class VideoConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         idTag = self.scope["url_route"]["kwargs"]["pk"]
-        #print("scope", self.scope)
+        print("idTag", idTag)
         print("request to connect socket tag", str(idTag))
 
         await self.channel_layer.group_add("channel_"+str(idTag), self.channel_name)

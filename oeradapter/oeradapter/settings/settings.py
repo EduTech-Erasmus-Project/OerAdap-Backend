@@ -4,13 +4,15 @@ import json
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-#BASE_DIR = Path(__file__).resolve().parent.parent
+# BASE_DIR = Path(__file__).resolve().parent.parent
 from unipath import Path
+
 BASE_DIR = Path(__file__).ancestor(3)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 with open(os.path.join("../", "config.json")) as f:
     secret = json.loads(f.read())
+
 
 def get_secret_config(secret_name, secrets=secret):
     try:
@@ -19,11 +21,12 @@ def get_secret_config(secret_name, secrets=secret):
         msg = "error the variable %s does not exist" % secret_name
         raise ImproperlyConfigured(msg)
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_secret_config('SECRET_KEY') #'django-insecure-8^c%8$!4tbk@*k)4mp@m^w3js+$)ca@c9)%z4be$v$4ie&a+=5'
+SECRET_KEY = get_secret_config('SECRET_KEY')  # 'django-insecure-8^c%8$!4tbk@*k)4mp@m^w3js+$)ca@c9)%z4be$v$4ie&a+=5'
 
 # Application definition
 
@@ -49,7 +52,7 @@ THIRD_PARTY_APPS = [
     'channels',
 ]
 
-INSTALLED_APPS = DJANGO_APPS+LOCAL_APPS+THIRD_PARTY_APPS
+INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -84,21 +87,16 @@ TEMPLATES = [
     },
 ]
 
-
 WSGI_APPLICATION = 'oeradapter.wsgi.application'
 ASGI_APPLICATION = "oeradapter.asgi.application"
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [(get_secret_config('REDIS_HOST'), get_secret_config('REDIS_PORT'))],
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+        #'CONFIG': {
+            #"hosts": [(get_secret_config('REDIS_HOST'), get_secret_config('REDIS_PORT'))],
+        #},
     },
 }
-
-
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -133,4 +131,3 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
