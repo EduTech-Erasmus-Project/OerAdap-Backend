@@ -6,17 +6,17 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:4200',
+    'http://localhost:4001',
 ]
 
 CORS_ORIGIN_ALLOW_ALL=False
 CORS_ORIGIN_WHITELIST = [
-    'http://127.0.0.1:4200',
-    'http://localhost:4200'
+    'http://127.0.0.1:4001',
+    'http://localhost:4001'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:4200',
+    'http://localhost:4001',
 ]
 
 # Database

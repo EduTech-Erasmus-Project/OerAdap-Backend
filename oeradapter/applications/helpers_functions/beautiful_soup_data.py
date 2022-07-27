@@ -4,6 +4,7 @@ from unipath import Path
 import pathlib
 from . import metadata as meta
 from bs4 import BeautifulSoup, Comment
+import lxml
 import os
 import shortuuid
 import magic
@@ -116,6 +117,24 @@ def generateBeautifulSoupFile(html_doc):
         file.close()
         return soup_data
 
+def generateBeautifulSoupFileXML(html_doc):
+    """
+    Genera un objeto de BeautifulSoup para realizar web scraping
+    :param html_doc:
+    :return BeautifulSoup Data:
+    """
+
+    blob = open(html_doc, 'rb').read()
+    m = magic.Magic(mime_encoding=True)
+    encoding = m.from_buffer(blob)
+    if encoding == 'binary':
+        encoding = 'utf-8'
+
+    with open(html_doc, encoding=encoding) as file:
+        # try:
+        soup_data = BeautifulSoup(file, "xml")
+        file.close()
+        return soup_data
 
 def save_filesHTML_db(files, learningObject, directory, directory_origin, request_host):
     """
@@ -851,7 +870,7 @@ def find_xml_in_directory(directory):
         for file in files:
             if file.endswith(".xml"):
                 file_path = os.path.join(root, file);
-                bs_data = generateBeautifulSoupFile(file_path)
+                bs_data = generateBeautifulSoupFileXML(file_path)
                 data = bs_data.find("lom")
                 if data is not None:
                     file_xml = file_path
@@ -882,27 +901,27 @@ def save_metadata_in_xml(path_directory, areas):
 
                 bs_data = lom_data.find("accesibility")
                 if bs_data is None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
-                    lom_data.insert(-1, BeautifulSoup("<accesibility></accesibility>", 'html.parser'))
+                    lom_data.insert(-1, BeautifulSoup("<accesibility></accesibility>", 'xml'))
                     bs_data = lom_data.find("accesibility")
 
                     # Creacion de la descripcion de accesibilidad
                     bs_data_descripcion = bs_data.find("description")
                     if bs_data_descripcion is None:
                         # Insertar la descripcion para la etiqueta de accesibilidad
-                        bs_data.insert(0, BeautifulSoup("<description language='es'> Adaptado para accesibilidad </description>", "html.parser"))
+                        bs_data.insert(0, BeautifulSoup("<description language='es'> Adaptado para accesibilidad </description>", "xml"))
 
                 elif not bs_data == None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     # Creacion de la descripcion de accesibilidad
                     bs_data_descripcion = bs_data.find("description")
                     if bs_data_descripcion is None:
                         # Insertar la descripcion para la etiqueta de accesibilidad
-                        bs_data.insert(0, BeautifulSoup("<description language='es'> Adaptado para accesibilidad </description>", "html.parser"))
+                        bs_data.insert(0, BeautifulSoup("<description language='es'> Adaptado para accesibilidad </description>", "xml"))
 
                 property_data = bs_data.find(data["property"].lower())
                 if property_data is None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     bs_data.append(
                         BeautifulSoup("<" + data["property"].lower() + "></" + data["property"].lower() + ">",
-                                      'html.parser'))
+                                      'xml'))
                 elif not property_data == None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     pass
 
@@ -911,36 +930,36 @@ def save_metadata_in_xml(path_directory, areas):
                     if data["type"] not in str(feature_data)  and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                         feature_data.append(
                             BeautifulSoup(""" <value uniqueElementName="value">%s</value>""" % data["type"],
-                                          'html.parser'))
+                                          'xml'))
                 except:
                     if data["type"] not in str(property_data) and property_data is not None  and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                         property_data.append(
                             BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                          'html.parser'))
+                                          'xml'))
 
                 #Etiqueta classification
                 bs_data_descripcion = lom_data.find("classification")
                 if bs_data_descripcion is None and data["property"].lower() == "alignmenttype":
-                    lom_data.insert(-1,BeautifulSoup("<classification></classification>", 'html.parser'))
+                    lom_data.insert(-1,BeautifulSoup("<classification></classification>", 'xml'))
                     bs_data_classification = lom_data.find("classification")
-                    bs_data_classification.insert(0,BeautifulSoup(" <purpose uniqueElementName='purpose'></purpose>", 'html.parser'))
+                    bs_data_classification.insert(0,BeautifulSoup(" <purpose uniqueElementName='purpose'></purpose>", 'xml'))
                     bs_data_purpose = bs_data_classification.find("purpose")
                     bs_data_purpose.append(
                         BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                      'html.parser'))
+                                      'xml'))
                 elif not bs_data_descripcion == None and data["property"].lower() == "alignmenttype":
                     bs_data_descripcion_ux = bs_data_descripcion.find("purpose")
                     if bs_data_descripcion_ux is None :
-                        bs_data_classification.insert(0, BeautifulSoup("<purpose uniqueElementName='purpose'></purpose>", 'html.parser'))
+                        bs_data_classification.insert(0, BeautifulSoup("<purpose uniqueElementName='purpose'></purpose>", 'xml'))
                         bs_data_descripcion = bs_data_classification
                         bs_data_descripcion.append("purpose")
                         bs_data_descripcion.append(
                             BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                          'html.parser'))
+                                          'xml'))
                     else:
                         bs_data_descripcion.append(
                         BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                      'html.parser'))
+                                      'xml'))
 
                 #etiqueta annotation ?
                 bs_annotation = lom_data.find("annotation")
@@ -953,12 +972,12 @@ def save_metadata_in_xml(path_directory, areas):
                         bs_accessmode_ux = bs_accessmode.find("accessmode")
                         bs_accessmode_ux.append(
                             BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                          'html.parser')
+                                          'xml')
                         );
                     else:
                         bs_accessmode_ux.append(
                             BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                          'html.parser')
+                                          'xml')
                         );
                 elif not bs_annotation == None and data["property"].lower() == "accessmode":
                     bs_accessmode = bs_annotation.find("accessmode")
@@ -967,14 +986,13 @@ def save_metadata_in_xml(path_directory, areas):
                         bs_accessmode_ux = bs_annotation.find("accessmode")
                         bs_accessmode_ux.append(
                             BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                          'html.parser')
+                                          'xml')
                         );
                     else:
                         bs_accessmode_ux.append(
                             BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                          'html.parser')
+                                          'xml')
                         );
-
         generate_new_htmlFile(bs_data_xml, file_xml)
         return True
 
