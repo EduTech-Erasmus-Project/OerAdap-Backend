@@ -117,13 +117,14 @@ def generateBeautifulSoupFile(html_doc):
         return soup_data
 
 
-def save_filesHTML_db(files, learningObject, directory, directory_origin, request_host):
+def save_filesHTML_db(files, learning_object, directory, directory_origin, request_host, files_website):
     """
     Lectura de archivos html, guardamos cada directorio
     de cada archivo en la base de datos
 
+    :param files_website:
     :param object files: contiene informacion de los nombre de archivos y directorios
-    :param object learningObject: objeto de aprendizaje
+    :param object learning_object: objeto de aprendizaje
     :param path directory: directorio raiz
     :param path directory_origin: directorio de origin donde se encuentra el objeto de aprendizaje
     :param request_host: direccion del host
@@ -132,312 +133,433 @@ def save_filesHTML_db(files, learningObject, directory, directory_origin, reques
     pages_convert = []
 
     for file in files:
-        directory_file = os.path.join(BASE_DIR, directory, file['file'])
-        preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
 
-        if PROD['PROD']:
-            preview_path = preview_path.replace("http://", "https://")
+        soup_data_website = None
+        page_adapted_website = None
+        file_website = None
 
-        soup_data = generateBeautifulSoupFile(directory_file)
+        soup_data, page_adapted = create_page_learning_object(learning_object, directory, directory_origin,
+                                                              request_host,
+                                                              file)
 
-        comment = Comment("""
-        This learning object has been adapted with the OerAdap tool from the EduTech group.
-        License: MIT license
-        Attribution to EduTech Project: https://edutech-project.org/
-        Created by: 
-        Claudio Maldonado - https://www.linkedin.com/in/claudiomldo/
-        Edwin Márquez - https://www.linkedin.com/in/edwinFernandoMarquez/
-        """)
+        # print("origin file", file['file_name'])
 
-        soup_data.insert(0, comment)
-        soup_data.insert(0, "")
+        find_website = [file_w for file_w in files_website if file['file_name'] in file_w['file_name']]
 
-        pages_convert.append(soup_data)
-
-        page_adapted = PageLearningObject.objects.create(
-            type="adapted",
-            title=soup_data.find('title').text,
-            path=directory_file,
-            preview_path=preview_path,
-            learning_object=learningObject,
-            dir_len=file['dir_len']
-        )
-
-        directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
-        preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
-        if PROD['PROD']:
-            preview_path_origin = preview_path_origin.replace("http://", "https://")
-
-        PageLearningObject.objects.create(
-            type="origin",
-            title=soup_data.find('title').text,
-            path=directory_file_origin,
-            preview_path=preview_path_origin,
-            learning_object=learningObject
-
-        )
+        # print("file_website", find_website)
+        if len(find_website) > 0:
+            file_website = find_website[0]
+            soup_data_website, page_adapted_website = create_page_learning_object(learning_object, directory,
+                                                                                  directory_origin,
+                                                                                  request_host, file_website, True)
 
         # Se procesa las etiquetas html
-        web_scraping_p(soup_data, page_adapted, file['file'])
-        webs_craping_img(soup_data, page_adapted, file['file'], directory, request_host)
-        webs_craping_audio(soup_data, page_adapted, file['file'], 'audio', request_host, directory)
+        web_scraping_paragraph(soup_data, page_adapted, file['file'], soup_data_website, page_adapted_website,
+                               file_website)
+        webs_scraping_img(soup_data, page_adapted, file['file'], directory, request_host, soup_data_website,
+                          page_adapted_website, file_website)
+        webs_scraping_audio(soup_data, page_adapted, file['file'], 'audio', directory, request_host, soup_data_website,
+                            page_adapted_website, file_website)
+        webs_scraping_video(soup_data, page_adapted, file['file'], 'video', directory, request_host, soup_data_website,
+                            page_adapted_website, file_website)
+        webs_scraping_iframe(soup_data, page_adapted, file['file'], soup_data_website, page_adapted_website,
+                             file_website)
 
-        webs_craping_video(soup_data, page_adapted, file['file'], 'video', request_host, directory)
-        webs_craping_iframe(soup_data, page_adapted, file['file'])
+
+def create_page_learning_object(learningObject, directory, directory_origin, request_host, file, is_webpage=False):
+    directory_file = os.path.join(BASE_DIR, directory, file['file'])
+    preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
+
+    if PROD['PROD']:
+        preview_path = preview_path.replace("http://", "https://")
+
+    soup_data = generateBeautifulSoupFile(directory_file)
+
+    comment = Comment("""
+            This learning object has been adapted with the OerAdap tool from the EduTech group.
+            License: MIT license
+            Attribution to EduTech Project: https://edutech-project.org/
+            Created by: 
+            Claudio Maldonado - https://www.linkedin.com/in/claudiomldo/
+            Edwin Márquez - https://www.linkedin.com/in/edwinFernandoMarquez/
+            """)
+
+    soup_data.insert(0, comment)
+    soup_data.insert(0, "")
+
+    # pages_convert.append(soup_data)
+
+    page_adapted = PageLearningObject.objects.create(
+        type="adapted",
+        title=soup_data.find('title').text,
+        path=directory_file,
+        preview_path=preview_path,
+        learning_object=learningObject,
+        dir_len=file['dir_len'],
+        file_name=file['file_name'],
+        is_webpage=is_webpage
+    )
+
+    directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
+    preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
+    if PROD['PROD']:
+        preview_path_origin = preview_path_origin.replace("http://", "https://")
+
+    PageLearningObject.objects.create(
+        type="origin",
+        title=soup_data.find('title').text,
+        path=directory_file_origin,
+        preview_path=preview_path_origin,
+        learning_object=learningObject
+    )
+
+    return soup_data, page_adapted
 
 
-def save_paragraph(tag_identify, p_text, page_id, class_uuid):
-    if len(p_text.get('class', [])) > 0:
-        p_text['class'].append(class_uuid)
+def save_paragraph(tag_identify, tag, page_id, class_uuid):
+    '''
+    if len(tag.get('class', [])) > 0:
+        tag['class'].append(class_uuid)
     else:
-        p_text['class'] = class_uuid
+        tag['class'] = class_uuid
+    '''
 
-    tag_page = TagPageLearningObject.objects.create(tag=tag_identify,
-                                                    text=str(p_text.string),
-                                                    html_text=str(p_text),
-                                                    page_learning_object=page_id,
-                                                    id_class_ref=class_uuid)
-    # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+    tag['class'] = tag.get('class', []) + [class_uuid]
+
+    TagPageLearningObject.objects.create(tag=tag_identify,
+                                         text=str(tag.string),
+                                         html_text=str(tag),
+                                         page_learning_object=page_id,
+                                         id_class_ref=class_uuid)
 
 
-def web_scraping_p(aux_text, page_id, file):
+def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, page_adapted_website, file_website):
     """
     Exatraccion de los parrafos de cada pagina html,
     se crea un ID unico, para identificar cada elemento
 
-    :param str aux_text: contiene el codigo html de la pagina
-    :param int page_id: id de la pagina
+    :param file_website:
+    :param page_adapted_website:
+    :param soup_data_website:
+    :param str soup_data: contiene el codigo html de la pagina
+    :param int page_adapted: id de la pagina
     :param str file: directorio de la pagina
 
     """
-
+    tag_identify = "p"
     length_text = 200
-    for p_text in aux_text.find_all("p"):
-        if p_text.string:
-            if len(p_text.string) >= length_text:
-                class_uuid = "p-" + getUUID()
-                save_paragraph("p", p_text, page_id, class_uuid)
+    for tag in soup_data.find_all(tag_identify):
+        if tag.string:
+            if len(tag.string) >= length_text:
+                class_uuid = tag_identify + '-' + getUUID()
 
-    for p_text in aux_text.find_all('span'):
-        if p_text.string:
-            if len(p_text.string) >= length_text:
-                class_uuid = 'span-' + getUUID()
-                save_paragraph("span", p_text, page_id, class_uuid)
+                if soup_data_website is not None:
+                    tag_webdata = soup_data_website.find(lambda
+                                                             tag_find: tag_find.name == tag_identify and tag.get_text().strip() in tag_find.get_text().strip())
+                    save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
 
-    for p_text in aux_text.find_all('li'):
-        if p_text.string:
-            if len(p_text.string) >= length_text:
-                class_uuid = 'li-' + getUUID()
-                save_paragraph("li", p_text, page_id, class_uuid)
+                save_paragraph(tag_identify, tag, page_adapted, class_uuid)
 
-    generate_new_htmlFile(aux_text, file)
+    tag_identify = "span"
+    for tag in soup_data.find_all(tag_identify):
+        if tag.string:
+            if len(tag.string) >= length_text:
+                class_uuid = tag_identify + '-' + getUUID()
+
+                if soup_data_website is not None:
+                    tag_webdata = soup_data_website.find(
+                        lambda
+                            tag_find: tag_find.name == tag_identify and tag.get_text().strip() in tag_find.get_text().strip())
+                    save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
+
+                save_paragraph(tag_identify, tag, page_adapted, class_uuid)
+
+    tag_identify = "li"
+    for tag in soup_data.find_all(tag_identify):
+        if tag.string:
+            if len(tag.string) >= length_text:
+                class_uuid = tag_identify + '-' + getUUID()
+
+                if soup_data_website is not None:
+                    tag_webdata = soup_data_website.find(
+                        lambda
+                            tag_find: tag_find.name == tag_identify and tag.get_text().strip() in tag_find.get_text().strip())
+                    save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
+
+                save_paragraph(tag_identify, tag, page_adapted, class_uuid)
+
+    generate_new_htmlFile(soup_data, file)
+    if soup_data_website is not None:
+        generate_new_htmlFile(soup_data_website, file_website['file'])
 
 
-def webs_craping_img(aux_text, page_id, file, directory, request_host):
+def webs_scraping_img(soup_data, page_adapted, file, directory, request_host, soup_data_website, page_adapted_website,
+                      file_website):
     """
     Vamos a extraer el alt de las imagenes y crear clases en las imagenes
 
-    :param aux_text: contiene el texto html generado por BeautifulSoup
-    :param page_id: id de la pagina
+    :param file_website:
+    :param page_adapted_website:
+    :param soup_data_website:
+    :param soup_data: contiene el texto html generado por BeautifulSoup
+    :param page_adapted: id de la pagina
     :param file: nombre del archivo
     :param directory:  directorio del archivo
     :param request_host: direccion del host
 
     """
-    path_split = split_path(page_id.preview_path)
 
     tag_identify = "img"
     attribute_img = "src"
-    text_alt = ""
 
-    for tag in aux_text.find_all(tag_identify):
+    for tag in soup_data.find_all(tag_identify):
 
         class_uuid = tag_identify + '-' + getUUID()
-        if len(tag.get('class', [])) > 0:
-            tag['class'].append(class_uuid)
-        else:
-            tag['class'] = class_uuid
+        # agregar a la etiqueta website
 
-        if tag.get('alt') is not None:
-            text_alt = tag.get('alt')
-        else:
-            tag['alt'] = text_alt
+        if soup_data_website is not None:
+            tag_webdata = soup_data_website.find("img", {"src": tag.get('src', []), "alt": tag.get('alt', [])})
+            save_tag_img(tag_webdata, class_uuid, tag_identify, attribute_img, page_adapted_website, directory,
+                         request_host)
 
-        tag['tabindex'] = "1"
+        save_tag_img(tag, class_uuid, tag_identify, attribute_img, page_adapted, directory, request_host)
 
-        tag_page = TagPageLearningObject.objects.create(
-            tag=tag_identify,
-            text=str(text_alt),
-            html_text=str(tag),
-            page_learning_object=page_id,
-            id_class_ref=class_uuid
-        )
-
-        # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
-        # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
-        # peticion a la base de datos
-
-        link_img = tag.get('src', [])
-        if "https://" in str(link_img) or "http://" in str(link_img):
-            data_attribute_path = str(tag.get('src', []))
-        else:
-            data_attribute_path = str(os.path.join(request_host, directory, tag.get('src', [])))
-
-        path_preview = get_path_preview(tag.get('src', []), path_split)
-
-        data_attribute = DataAttribute(
-            attribute=attribute_img,
-            data_attribute=path_preview,
-            tag_page_learning_object=tag_page,
-            type=tag_identify
-        )
-        data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
-
-        tag_adapted = TagAdapted.objects.create(
-            type=tag_identify,
-            text=str(text_alt),
-            html_text=str(tag),
-            id_ref=class_uuid,
-            path_src=data_attribute_path,
-            tag_page_learning_object=tag_page
-        )
-
-    generate_new_htmlFile(aux_text, file)
+    generate_new_htmlFile(soup_data, file)
+    if soup_data_website is not None:
+        generate_new_htmlFile(soup_data_website, file_website['file'])
 
 
-def webs_craping_video(aux_text, page_id, file, tag_identify, request_host, directory):
+def save_tag_img(tag, class_uuid, tag_identify, attribute_img, page_adapted, directory, request_host):
+    path_split = split_path(page_adapted.preview_path)
+    '''
+            if len(tag.get('class', [])) > 0:
+                tag['class'].append(class_uuid)
+            else:
+                tag['class'] = class_uuid
+            '''
+    tag['class'] = tag.get('class', []) + [class_uuid]
+
+    '''
+    if tag.get('alt') is not None:
+        text_alt = tag.get('alt')
+    else:
+        tag['alt'] = text_alt
+    '''
+    text_alt = tag.get('alt', '')
+    tag['alt'] = text_alt
+
+    tag['tabindex'] = "1"
+
+    tag_page = TagPageLearningObject.objects.create(
+        tag=tag_identify,
+        text=str(text_alt),
+        html_text=str(tag),
+        page_learning_object=page_adapted,
+        id_class_ref=class_uuid
+    )
+
+    link_img = tag.get('src', '')
+    if "https://" in str(link_img) or "http://" in str(link_img):
+        data_attribute_path = str(tag.get('src', ''))
+    else:
+        data_attribute_path = str(os.path.join(request_host, directory, tag.get('src', '')))
+
+    path_preview = get_path_preview(tag.get('src', ''), path_split)
+
+    data_attribute = DataAttribute(
+        attribute=attribute_img,
+        data_attribute=path_preview,
+        tag_page_learning_object=tag_page,
+        type=tag_identify
+    )
+    data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+
+    TagAdapted.objects.create(
+        type=tag_identify,
+        text=str(text_alt),
+        html_text=str(tag),
+        id_ref=class_uuid,
+        path_src=data_attribute_path,
+        tag_page_learning_object=tag_page
+    )
+
+
+def webs_scraping_video(soup_data, page_adapted, file, tag_identify, directory, request_host, soup_data_website,
+                        page_adapted_website, file_website):
     """
     Vamos a extraer el el src de los videos y audios
 
-    :param aux_text: contiene el texto html generado por BeautifulSoup
-    :param page_id: id de la pagina
+    :param file_website:
+    :param page_adapted_website:
+    :param soup_data_website:
+    :param soup_data: contiene el texto html generado por BeautifulSoup
+    :param page_adapted: id de la pagina
     :param file: nombre del archivo
     :param tag_identify: identificador para los elementos html
     :param request_host: direccion del host
     :param directory: directorio del archivo
-
     """
-
-    path_split = split_path(page_id.preview_path)
 
     attribute_src = "src"
 
-    for tag in aux_text.find_all(tag_identify):
-        class_uuid = tag_identify + '-' + getUUID()
-        if len(tag.get('class', [])) > 0:
-            tag['class'].append(class_uuid)
-        else:
-            tag['class'] = class_uuid
-
-        tag_page = TagPageLearningObject.objects.create(
-            tag=tag_identify,
-            html_text=str(tag),
-            page_learning_object=page_id,
-            id_class_ref=class_uuid
-        )
-
-        subtag = tag.find_all('source')
-        subtag = subtag[0]
-
-        path_preview = get_path_preview(subtag.get('src'), path_split)
-
-        # path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
-
-        if PROD['PROD']:
-            path_preview = path_preview.replace("http://", "https://")
-
-        path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
-
-        data_attribute = DataAttribute(
-            attribute=attribute_src,
-            data_attribute=str(subtag.get('src')),
-            type=str(subtag.get('type')),
-            tag_page_learning_object=tag_page,
-            path_preview=path_preview,
-            path_system=path_system,
-            source="local"
-        )
-
-        data_attribute.save()
-        # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
-    generate_new_htmlFile(aux_text, file)
-
-
-def webs_craping_audio(aux_text, page_id, file, tag_identify, request_host, directory):
-    """
-    Vamos a extraer el el src de los videos y audios
-
-    :param aux_text: contiene el texto html generado por BeautifulSoup
-    :param page_id: id de la pagina
-    :param file: nombre del archivo
-    :param tag_identify: identificador para los elementos html
-    :param request_host: direccion del host
-    :param directory: directorio del archivo
-
-    """
-
-    path_split = split_path(page_id.preview_path)
-
-    attribute_src = "src"
-
-    for tag in aux_text.find_all(tag_identify):
-
+    for tag in soup_data.find_all(tag_identify):
         class_uuid = tag_identify + '-' + getUUID()
 
-        if len(tag.get('class', [])) > 0:
-            tag['class'].append(class_uuid)
-        else:
-            tag['class'] = class_uuid
+        if soup_data_website is not None:
+            tag_webdata = soup_data_website.find(
+                lambda tag_find: tag_find.name == "video" and tag.findChild("source").get("src",
+                                                                                          '') in tag_find.findChild(
+                    "source").get("src", '') and tag.findChild("source").get("type", '') in tag_find.findChild(
+                    "source").get("type", ''))
+            save_video_tag(tag_webdata, class_uuid, tag_identify, attribute_src, page_adapted_website, directory)
 
-        tag_page = TagPageLearningObject.objects.create(
-            tag=tag_identify,
-            html_text=str(tag),
-            page_learning_object=page_id,
-            id_class_ref=class_uuid
-        )
+        save_video_tag(tag, class_uuid, tag_identify, attribute_src, page_adapted, directory)
 
-        # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
+    generate_new_htmlFile(soup_data, file)
+    if soup_data_website is not None:
+        generate_new_htmlFile(soup_data_website, file_website['file'])
 
-        # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
-        # peticion a la base de datos
 
-        path_preview = get_path_preview(tag.get('src', []), path_split)
+def save_video_tag(tag, class_uuid, tag_identify, attribute_src, page_adapted, directory):
+    path_split = split_path(page_adapted.preview_path)
+    '''
+            if len(tag.get('class', [])) > 0:
+                tag['class'].append(class_uuid)
+            else:
+                tag['class'] = class_uuid
+            '''
+    tag['class'] = tag.get('class', []) + [class_uuid]
 
-        data_attribute = DataAttribute(
-            attribute=attribute_src,
-            data_attribute=path_preview,
-            tag_page_learning_object=tag_page,
-            type=tag_identify,
-            path_system=str(os.path.join(BASE_DIR, directory, tag.get('src', []))),
-        )
-        data_attribute.save()
+    tag_page = TagPageLearningObject.objects.create(
+        tag=tag_identify,
+        html_text=str(tag),
+        page_learning_object=page_adapted,
+        id_class_ref=class_uuid
+    )
 
-        # tag_adapted = TagAdapted.objects.create(
-        #   type=tag_identify,
-        #  html_text=str(tag),
-        # id_ref=class_uuid,
-        # path_src=str(os.path.join(request_host, directory, tag.get('src', []))),
-        # tag_page_learning_object=tag_page
-    # )
+    # subtag = tag.find_all('source')
+    subtag = tag.findChild('source')
 
+    path_preview = get_path_preview(subtag.get('src'), path_split)
+
+    # path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
+
+    if PROD['PROD']:
+        path_preview = path_preview.replace("http://", "https://")
+
+    path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
+
+    data_attribute = DataAttribute(
+        attribute=attribute_src,
+        data_attribute=str(subtag.get('src')),
+        type=str(subtag.get('type')),
+        tag_page_learning_object=tag_page,
+        path_preview=path_preview,
+        path_system=path_system,
+        source="local"
+    )
+
+    data_attribute.save()
     # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
-    generate_new_htmlFile(aux_text, file)
 
 
-def webs_craping_iframe(file_beautiful_soup, page_id, file):
+def webs_scraping_audio(soup_data, page_adapted, file, tag_identify, directory, request_host, soup_data_website,
+                        page_adapted_website, file_website):
+    """
+    Vamos a extraer el el src de los videos y audios
 
+    :param file_website:
+    :param page_adapted_website:
+    :param soup_data_website:
+    :param soup_data: contiene el texto html generado por BeautifulSoup
+    :param page_adapted: id de la pagina
+    :param file: nombre del archivo
+    :param tag_identify: identificador para los elementos html
+    :param request_host: direccion del host
+    :param directory: directorio del archivo
+
+    """
+
+    for tag in soup_data.find_all(tag_identify):
+        class_uuid = tag_identify + '-' + getUUID()
+
+        print("class_uuid", class_uuid)
+        print("tag audio", tag)
+        print("is none", tag.get('src', None))
+
+        if soup_data_website is not None:
+            tag_webdata = find_tag_in_webpage(tag, soup_data_website)
+            print("tag_webdata", tag_webdata)
+            save_tag_audio(tag_webdata, class_uuid, tag_identify, page_adapted_website, directory)
+
+        save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory)
+
+    generate_new_htmlFile(soup_data, file)
+    if soup_data_website is not None:
+        generate_new_htmlFile(soup_data_website, file_website['file'])
+
+
+def find_tag_in_webpage(tag, soup_data_website):
+    src = tag.get('src', None)
+    if src is None:
+        tag_webdata = soup_data_website.find(
+            lambda tag_find: tag_find.name == "audio" and
+                             tag.findChild("source").get("src", '') == tag_find.findChild("source").get("src", '') and
+                             tag.findChild("source").get("type", '') == tag_find.findChild("source").get("type", '') and
+                             tag.findChild("source").get("class", []) == tag_find.findChild("source").get("class", []))
+    else:
+        tag_webdata = soup_data_website.find(
+            lambda tag_find: tag_find.name == "audio" and
+                             tag.get("src", '') == tag_find.get("src", '') and
+                             tag.get("type", '') == tag_find.get("type", '') and
+                             tag.get("class", []) == tag_find.get("class", []))
+    return tag_webdata
+
+
+def save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory):
+    src = tag.get('src', None)
+    path_split = split_path(page_adapted.preview_path)
+    tag['class'] = tag.get('class', []) + [class_uuid]
+    tag_page = TagPageLearningObject.objects.create(
+        tag=tag_identify,
+        html_text=str(tag),
+        page_learning_object=page_adapted,
+        id_class_ref=class_uuid
+    )
+
+    if src is not None:
+        path_preview = get_path_preview(tag.get('src', ''), path_split)
+    else:
+        child_src = tag.findChild("source").get("src", None)
+        if child_src is None:
+            return
+        path_preview = get_path_preview(child_src, path_split)
+
+    data_attribute = DataAttribute.objects.create(
+        attribute='src',
+        data_attribute=path_preview,
+        tag_page_learning_object=tag_page,
+        type=tag_identify,
+        path_system=str(os.path.join(BASE_DIR, directory, tag.get('src', []))),
+    )
+
+
+def webs_scraping_iframe(file_beautiful_soup, page_adapted, file, soup_data_website, page_adapted_website,
+                         file_website):
     """
     Vamos a extraer el src de los iframses incrustados de videos
 
+    :param file_website:
+    :param page_adapted_website:
+    :param soup_data_website:
     :param file_beautiful_soup: contiene el texto html generado por BeautifulSoup
-    :param page_id: id de la pagina
+    :param page_adapted: id de la pagina
     :param file: directorio del archivo
 
     """
 
     tag_identify = "iframe"
     attribute_src = "src"
-    text_title = ""
 
     for tag in file_beautiful_soup.find_all(tag_identify):
         if '.com' not in str(tag.get('src')):
@@ -445,39 +567,50 @@ def webs_craping_iframe(file_beautiful_soup, page_id, file):
 
         class_uuid = tag_identify + '-' + getUUID()
 
-        if len(tag.get('class', [])) > 0:
-            tag['class'].append(class_uuid)
-        else:
-            tag['class'] = class_uuid
+        if soup_data_website is not None:
+            tag_webdata = soup_data_website.find(tag_identify, {"src": tag.get('src', []), "alt": tag.get('alt', [])})
+            save_tag_iframe(tag_webdata, class_uuid, tag_identify, attribute_src, page_adapted_website)
 
-        if tag.get('title') is not None:
-            text_title = tag.get('title')
-        else:
-            tag['title'] = text_title
+        save_tag_iframe(tag, class_uuid, tag_identify, attribute_src, page_adapted)
 
-        tag_page = TagPageLearningObject.objects.create(
-            tag=tag_identify,
-            text=str(text_title),
-            html_text=str(tag),
-            page_learning_object=page_id,
-            id_class_ref=class_uuid
-        )
-
-        # tag_page.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
-        # tag_page_object = TagPageLearningObject.objects.get(pk=tag_page.id)  # refactirizar sin hacer
-        # peticion a la base de datos
-
-        domain = urlparse(str(tag.get('src'))).netloc
-
-        data_attribute = DataAttribute(
-            attribute=attribute_src,
-            data_attribute=str(tag.get('src')),
-            tag_page_learning_object=tag_page,
-            path_preview=str(tag.get('src')),
-            source=domain
-        )
-        data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
     generate_new_htmlFile(file_beautiful_soup, file)
+    if soup_data_website is not None:
+        generate_new_htmlFile(soup_data_website, file_website['file'])
+
+
+def save_tag_iframe(tag, class_uuid, tag_identify, attribute_src, page_adapted):
+    """
+
+    :param tag:
+    :param class_uuid:
+    :param tag_identify:
+    :param attribute_src:
+    :param page_adapted:
+    :return:
+    """
+
+    tag['class'] = tag.get('class', []) + [class_uuid]
+    text_title = tag.get('title', '')
+    tag['title'] = text_title
+
+    tag_page = TagPageLearningObject.objects.create(
+        tag=tag_identify,
+        text=str(text_title),
+        html_text=str(tag),
+        page_learning_object=page_adapted,
+        id_class_ref=class_uuid
+    )
+
+    domain = urlparse(str(tag.get('src'))).netloc
+
+    data_attribute = DataAttribute(
+        attribute=attribute_src,
+        data_attribute=str(tag.get('src')),
+        tag_page_learning_object=tag_page,
+        path_preview=str(tag.get('src')),
+        source=domain
+    )
+    data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
 
 
 def generate_new_htmlFile(file_beautiful_soup, path):
@@ -652,6 +785,40 @@ def templateTextAdaptation(dir_len):
     return head_adaptation, body_adaptation
 
 
+def templateImageAdaptation(dir_len):
+    head_adaptation = """ 
+        <!---------------------------------------Begin image lightbox------------------------------------------------------->
+        
+        <link href="%soer_resources/lightbox/lightbox.css" rel="stylesheet" />
+        
+        <!---------------------------------------End image lightbox------------------------------------------------------->
+    """ % get_directory_resource(dir_len)
+    head_adaptation = BeautifulSoup(head_adaptation, 'html.parser')
+    body_adaptation = """ 
+        <!---------------------------------------Begin script image lightbox------------------------------------------------------->
+        
+        <script src="%soer_resources/lightbox/lightbox.js"></script>
+        
+        <!---------------------------------------End script image lightbox------------------------------------------------------->
+    """ % get_directory_resource(dir_len)
+
+    body_adaptation = BeautifulSoup(body_adaptation, 'html.parser')
+
+    return head_adaptation, body_adaptation
+
+
+def templateImagePreview(id_class_ref, src_img, alt_img, tag):
+    tag_image_adapted = """
+                    <a href="%s" id="%s"
+                            title="%s"
+                            class="fancybox" data-lightbox="gallery">
+                    %s         
+                    </a>
+                """ % (src_img, id_class_ref, alt_img, str(tag))
+    soup_data = BeautifulSoup(tag_image_adapted, 'html.parser')
+    return soup_data
+
+
 def templateAdaptationTag(id_class_ref):
     id_ref = getUUID()
     tag_text_Adapted = """
@@ -735,7 +902,6 @@ def templateAudioTextButton(id_class_ref, text, dir_len):
 
 
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
-
     """
     Crea un template que envuelve el audio en una clase para adaptarla al HTML
 
@@ -760,7 +926,7 @@ def templateAdaptedAudioButton(id_class_ref, audio_src, dir_len):
     :param dir_len:  representacion de la logitud del directorio "../../"
 
     """
-    audio_src = get_directory_resource(dir_len)+audio_src
+    audio_src = get_directory_resource(dir_len) + audio_src
     button_tag_id = getUUID()
     tag_audio = """
     <div class="tooltip audio-container" id="{0}">
@@ -872,16 +1038,17 @@ def save_metadata_in_xml(path_directory, areas):
     metadata_filter = meta.get_metadata(areas)
 
     if type_standard == "lom" or type_standard == "lomes:lom":
-        if type_standard =="lom":
+        if type_standard == "lom":
             lom_data = bs_data_xml.find("lom")
-        elif type_standard =="lomes:lom":
+        elif type_standard == "lomes:lom":
             lom_data = bs_data_xml.find("lomes:lom")
 
         for metadata in metadata_filter:
             for data in metadata["metadata"]:
 
                 bs_data = lom_data.find("accesibility")
-                if bs_data is None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                if bs_data is None and (
+                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     lom_data.insert(-1, BeautifulSoup("<accesibility></accesibility>", 'html.parser'))
                     bs_data = lom_data.find("accesibility")
 
@@ -889,49 +1056,59 @@ def save_metadata_in_xml(path_directory, areas):
                     bs_data_descripcion = bs_data.find("description")
                     if bs_data_descripcion is None:
                         # Insertar la descripcion para la etiqueta de accesibilidad
-                        bs_data.insert(0, BeautifulSoup("<description language='es'> Adaptado para accesibilidad </description>", "html.parser"))
+                        bs_data.insert(0, BeautifulSoup(
+                            "<description language='es'> Adaptado para accesibilidad </description>", "html.parser"))
 
-                elif not bs_data == None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                elif not bs_data == None and (
+                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     # Creacion de la descripcion de accesibilidad
                     bs_data_descripcion = bs_data.find("description")
                     if bs_data_descripcion is None:
                         # Insertar la descripcion para la etiqueta de accesibilidad
-                        bs_data.insert(0, BeautifulSoup("<description language='es'> Adaptado para accesibilidad </description>", "html.parser"))
+                        bs_data.insert(0, BeautifulSoup(
+                            "<description language='es'> Adaptado para accesibilidad </description>", "html.parser"))
 
                 property_data = bs_data.find(data["property"].lower())
-                if property_data is None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                if property_data is None and (
+                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     bs_data.append(
                         BeautifulSoup("<" + data["property"].lower() + "></" + data["property"].lower() + ">",
                                       'html.parser'))
-                elif not property_data == None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                elif not property_data == None and (
+                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                     pass
 
                 try:
                     feature_data = property_data.find(data["property"])
-                    if data["type"] not in str(feature_data)  and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                    if data["type"] not in str(feature_data) and (
+                            data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                         feature_data.append(
                             BeautifulSoup(""" <value uniqueElementName="value">%s</value>""" % data["type"],
                                           'html.parser'))
                 except:
-                    if data["type"] not in str(property_data) and property_data is not None  and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                    if data["type"] not in str(property_data) and property_data is not None and (
+                            data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
                         property_data.append(
                             BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
                                           'html.parser'))
 
-                #Etiqueta classification
+                # Etiqueta classification
                 bs_data_descripcion = lom_data.find("classification")
                 if bs_data_descripcion is None and data["property"].lower() == "alignmenttype":
-                    lom_data.insert(-1,BeautifulSoup("<classification></classification>", 'html.parser'))
+                    lom_data.insert(-1, BeautifulSoup("<classification></classification>", 'html.parser'))
                     bs_data_classification = lom_data.find("classification")
-                    bs_data_classification.insert(0,BeautifulSoup(" <purpose uniqueElementName='purpose'></purpose>", 'html.parser'))
+                    bs_data_classification.insert(0, BeautifulSoup(" <purpose uniqueElementName='purpose'></purpose>",
+                                                                   'html.parser'))
                     bs_data_purpose = bs_data_classification.find("purpose")
                     bs_data_purpose.append(
                         BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
                                       'html.parser'))
                 elif not bs_data_descripcion == None and data["property"].lower() == "alignmenttype":
                     bs_data_descripcion_ux = bs_data_descripcion.find("purpose")
-                    if bs_data_descripcion_ux is None :
-                        bs_data_classification.insert(0, BeautifulSoup("<purpose uniqueElementName='purpose'></purpose>", 'html.parser'))
+                    if bs_data_descripcion_ux is None:
+                        bs_data_classification.insert(0,
+                                                      BeautifulSoup("<purpose uniqueElementName='purpose'></purpose>",
+                                                                    'html.parser'))
                         bs_data_descripcion = bs_data_classification
                         bs_data_descripcion.append("purpose")
                         bs_data_descripcion.append(
@@ -939,10 +1116,10 @@ def save_metadata_in_xml(path_directory, areas):
                                           'html.parser'))
                     else:
                         bs_data_descripcion.append(
-                        BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
-                                      'html.parser'))
+                            BeautifulSoup("""<value uniqueElementName="value">%s</value>""" % data["type"],
+                                          'html.parser'))
 
-                #etiqueta annotation ?
+                # etiqueta annotation ?
                 bs_annotation = lom_data.find("annotation")
                 if bs_annotation is None and data["property"].lower() == "accessmode":
                     lom_data.insert(-1, BeautifulSoup("<annotation></annotation>", 'html.parser'))
@@ -980,121 +1157,121 @@ def save_metadata_in_xml(path_directory, areas):
 
 
 def codeAxuliarLomesRespla():
-       # elif type_standard == "lomes:lom":
-        bs_data_xml = ""
-        metadata_filter =""
-        lom_data = bs_data_xml.find("lomes:lom")
-        for metadata in metadata_filter:
-            for data in metadata["metadata"]:
+    # elif type_standard == "lomes:lom":
+    bs_data_xml = ""
+    metadata_filter = ""
+    lom_data = bs_data_xml.find("lomes:lom")
+    for metadata in metadata_filter:
+        for data in metadata["metadata"]:
 
-                # Etoqueta accesibility
+            # Etoqueta accesibility
+            bs_data = lom_data.find("lomes:accesibility")
+            if bs_data is None and (
+                    data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                lom_data.insert(-1, BeautifulSoup("<lomes:accesibility></lomes:accesibility>", 'html.parser'))
                 bs_data = lom_data.find("lomes:accesibility")
-                if bs_data is None and (
+
+                # Creacion de la descripcion de accesibilidad
+                bs_data_descripcion = bs_data.find("lomes:description")
+                if bs_data_descripcion is None:
+                    # Insertar la descripcion para la etiqueta de accesibilidad
+                    bs_data.insert(0, BeautifulSoup(
+                        "<lomes:description language='es'> Adaptado para accesibilidad </lomes:description>",
+                        "html.parser"))
+
+            elif not bs_data == None and (
+                    data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                # Creacion de la descripcion de accesibilidad
+                bs_data_descripcion = bs_data.find("lomes:description")
+                if bs_data_descripcion is None:
+                    # Insertar la descripcion para la etiqueta de accesibilidad
+                    bs_data.insert(0, BeautifulSoup(
+                        "<lomes:description language='es'> Adaptado para accesibilidad </lomes:description>",
+                        "html.parser"))
+
+            property_data = bs_data.find(data["property"].lower())
+            if property_data is None and (
+                    data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                bs_data.append(
+                    BeautifulSoup(
+                        "<lomes:" + data["property"].lower() + "></lomes:" + data["property"].lower() + ">",
+                        'html.parser'))
+            elif not property_data == None and (
+                    data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                pass
+
+            try:
+                feature_data = property_data.find(data["property"])
+                if data["type"] not in str(feature_data) and (
                         data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
-                    lom_data.insert(-1, BeautifulSoup("<lomes:accesibility></lomes:accesibility>", 'html.parser'))
-                    bs_data = lom_data.find("lomes:accesibility")
-
-                    # Creacion de la descripcion de accesibilidad
-                    bs_data_descripcion = bs_data.find("lomes:description")
-                    if bs_data_descripcion is None:
-                        # Insertar la descripcion para la etiqueta de accesibilidad
-                        bs_data.insert(0, BeautifulSoup(
-                            "<lomes:description language='es'> Adaptado para accesibilidad </lomes:description>",
-                            "html.parser"))
-
-                elif not bs_data == None and (
+                    feature_data.append(
+                        BeautifulSoup(""" <lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                      'html.parser'))
+            except:
+                if data["type"] not in str(property_data) and property_data is not None and (
                         data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
-                    # Creacion de la descripcion de accesibilidad
-                    bs_data_descripcion = bs_data.find("lomes:description")
-                    if bs_data_descripcion is None:
-                        # Insertar la descripcion para la etiqueta de accesibilidad
-                        bs_data.insert(0, BeautifulSoup(
-                            "<lomes:description language='es'> Adaptado para accesibilidad </lomes:description>",
-                            "html.parser"))
-
-                property_data = bs_data.find(data["property"].lower())
-                if property_data is None and (
-                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
-                    bs_data.append(
-                        BeautifulSoup(
-                            "<lomes:" + data["property"].lower() + "></lomes:" + data["property"].lower() + ">",
-                            'html.parser'))
-                elif not property_data == None and (
-                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
-                    pass
-
-                try:
-                    feature_data = property_data.find(data["property"])
-                    if data["type"] not in str(feature_data) and (
-                            data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
-                        feature_data.append(
-                            BeautifulSoup(""" <lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
-                                          'html.parser'))
-                except:
-                    if data["type"] not in str(property_data) and property_data is not None and (
-                            data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
-                        property_data.append(
-                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
-                                          'html.parser'))
-
-                # Etiqueta classification
-                bs_data_descripcion = lom_data.find("lomes:classification")
-                if bs_data_descripcion is None and data["property"].lower() == "alignmenttype":
-                    lom_data.insert(-1, BeautifulSoup("<lomes:classification></lomes:classification>", 'html.parser'))
-                    bs_data_classification = lom_data.find("lomes:classification")
-                    bs_data_classification.insert(0, BeautifulSoup(
-                        " <lomes:purpose uniqueElementName='purpose'></lomes:purpose>", 'html.parser'))
-                    bs_data_purpose = bs_data_classification.find("lomes:purpose")
-                    bs_data_purpose.append(
+                    property_data.append(
                         BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
                                       'html.parser'))
-                elif not bs_data_descripcion == None and data["property"].lower() == "alignmenttype":
-                    bs_data_descripcion_ux = bs_data_descripcion.find("lomes:purpose")
-                    if bs_data_descripcion_ux is None:
-                        bs_data_classification.insert(0, BeautifulSoup(
-                            "<lomes:purpose uniqueElementName='purpose'></lomes:purpose>", 'html.parser'))
-                        bs_data_descripcion = bs_data_classification
-                        bs_data_descripcion.append("lomes:purpose")
-                        bs_data_descripcion.append(
-                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
-                                          'html.parser'))
-                    else:
-                        bs_data_descripcion.append(
-                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
-                                          'html.parser'))
 
-                # etiqueta annotation ?
-                bs_annotation = lom_data.find("lomes:annotation")
-                if bs_annotation is None and data["property"].lower() == "accessmode":
-                    lom_data.insert(-1, BeautifulSoup("<lomes:annotation></lomes:annotation>", 'html.parser'))
-                    bs_accessmode = lom_data.find("lomes:annotation")
-                    bs_accessmode_aux = bs_accessmode.find("lomes:accessmode")
-                    if bs_accessmode_aux is None:
-                        bs_accessmode.append(BeautifulSoup("<lomes:accessmode></lomes:accessmode>", 'html.parser'))
-                        bs_accessmode_ux = bs_accessmode.find("lomes:accessmode")
-                        bs_accessmode_ux.append(
-                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
-                                          'html.parser')
-                        );
-                    else:
-                        bs_accessmode_ux.append(
-                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
-                                          'html.parser')
-                        );
-                elif not bs_annotation == None and data["property"].lower() == "accessmode":
-                    bs_accessmode = bs_annotation.find("lomes:accessmode")
-                    if bs_accessmode is None:
-                        bs_annotation.append(BeautifulSoup("<lomes:accessmode></lomes:accessmode>", 'html.parser'))
-                        bs_accessmode_ux = bs_annotation.find("lomes:accessmode")
-                        bs_accessmode_ux.append(
-                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
-                                          'html.parser')
-                        );
-                    else:
-                        bs_accessmode_ux.append(
-                            BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
-                                          'html.parser')
-                        );
-        file_xml=""
-        generate_new_htmlFile(bs_data_xml, file_xml)
-        return True
+            # Etiqueta classification
+            bs_data_descripcion = lom_data.find("lomes:classification")
+            if bs_data_descripcion is None and data["property"].lower() == "alignmenttype":
+                lom_data.insert(-1, BeautifulSoup("<lomes:classification></lomes:classification>", 'html.parser'))
+                bs_data_classification = lom_data.find("lomes:classification")
+                bs_data_classification.insert(0, BeautifulSoup(
+                    " <lomes:purpose uniqueElementName='purpose'></lomes:purpose>", 'html.parser'))
+                bs_data_purpose = bs_data_classification.find("lomes:purpose")
+                bs_data_purpose.append(
+                    BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                  'html.parser'))
+            elif not bs_data_descripcion == None and data["property"].lower() == "alignmenttype":
+                bs_data_descripcion_ux = bs_data_descripcion.find("lomes:purpose")
+                if bs_data_descripcion_ux is None:
+                    bs_data_classification.insert(0, BeautifulSoup(
+                        "<lomes:purpose uniqueElementName='purpose'></lomes:purpose>", 'html.parser'))
+                    bs_data_descripcion = bs_data_classification
+                    bs_data_descripcion.append("lomes:purpose")
+                    bs_data_descripcion.append(
+                        BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                      'html.parser'))
+                else:
+                    bs_data_descripcion.append(
+                        BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                      'html.parser'))
+
+            # etiqueta annotation ?
+            bs_annotation = lom_data.find("lomes:annotation")
+            if bs_annotation is None and data["property"].lower() == "accessmode":
+                lom_data.insert(-1, BeautifulSoup("<lomes:annotation></lomes:annotation>", 'html.parser'))
+                bs_accessmode = lom_data.find("lomes:annotation")
+                bs_accessmode_aux = bs_accessmode.find("lomes:accessmode")
+                if bs_accessmode_aux is None:
+                    bs_accessmode.append(BeautifulSoup("<lomes:accessmode></lomes:accessmode>", 'html.parser'))
+                    bs_accessmode_ux = bs_accessmode.find("lomes:accessmode")
+                    bs_accessmode_ux.append(
+                        BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                      'html.parser')
+                    );
+                else:
+                    bs_accessmode_ux.append(
+                        BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                      'html.parser')
+                    );
+            elif not bs_annotation == None and data["property"].lower() == "accessmode":
+                bs_accessmode = bs_annotation.find("lomes:accessmode")
+                if bs_accessmode is None:
+                    bs_annotation.append(BeautifulSoup("<lomes:accessmode></lomes:accessmode>", 'html.parser'))
+                    bs_accessmode_ux = bs_annotation.find("lomes:accessmode")
+                    bs_accessmode_ux.append(
+                        BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                      'html.parser')
+                    );
+                else:
+                    bs_accessmode_ux.append(
+                        BeautifulSoup("""<lomes:value uniqueElementName="value">%s</lomes:value>""" % data["type"],
+                                      'html.parser')
+                    );
+    file_xml = ""
+    generate_new_htmlFile(bs_data_xml, file_xml)
+    return True

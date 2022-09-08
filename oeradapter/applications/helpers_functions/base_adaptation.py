@@ -1,10 +1,7 @@
+import copy
 import json
 import re
-import threading
-import time
 from zipfile import ZipFile
-
-import shortuuid
 import webvtt
 from unipath import Path
 from . import beautiful_soup_data as bsd
@@ -12,7 +9,6 @@ from youtube_dl import YoutubeDL
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import WebVTTFormatter
 from vtt_to_srt.vtt_to_srt import vtt_to_srt
-from geopy.geocoders import Nominatim
 import shutil
 import os
 from os import remove, listdir
@@ -24,10 +20,9 @@ from asgiref.sync import async_to_sync
 from ..adaptation.VideoDownloader import YoutubeDLThread
 from ..adaptation.serializers import TagsVideoSerializer
 from ..adaptation.views import save_data_attribute
-from ..learning_object.models import MetadataInfo, TagAdapted, Transcript
-import pyttsx3
-from queue import Queue
+from ..learning_object.models import TagAdapted, Transcript, PageLearningObject
 from channels.layers import get_channel_layer
+import imgkit
 
 channel_layer = get_channel_layer()
 
@@ -92,7 +87,15 @@ def remove_folder(path):
         print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def add_files_adaptation(html_files, directory, button=False, paragraph_script=False, video=False, root_dirs=None):
+def move_folder(directory, path):
+    """Add paragraph script on pages of learning object"""
+    path_origin = os.path.join(BASE_DIR, 'resources', path)
+    path_src = os.path.join(BASE_DIR, directory, 'oer_resources', path)
+    return copy_folder(path_origin, path_src)
+
+
+def add_files_adaptation(html_files, directory, button=False, paragraph_script=False, video=False, image=False,
+                         root_dirs=None):
     """Add essential files of adaptation on learning object"""
 
     if button or video:
@@ -106,10 +109,18 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
                 pass
 
     if paragraph_script:
-        """Add paragraph script on pages of learning object"""
-        path_origin = os.path.join(BASE_DIR, 'resources', 'text_adaptation')
-        path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'text_adaptation')
-        path_save = copy_folder(path_origin, path_src)
+        # """Add paragraph script on pages of learning object"""
+        # path_origin = os.path.join(BASE_DIR, 'resources', 'text_adaptation')
+        # path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'text_adaptation')
+        # path_save = copy_folder(path_origin, path_src)
+        move_folder(directory, 'text_adaptation')
+
+    if image:
+        # """Add paragraph script on pages of learning object"""
+        # path_origin = os.path.join(BASE_DIR, 'resources', 'lightbox')
+        # path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'lightbox')
+        # path_save = copy_folder(path_origin, path_src)
+        move_folder(directory, 'lightbox')
 
     for file in html_files:
         soup_file = bsd.generateBeautifulSoupFile(file['file'])
@@ -128,6 +139,11 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
 
         if paragraph_script:
             head_adaptation, body_adaptation = bsd.templateTextAdaptation(file['dir_len'])
+            soup_file.head.insert(len(soup_file.head) - 1, head_adaptation)
+            soup_file.body.insert(len(soup_file.head) - 1, body_adaptation)
+
+        if image:
+            head_adaptation, body_adaptation = bsd.templateImageAdaptation(file['dir_len'])
             soup_file.head.insert(len(soup_file.head) - 1, head_adaptation)
             soup_file.body.insert(len(soup_file.head) - 1, body_adaptation)
 
@@ -179,42 +195,37 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
 
 
 def convertAudio_Text(path_init):
-    audioI = path_init.replace('\\\\', '\\')
-    is_wav = False;
-
-    # Verificar la extencion del archivo.
-
     root, extension = os.path.splitext(path_init)
+    audio = root + ".wav"
 
     if extension == '.mp3':
-        print('ES MP3')
-        sound = AudioSegment.from_mp3(str(audioI))
+        sound = AudioSegment.from_mp3(path_init)
+        sound.export(audio, format="wav")
     elif extension == '.webm':
-        sound = AudioSegment.from_file(str(audioI), format="webm")
+        sound = AudioSegment.from_file(path_init, format="webm")
+        sound.export(audio, format="wav")
     elif extension == ".ogg":
-        sound = AudioSegment.from_ogg(str(audioI))
+        sound = AudioSegment.from_ogg(path_init)
+        sound.export(audio, format="wav")
     elif extension == ".wav":
-        is_wav = True;
-        pass;
-    elif extension == ".flv":
-        sound = AudioSegment.from_flv(str(audioI))
-
-    if (is_wav == True):
         audio = path_init
+    elif extension == ".flv":
+        sound = AudioSegment.from_flv(path_init)
+        sound.export(audio, format="wav")
     else:
-        audio = path_init + ".wav"
+        raise Exception("Format not supported")
 
-    sound.export(audio, format="wav")
-
-    r = sr.Recognizer()
-
-    with sr.AudioFile(audio) as source:
-        info_audio = r.record(source)
-        text_new = r.recognize_google(info_audio, language="es-ES")
-
-    remove(audio)
-    # time.sleep(10)
-    return text_new
+    try:
+        r = sr.Recognizer()
+        with sr.AudioFile(audio) as source:
+            info_audio = r.record(source)
+            text_new = r.recognize_google(info_audio, language="es-ES")
+        remove(audio)
+        return text_new
+    except Exception as e:
+        # print("error", e)
+        remove(audio)
+        raise e
 
 
 '''
@@ -275,15 +286,17 @@ def download_video1(tag, data_attribute, learning_object, request):
             "message": "La fuente no permite la descarga de videos.",
             "data": serializer.data
         }})
-
     else:
-
         # guardar video
-        try:
-            file_html = bsd.generateBeautifulSoupFile(tag.page_learning_object.path)
-            tag_adaptation = file_html.find(tag.tag, tag.id_class_ref)
+        page_website_learning_object = None
+        uid = bsd.getUUID()
+        if tag.page_learning_object.is_webpage:
+            name_filter = tag.page_learning_object.file_name.replace('website_', '')
+            page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
+                                                                          is_webpage=False,
+                                                                          learning_object_id=tag.page_learning_object.learning_object_id)
 
-            uid = bsd.getUUID()
+        try:
             tag_adapted = TagAdapted.objects.create(
                 type="video",
                 id_ref=uid,
@@ -313,6 +326,7 @@ def download_video1(tag, data_attribute, learning_object, request):
             }})
 
             try:
+
                 transcripts, captions = generate_transcript_youtube(data_attribute.data_attribute, tittle,
                                                                     learning_object.path_adapted, request,
                                                                     tag.page_learning_object.dir_len)
@@ -323,14 +337,19 @@ def download_video1(tag, data_attribute, learning_object, request):
                 for caption in captions:
                     create_transcript(caption, tag_adapted)
 
+                save_data_attribute(data_attribute, path_src, path_system, path_preview)
+
                 # transform html
                 video_template = bsd.templateVideoAdaptation(path_src, "video/mp4", tittle, captions,
                                                              transcripts, uid)
 
-                tag_adaptation.replace_with(video_template)
-                bsd.generate_new_htmlFile(file_html, tag.page_learning_object.path)
-
-                save_data_attribute(data_attribute, path_src, path_system, path_preview)
+                tag_adapted.html_text = str(video_template)
+                tag_adapted.save()
+                # save video youtube
+                save_video_on_html(tag, copy.copy(video_template), tag.page_learning_object)
+                # find web page
+                if page_website_learning_object is not None:
+                    save_video_on_html(tag, copy.copy(video_template), page_website_learning_object)
 
                 tag.adapting = False
                 tag.save()
@@ -364,13 +383,24 @@ def download_video1(tag, data_attribute, learning_object, request):
                                                         }})
 
         else:
+            # file_html = bsd.generateBeautifulSoupFile(tag.page_learning_object.path)
+            # tag_adaptation = file_html.find(tag.tag, tag.id_class_ref)
+
             # transform html
             save_data_attribute(data_attribute, path_src, path_system, path_preview)
 
             video_template = bsd.templateVideoAdaptation(path_src, "video/mp4", tittle, captions,
                                                          transcripts, uid)
-            tag_adaptation.replace_with(video_template)
-            bsd.generate_new_htmlFile(file_html, tag.page_learning_object.path)
+
+            tag_adapted.html_text = str(video_template)
+            tag_adapted.save()
+
+            # tag_adaptation.replace_with(video_template)
+            # bsd.generate_new_htmlFile(file_html, tag.page_learning_object.path)
+            save_video_on_html(tag, copy.copy(video_template), tag.page_learning_object)
+            # find web page
+            if page_website_learning_object is not None:
+                save_video_on_html(tag, copy.copy(video_template), page_website_learning_object)
 
             tag.adapting = False
             tag.save()
@@ -382,6 +412,14 @@ def download_video1(tag, data_attribute, learning_object, request):
                                                         "message": "La fuente no tiene subtítulos.",
                                                         "data": serializer.data
                                                     }})
+
+
+def save_video_on_html(tag, video_template, page_learning_object):
+    file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+    tag_adaptation = file_html.find(tag.tag, tag.id_class_ref)
+
+    tag_adaptation.replace_with(video_template)
+    bsd.generate_new_htmlFile(file_html, page_learning_object.path)
 
 
 '''
@@ -572,7 +610,8 @@ def save_transcript(transcript, path_adapted, video_title, transcripts, captions
 
     srt_file = convert_vtt_to_str(vtt_system)
 
-    path_json = os.path.join(BASE_DIR, path_adapted, "oer_resources", video_title + "_" + transcript.language_code + ".json")
+    path_json = os.path.join(BASE_DIR, path_adapted, "oer_resources",
+                             video_title + "_" + transcript.language_code + ".json")
 
     json_system = convert_str_to_json(srt_file, path_json)
 
@@ -736,36 +775,31 @@ def extract_zip_file(path, file_name, file):
     return directory_origin, directory_adapted
 
 
-def compress_file(request, learning_object, count_images_count, count_paragraphs_count, count_videos_count,
-                  count_audios_count):
-    location = "Private request Api"
-    browser = "Request Api"
-    try:
-        browser = str(request.data['browser'])
-        laltitud = str(request.data['latitude'])
-        longitud = str(request.data['longitude'])
-        geolocator = Nominatim(user_agent="geoapiExercises")
-        location = str(geolocator.reverse(laltitud + "," + longitud))
-    except Exception as e:
-        print(e)
-
-    metadataInfo = MetadataInfo.objects.create(
-        browser=browser,
-        country=location,
-        text_number=count_paragraphs_count,
-        video_number=count_videos_count,
-        audio_number=count_audios_count,
-        img_number=count_images_count,
-    )
-
+def compress_file(request, learning_object):
     path_folder = os.path.join(BASE_DIR, learning_object.path_adapted)
     archivo_zip = shutil.make_archive(path_folder, "zip", path_folder)
-    new_path = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip').replace(
+    path_zip_file = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip').replace(
         "\\", "/")
 
     if PROD['PROD']:
-        new_path = new_path.replace("http://", "https://")
+        path_zip_file = path_zip_file.replace("http://", "https://")
 
     # print("Creado el archivo:", new_path)
 
-    return new_path
+    return path_zip_file
+
+
+def take_screenshot(learning_object, page_learning_object):
+    try:
+        options = {
+            'format': 'png',
+            'height': '1000',
+            'width': '1000',
+            'encoding': "UTF-8",
+        }
+        imgkit.from_url(page_learning_object.preview_path,
+                        os.path.join(BASE_DIR, learning_object.path_adapted, 'img-prev.png'), options=options)
+
+    except Exception as e:
+        print(e)
+        pass

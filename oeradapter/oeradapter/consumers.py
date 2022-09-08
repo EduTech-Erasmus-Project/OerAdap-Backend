@@ -1,9 +1,4 @@
-import asyncio
 import json
-
-import redis
-from channels.consumer import AsyncConsumer
-from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 

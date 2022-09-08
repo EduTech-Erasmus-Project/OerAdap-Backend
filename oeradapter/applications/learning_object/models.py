@@ -54,10 +54,12 @@ class PageLearningObject(models.Model):
 
     type = models.CharField(max_length=10, null=True)
     path = models.TextField()
-    title = models.CharField(max_length=200, null=True)
+    title = models.CharField(max_length=256, null=True)
+    file_name = models.CharField(max_length=256, null=True, blank=True)
     preview_path = models.URLField(null=True)
     disabled = models.BooleanField(default=False)
     dir_len = models.IntegerField(default=0)
+    is_webpage = models.BooleanField(default=False)
     learning_object = models.ForeignKey(LearningObject, related_name="page_learning_object", on_delete=models.CASCADE)
 
 
@@ -70,6 +72,7 @@ class TagPageLearningObject(models.Model):
     html_text = models.TextField(null=True, blank=True)
     id_class_ref = models.CharField(max_length=20)
     adapting = models.BooleanField(default=False, null=True)
+    adaptation = models.BooleanField(default=True)
     page_learning_object = models.ForeignKey(PageLearningObject, related_name="tag_page_learning_object",
                                              on_delete=models.CASCADE)
 
@@ -88,6 +91,7 @@ class TagAdapted(models.Model):
     button_text_id = models.CharField(max_length=20, null=True)
     button_audio_id = models.CharField(max_length=20, null=True)
     text_table = models.TextField(null=True, blank=True)
+    img_fullscreen = models.BooleanField(default=False)
     tag_page_learning_object = models.OneToOneField(
         TagPageLearningObject,
         related_name="tags_adapted",
@@ -135,10 +139,11 @@ class MetadataInfo(models.Model):
 
     browser = models.CharField(max_length=100, null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
-    text_number = models.CharField(max_length=100, null=True, blank=True)
-    video_number = models.CharField(max_length=100, null=True, blank=True)
-    audio_number = models.CharField(max_length=100, null=True, blank=True)
-    img_number = models.CharField(max_length=100, null=True, blank=True)
+    text_number = models.IntegerField(default=0)
+    video_number = models.IntegerField(default=0)
+    audio_number = models.IntegerField(default=0)
+    img_number = models.IntegerField(default=0)
+    id_learning = models.IntegerField(default=0)
 
 
 class RequestApi(models.Model):
