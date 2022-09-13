@@ -9,7 +9,7 @@ try:
         metadata = json.loads(f.read())
         f.close()
 except Exception as e:
-    print("file metadata.json not found", e)
+    print("Error", e)
 
 
 def get_metadata(areas):

@@ -1,4 +1,7 @@
+import threading
 from datetime import datetime
+
+from django.db.models import Q, Sum, Count
 from pytz import utc
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -10,9 +13,10 @@ import json
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, TagAdapted, \
-    RequestApi
+    RequestApi, MetadataInfo
 from .permission import IsPermissionToken
 from .serializers import LearningObjectSerializer, ApiLearningObjectDetailSerializer, LearningObjectDetailSerializer
+from ..adaptation.serializers import TagsSerializerTagAdapted, TagsVideoSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 from ..helpers_functions import automatic_adaptation as aa
@@ -30,22 +34,23 @@ def adaptation_settings(areas, files, directory, root_dirs):
     button = False
     paragraph_script = False
     video = False
+    image = False
     if 'image' in areas:
-        pass
+        image = True
+
     if 'video' in areas:
         video = True
-        pass
+
     if 'audio' in areas:
         paragraph_script = True
-        pass
+
     if 'button' in areas:
         button = True
-        pass
+
     if 'paragraph' in areas:
         paragraph_script = True
-        pass
-    # pass
-    ba.add_files_adaptation(files, directory, button, paragraph_script, video, root_dirs)
+
+    ba.add_files_adaptation(files, directory, button, paragraph_script, video, image, root_dirs)
 
 
 def get_learning_objects_by_token(user_ref):
@@ -63,6 +68,20 @@ def get_learning_objects_by_token(user_ref):
     return serializer
 
 
+def save_screenshot(learning_object):
+    #print("page_learning_object")
+    page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
+                                                             Q(file_name="website_index.html"))
+    if len(page_learning_object) == 0:
+        page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
+                                                                 Q(file_name="index.html"))
+    #print("page_learning_object", page_learning_object)
+
+    th_take_screenshot = threading.Thread(target=ba.take_screenshot,
+                                          args=[learning_object, page_learning_object[0], ])
+    th_take_screenshot.start()
+
+
 def create_learning_object(request, user_token, Serializer, areas, method):
     uuid = str(shortuuid.ShortUUID().random(length=8))
     file = request.FILES['file']
@@ -72,7 +91,10 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     # Extract file
     path = "uploads"
     file_name = file._name
-    directory_origin, directory_adapted = ba.extract_zip_file(path, file_name, file)
+    try:
+        directory_origin, directory_adapted = ba.extract_zip_file(path, file_name, file)
+    except:
+        return None, None, True
 
     # save the learning object preview path
     preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
@@ -98,7 +120,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
         preview_adapted=preview_adapted,
         file_folder=os.path.join(path, file_name.split('.')[0])
     )
-    serializer = Serializer(learning_object)  # LearningObjectSerializer(learning_object)
+    serializer = Serializer(learning_object)
 
     AdaptationLearningObject.objects.create(
         method=method,
@@ -109,11 +131,20 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     # files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
     adaptation_settings(areas, files, directory_adapted, root_dirs)
 
-    bsd.save_filesHTML_db(files, learning_object, directory_adapted, directory_origin, request._current_scheme_host)
+    # print("files", files)
+    files_website = [file for file in files if "website_" in file['file_name']]
+    # print("files website", files_website)
+    files_normal = [file for file in files if "website_" not in file['file_name']]
+    # print("files normal", files_normal)
+
+    bsd.save_filesHTML_db(files_normal, learning_object, directory_adapted, directory_origin,
+                          request._current_scheme_host, files_website)
     learning_object.button_adaptation = True
     learning_object.save()
 
     bsd.save_metadata_in_xml(directory_adapted, areas)
+
+    save_screenshot(learning_object)
 
     return serializer, learning_object, is_adapted
 
@@ -232,17 +263,23 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         if len(areas) <= 0:
             return Response({"state": "Array Areas Empty", "code": "areas_empty"}, status=status.HTTP_400_BAD_REQUEST)
 
-        ## metodo par aguardar
-        serializer, learning_object, is_adapted = create_learning_object(request, user_token, LearningObjectSerializer,
-                                                                         areas,
-                                                                         request.data['method'])
+        try:
+            serializer, learning_object, is_adapted = create_learning_object(request, user_token,
+                                                                             LearningObjectSerializer,
+                                                                             areas,
+                                                                             request.data['method'])
+        except Exception as e:
+            return Response({"state": "error", "message": e.__str__()},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         if is_adapted:
-            return Response({"state": "learning_Object_Adapted"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"state": "error", "code": "learning_object_odapted", "message": "Adapted"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if request.data['method'] == "handbook":
             return Response(serializer.data)
 
-        if request.data['method'] == "automatic" or request.data['method'] == "mixed":
+        elif request.data['method'] == "automatic":
 
             ## adaptayion method
             state = automatic_adaptation(areas, request, learning_object)
@@ -276,6 +313,98 @@ class LearningObjectRetrieveAPIView(generics.RetrieveAPIView):
         else:
             return Response({"status": False, "code": "ERROR_UNAUTHORIZED", "message": "no authorization key"},
                             status=status.HTTP_401_UNAUTHORIZED)
+
+
+class MetadataInfoListAPIView(generics.ListAPIView):
+    queryset = MetadataInfo.objects.all()
+    serializer_class = serializers.InfoMetadataSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            count_learning_object = self.queryset.values('id_learning').annotate(Count('id_learning')).count()
+            count_audio = self.queryset.aggregate(Sum('audio_number'))
+            count_image = self.queryset.aggregate(Sum('img_number'))
+            count_paragraphs = self.queryset.aggregate(Sum('text_number'))
+            count_video = self.queryset.aggregate(Sum('video_number'))
+            countries = self.queryset.values('country').annotate(total=Count('country'))
+
+            return Response({
+                "learning_object": count_learning_object,
+                "audio": count_audio["audio_number__sum"],
+                "image": count_image["img_number__sum"],
+                "paragraphs": count_paragraphs["text_number__sum"],
+                "video": count_video["video_number__sum"],
+                "countries": countries
+            },
+                status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "status": "err"
+            },
+                status=status.HTTP_400_BAD_REQUEST)
+
+
+class LearningObjectAudioRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TagPageLearningObject.objects.all
+    serializer_class = TagsSerializerTagAdapted
+
+    def get(self, request, *args, **kwargs):
+        tagPageLearningObject = TagPageLearningObject.objects.filter(
+            Q(page_learning_object__learning_object_id=self.kwargs['pk']) &
+            Q(tag='audio') &
+            Q(page_learning_object__is_webpage=True))
+
+        if len(tagPageLearningObject) <= 0:
+            tagPageLearningObject = TagPageLearningObject.objects.filter(
+                Q(page_learning_object__learning_object_id=self.kwargs['pk']) &
+                Q(tag='audio') &
+                Q(page_learning_object__is_webpage=False) &
+                ~Q(page_learning_object__file_name__contains="singlepage_index.html"))
+
+        response_data = self.get_serializer(tagPageLearningObject, many=True)
+        return Response(response_data.data, status=status.HTTP_200_OK)
+
+
+class LearningObjectImageRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TagPageLearningObject.objects.all
+    serializer_class = TagsSerializerTagAdapted
+
+    def get(self, request, *args, **kwargs):
+        tagPageLearningObject = TagPageLearningObject.objects.filter(
+            Q(page_learning_object__learning_object_id=self.kwargs['pk']) &
+            Q(tag='img') &
+            Q(page_learning_object__is_webpage=True))
+
+        if len(tagPageLearningObject) <= 0:
+            tagPageLearningObject = TagPageLearningObject.objects.filter(
+                Q(page_learning_object__learning_object_id=self.kwargs['pk']) &
+                Q(tag='img') &
+                Q(page_learning_object__is_webpage=False) &
+                ~Q(page_learning_object__file_name__contains="singlepage_index.html"))
+
+        response_data = self.get_serializer(tagPageLearningObject, many=True)
+        return Response(response_data.data, status=status.HTTP_200_OK)
+
+
+class LearningObjectVideoRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TagPageLearningObject.objects.all
+    serializer_class = TagsVideoSerializer
+
+    def get(self, request, *args, **kwargs):
+        tagPageLearningObject = TagPageLearningObject.objects.filter(
+            Q(page_learning_object__learning_object_id=self.kwargs['pk']) &
+            (Q(tag='iframe') | Q(tag='video')) &
+            Q(page_learning_object__is_webpage=True))
+
+        if len(tagPageLearningObject) <= 0:
+            tagPageLearningObject = TagPageLearningObject.objects.filter(
+                Q(page_learning_object__learning_object_id=self.kwargs['pk']) &
+                (Q(tag='iframe') | Q(tag='video')) &
+                Q(page_learning_object__is_webpage=False) &
+                ~Q(page_learning_object__file_name__contains="singlepage_index.html"))
+
+        response_data = self.get_serializer(tagPageLearningObject, many=True)
+        return Response(response_data.data, status=status.HTTP_200_OK)
 
 
 class RequestApiEmail(generics.CreateAPIView):

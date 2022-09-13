@@ -1,16 +1,6 @@
-#application = get_asgi_application()
-''' 
-ProtocolTypeRouter({
-    'websocket': AllowedHostsOriginValidator(
-        AuthMiddlewareStack(
-            URLRouter(
-                [
-                    # url(r"^api/adapter/(?P<tag>[\w.@+-]+)/$", VideoConsumer),
-                    url(r"^api/adapter/video/progress/(?P<tag>[\w.@+-]+)/$", VideoConsumer.as_asgi()),
-                ]
-            )
-        )
-    )
+from django.conf.urls import url
+from . import consumers
 
-})
-'''
+websocket_urlpatterns = [
+    url(r'^ws/adapter/video/progress/(?P<pk>[^/]+)$', consumers.VideoConsumer.as_asgi()),
+]

@@ -1,9 +1,4 @@
-import asyncio
 import json
-
-import redis
-from channels.consumer import AsyncConsumer
-from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
@@ -11,7 +6,7 @@ class VideoConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         idTag = self.scope["url_route"]["kwargs"]["pk"]
-        #print("scope", self.scope)
+        print("idTag", idTag)
         print("request to connect socket tag", str(idTag))
 
         await self.channel_layer.group_add("channel_"+str(idTag), self.channel_name)

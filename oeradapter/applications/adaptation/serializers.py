@@ -7,13 +7,13 @@ from django.db.models import Q
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
         model = TagPageLearningObject
-        fields = ('id', 'text', 'html_text', 'page_learning_object')
+        fields = ('id', 'text', 'html_text', 'page_learning_object', 'adaptation')
 
 
 class TagsSerializerTagUpdate(serializers.ModelSerializer):
     class Meta:
         model = TagAdapted
-        fields = ('id', 'text', 'html_text', 'tag_page_learning_object', 'id_ref', 'path_src', 'text_table')
+        fields = ('id', 'text', 'html_text', 'tag_page_learning_object', 'id_ref', 'path_src', 'text_table', 'img_fullscreen')
 
 
 class DataAttributeSerializer(serializers.ModelSerializer):
@@ -28,7 +28,7 @@ class TagsSerializerTagAdapted(serializers.ModelSerializer):
 
     class Meta:
         model = TagPageLearningObject
-        fields = ('id', 'page_learning_object', 'html_text', 'id_class_ref', 'attributes', 'tags_adapted')
+        fields = ('id', 'page_learning_object', 'html_text', 'id_class_ref', 'attributes', 'tags_adapted', 'adaptation')
 
 
 class TranscriptSerializer(serializers.ModelSerializer):
@@ -110,7 +110,7 @@ class TagsVideoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TagPageLearningObject
-        fields = ['id', 'text', 'html_text', 'page_learning_object', 'adapting', 'attributes', 'tags_adapted', ]
+        fields = ['id', 'text', 'html_text', 'page_learning_object', 'adapting', 'attributes', 'tags_adapted', 'adaptation']
 
 
 class LearningObjectSerializerAdaptation(serializers.ModelSerializer):
