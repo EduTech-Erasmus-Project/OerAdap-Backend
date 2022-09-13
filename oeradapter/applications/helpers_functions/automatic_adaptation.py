@@ -25,10 +25,8 @@ def convertAudioToText(tag_learning_object, page, learning_object, request):
 
     tag_aux = str(tag)
     tag.insert(1, div_soup_data)
-
     new_text = ba.convertAudio_Text(data_attribute.path_system)
-
-    TagAdapted_create = TagAdapted.objects.create(
+    TagAdapted.objects.create(
         tag_page_learning_object_id=tag.id,
         path_system=data_attribute.path_system,
         id_ref=tag.id_class_ref,
@@ -37,7 +35,6 @@ def convertAudioToText(tag_learning_object, page, learning_object, request):
         path_src=data_attribute.data_attribute,
         text=new_text
     )
-
     button_text_data = bsd.templateAudioTextButton(
         tag.id_class_ref,
         new_text, page.dir_len)
@@ -45,8 +42,8 @@ def convertAudioToText(tag_learning_object, page, learning_object, request):
     div_soup_data.insert(1, button_text_data)
     tag_audio_div = bsd.templateAdaptedAudio(tag_aux, tag.id_class_ref)
     tag_audio_div.append(div_soup_data)
-    tag.replace_with(tag_audio_div)
-
+    tag_container = bsd.templateContainerButtons(tag_learning_object.id_class_ref, tag_audio_div)
+    tag.replace_with(tag_container)
     bsd.generate_new_htmlFile(file_html, page.path)
 
 

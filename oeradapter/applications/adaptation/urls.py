@@ -13,6 +13,7 @@ urlpatterns = [
     path('compress/learningObject/<int:pk>', views.comprimeFileZip),
     path('convert/paragraph/<int:pk>', views.CovertTextToAudioRetrieveAPIView.as_view()),
 
+    path('adapter/image/preview/<int:pk>', views.AdaptedImagePreviewRetrieveUpdateAPIView.as_view()),
     path('adapter/image/<int:pk>', views.AdapatedImageView.as_view()),
     path('adapter/paragraph/<int:pk>', views.AdapterParagraphTestRetrieveAPIView.as_view()),
 
@@ -20,4 +21,11 @@ urlpatterns = [
     path('adapter/video/subtitle/add/<int:pk>', views.VideoAddCreateAPIView.as_view()),
     path('adapter/gettranscript/<int:pk>', views.transcript_api_view),
     path('adapter/updatetranscript/<int:pk>', views.update_transcript_api_view),
+
+    path('revert/image/<int:pk>', views.revertImageRetrieveUpdateAPIView.as_view()),
+    path('revert/audio/<int:pk>', views.revertAudioRetrieveUpdateAPIView.as_view()),
+    path('revert/paragraph/<int:pk>', views.revertParagraphRetrieveUpdateAPIView.as_view()),
+    path('revert/video/<int:pk>', views.revertVideoRetrieveUpdateAPIView.as_view()),
 ]
+
+

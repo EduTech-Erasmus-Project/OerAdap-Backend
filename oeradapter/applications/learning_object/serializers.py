@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, RequestApi, \
-    TagAdapted
+    TagAdapted, MetadataInfo
 from django.db.models import Q
 from ..helpers_functions import metadata as metadata
 
@@ -38,18 +38,27 @@ class AdaptationLearningObjectSerializer(serializers.ModelSerializer):
 
 
 def count_data(instance):
-    # count_pages = PageLearningObject.objects.filter(learning_object=instance.id).count()
-    count_pages = PageLearningObject.objects.filter(Q(learning_object=instance.id) & Q(type='adapted')).count()
+    count_pages = PageLearningObject.objects.filter(
+        Q(learning_object=instance.id) & Q(type='adapted') & Q(is_webpage=False) &
+        ~Q(file_name__contains="singlepage_index.html")).count()
 
-    # test = TagPageLearningObject.objects.filter(Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
     count_images = TagPageLearningObject.objects.filter(
-        Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img')).count()
+        Q(page_learning_object__learning_object__id=instance.id) & Q(tag='img') & Q(
+            page_learning_object__is_webpage=False) &
+        ~Q(page_learning_object__file_name__contains="singlepage_index.html")).count()
     count_paragraphs = TagPageLearningObject.objects.filter(
-        Q(page_learning_object__learning_object__id=instance.id) & (Q(tag='p') | Q(tag='span') | Q(tag='li'))).count()
+        Q(page_learning_object__learning_object__id=instance.id) & (Q(tag='p') | Q(tag='span') | Q(tag='li')) & Q(
+            page_learning_object__is_webpage=False) &
+        ~Q(page_learning_object__file_name__contains="singlepage_index.html")).count()
     count_videos = TagPageLearningObject.objects.filter(
-        Q(page_learning_object__learning_object__id=instance.id) & (Q(tag='iframe') | Q(tag='video'))).count()
+        Q(page_learning_object__learning_object__id=instance.id) & (Q(tag='iframe') | Q(tag='video')) & Q(
+            page_learning_object__is_webpage=False) &
+        ~Q(page_learning_object__file_name__contains="singlepage_index.html")).count()
+
     count_audios = TagPageLearningObject.objects.filter(
-        Q(page_learning_object__learning_object__id=instance.id) & Q(tag='audio')).count()
+        Q(page_learning_object__learning_object__id=instance.id) & Q(tag='audio') & Q(
+            page_learning_object__is_webpage=False) &
+        ~Q(page_learning_object__file_name__contains="singlepage_index.html")).count()
     return count_pages, count_images, count_paragraphs, count_videos, count_audios
 
 
@@ -67,7 +76,7 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         # count data
         count_pages, count_images, count_paragraphs, count_videos, count_audios = count_data(instance)
 
-        print("adap", config_adaptability.data["areas"])
+        #print("adap", config_adaptability.data["areas"])
 
         data = {
             "id": instance.id,
@@ -190,3 +199,9 @@ class ApiLearningObjectDetailSerializer(serializers.ModelSerializer):
 
         }
         return data
+
+
+class InfoMetadataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadataInfo
+        exclude = "browser"
