@@ -483,13 +483,13 @@ def webs_scraping_audio(soup_data, page_adapted, file, tag_identify, directory, 
     for tag in soup_data.find_all(tag_identify):
         class_uuid = tag_identify + '-' + getUUID()
 
-        print("class_uuid", class_uuid)
-        print("tag audio", tag)
-        print("is none", tag.get('src', None))
+        #print("class_uuid", class_uuid)
+        # print("tag audio", tag)
+        #print("is none", tag.get('src', None))
 
         if soup_data_website is not None:
             tag_webdata = find_tag_in_webpage(tag, soup_data_website)
-            print("tag_webdata", tag_webdata)
+            #print("tag_webdata", tag_webdata)
             save_tag_audio(tag_webdata, class_uuid, tag_identify, page_adapted_website, directory)
 
         save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory)
@@ -896,7 +896,7 @@ def templateAudioTextButton(id_class_ref, text, dir_len):
         <input class="text" type="image" onclick='textAdaptationEvent("{1}", "{2}", this)' src="{3}oer_resources/text_adaptation/paragraph.svg" aria-label="Convertir a texto" />
         <span class="tooltiptext">Convertir a texto</span>
      </div>
-    """.format(id_class_ref, text, id_class_ref, get_directory_resource(dir_len))
+    """.format(button_tag_id, text, id_class_ref, get_directory_resource(dir_len))
     soup_data = BeautifulSoup(tag_button, 'html.parser')
     return soup_data
 
@@ -909,12 +909,23 @@ def templateAdaptedAudio(original_tag_audio, id_class_ref):
     :param id_class_ref: id de referencia donde para encontrar el elemento en HTML
 
     """
-    class_aux = 'class="' + str(id_class_ref) + '"'
-    tag_figure_new = """<div """ + class_aux + """id="ref_adapted" style="text-align: justify;">""" + str(
-        original_tag_audio) + """
-       </div>"""
+    tag_figure_new = """
+            <div class="{0}" style="text-align: justify;">
+                {1}
+             </div>
+            """.format(id_class_ref, str(original_tag_audio))
     tag_figure_new = BeautifulSoup(tag_figure_new, 'html.parser')
     return tag_figure_new
+
+
+def templateContainerButtons(id_class_ref, tag):
+    tag_container = """
+        <div id="{0}">
+            {1}
+         </div>
+        """.format(id_class_ref, str(tag))
+    tag_container = BeautifulSoup(tag_container, 'html.parser')
+    return tag_container
 
 
 def templateAdaptedAudioButton(id_class_ref, audio_src, dir_len):
@@ -951,7 +962,7 @@ def convertElementBeautifulSoup(html_code):
 def templateVideoAdaptation(video_src, video_type, video_title, captions, transcripts, tag_id):
     player_uid = getUUID()
     video_bsd = """ 
-     <div class="ui-video-adaptability %s">
+     <div class="ui-video-adaptability" id="%s">
                                             <div class="videoPlayer fl-videoPlayer player-%s">
                                             </div>
                                             <script>
@@ -1016,7 +1027,7 @@ def find_xml_in_directory(directory):
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".xml"):
-                file_path = os.path.join(root, file);
+                file_path = os.path.join(root, file)
                 bs_data = generateBeautifulSoupFile(file_path)
                 data = bs_data.find("lom")
                 if data is not None:

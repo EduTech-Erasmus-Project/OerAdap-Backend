@@ -27,7 +27,6 @@ with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
 
 
 class ParagraphView(RetrieveAPIView):
-    # serializer_class = serializers.TagLearningObjectDetailSerializerP
     queryset = TagPageLearningObject.objects.all()
 
     def get(self, request, pk=None):
@@ -37,51 +36,21 @@ class ParagraphView(RetrieveAPIView):
         return Response(pages.data, status=status.HTTP_200_OK)
 
 
-# def get_queryset(self):
-#    return self.get_serializer().Meta.model.objects.all()
-
 class ImageView(RetrieveAPIView):
     queryset = TagPageLearningObject.objects.all()
 
     def get(self, request, pk=None):
-
         pages = TagPageLearningObject.objects.filter(Q(page_learning_object_id=pk) & Q(tag='img'))
-        # pages = TagAdapted.objects.filter(tag_page_learning_object=pages_id.id)
         pages = serializers.TagsSerializerTagAdapted(pages, many=True)
-
-        '''
-        def get_queryset(self):
-                pages = super().get_queryset()
-                pages = pages.prefetch_related(
-                    Prefetch('attributes')
-                )
-
-        def get_queryset(self):
-                pages = super().get_queryset()
-                pages = pages.prefetch_related(
-                    Prefetch('tags_adapted')
-                )
-
-        '''
         return Response(pages.data, status=status.HTTP_200_OK)
-        '''
-        return Response({
-            'message': "the page has no images"
-        }, status=status.HTTP_404_NOT_FOUND)
-        '''
 
     def put(self, request, pk=None):
-
         page_website_learning_object = None
         tag_website_adapted_learning_object = None
 
         """Consultas"""
-        # tag_learning_object = TagPageLearningObject.objects.get(pk=pk)
-        # page_learning_object = PageLearningObject.objects.get(pk=tag_learning_object.page_learning_object_id)
         page_learning_object = PageLearningObject.objects.get(tag_page_learning_object__id=pk)
-        print("page_learning_object", page_learning_object)
         tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object__id=pk)
-        print("tag_adapted_learning_object", tag_adapted_learning_object)
         tag_class_ref = tag_adapted_learning_object.id_ref
         if page_learning_object.is_webpage:
             name_filter = page_learning_object.file_name.replace('website_', '')
@@ -91,46 +60,38 @@ class ImageView(RetrieveAPIView):
             tag_website_adapted_learning_object = TagAdapted.objects.get(
                 tag_page_learning_object__page_learning_object__id=page_website_learning_object.id,
                 id_ref=tag_class_ref)
-            # print("tag_website_adapted_learning_object", tag_website_adapted_learning_object.id_ref)
 
-        adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object, data=request.data)
-        if adapted_serializer.is_valid():
-
-            """WebScraping"""
-            # file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
-            # html_img_code = file_html.find_all(class_=tag_class_ref)
-
-            if str(request.data['method']) == 'img-alt':
-                """Validacion de envio de datos, para realizar la actualizacion """
-                if (not request.data['text'].isspace()) & (request.data['text'] != ""):
-                    self.__update_alt_image(request, page_learning_object, tag_class_ref,
-                                            tag_adapted_learning_object)
-
-                    if page_website_learning_object is not None:
-                        self.__update_alt_image(request, page_website_learning_object, tag_class_ref,
-                                                tag_website_adapted_learning_object)
-                else:
-                    return Response({'message': "Campo vacío"}, status=status.HTTP_304_NOT_MODIFIED)
-
-            elif str(request.data['method']) == 'transform-table':
-                self.__create_table(request, page_learning_object, tag_class_ref,
-                                    tag_adapted_learning_object)
+        if str(request.data['method']) == 'img-alt':
+            """Validacion de envio de datos, para realizar la actualizacion """
+            if (not request.data['text'].isspace()) & (request.data['text'] != ""):
+                self.__update_alt_image(request, page_learning_object, tag_class_ref,
+                                        tag_adapted_learning_object)
 
                 if page_website_learning_object is not None:
-                    self.__create_table(request, page_website_learning_object, tag_class_ref,
-                                        tag_website_adapted_learning_object)
+                    self.__update_alt_image(request, page_website_learning_object, tag_class_ref,
+                                            tag_website_adapted_learning_object)
+            else:
+                return Response({'message': "Campo vacío"}, status=status.HTTP_304_NOT_MODIFIED)
 
-            elif str(request.data['method'] == 'update-table'):
-                self.__update_table(request, page_learning_object, tag_class_ref,
-                                    tag_adapted_learning_object)
+        elif str(request.data['method']) == 'transform-table':
+            self.__create_table(request, page_learning_object, tag_class_ref,
+                                tag_adapted_learning_object)
 
-                if page_website_learning_object is not None:
-                    self.__update_table(request, page_website_learning_object, tag_class_ref,
-                                        tag_website_adapted_learning_object)
+            if page_website_learning_object is not None:
+                self.__create_table(request, page_website_learning_object, tag_class_ref,
+                                    tag_website_adapted_learning_object)
 
-            adapted_serializer.save()
-            return Response(adapted_serializer.data)
-        return Response({'message': adapted_serializer.error_messages}, status=status.HTTP_304_NOT_MODIFIED)
+        elif str(request.data['method'] == 'update-table'):
+            self.__update_table(request, page_learning_object, tag_class_ref,
+                                tag_adapted_learning_object)
+
+            if page_website_learning_object is not None:
+                self.__update_table(request, page_website_learning_object, tag_class_ref,
+                                    tag_website_adapted_learning_object)
+
+        adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object)
+        return Response(adapted_serializer.data)
+        # return Response({'message': adapted_serializer.error_messages}, status=status.HTTP_304_NOT_MODIFIED)
 
     def __update_alt_image(self, request, page_learning_object, tag_class_ref, tag_adapted_learning_object):
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
@@ -162,7 +123,7 @@ class ImageView(RetrieveAPIView):
             html_img_code = file_html.find("img", class_=tag_class_ref)
 
         html_img_code.replace_with(copy.copy(html_change))
-        tag_adapted_learning_object.text_table = str(html_change)
+        tag_adapted_learning_object.text_table = str(copy.copy(html_change))
         tag_adapted_learning_object.save()
 
         """Revisar si el elemento ya esta envuelto por el elemto figure"""
@@ -177,7 +138,7 @@ class ImageView(RetrieveAPIView):
         table_update = file_html.find('figure', {"id": tag_class_ref})
         table_update.replace_with(copy.copy(html_change))
 
-        tag_adapted_learning_object.text_table = str(html_change)
+        tag_adapted_learning_object.text_table = str(copy.copy(html_change))
         tag_adapted_learning_object.save()
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
@@ -190,6 +151,7 @@ class AdaptedImagePreviewRetrieveUpdateAPIView(RetrieveUpdateAPIView):
                                                  tag_page_learning_object__id=pk)  # PageLearningObject.objects.get(tag_page_learning_object__id=pk)
         page_website_learning_object = None
         tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object__id=pk)
+
         tag_class_ref = tag_adapted_learning_object.id_ref
         if page_learning_object.is_webpage:
             name_filter = page_learning_object.file_name.replace('website_', '')
@@ -221,7 +183,7 @@ class AdaptedImagePreviewRetrieveUpdateAPIView(RetrieveUpdateAPIView):
             tag_adapted_learning_object.save()
 
         else:
-            parent = file_html.find('a', {"id": tag_class_ref})  # html_img_code.findParent(id=tag_class_ref)
+            parent = file_html.find('a', {"id": tag_class_ref})
             if parent is not None:
                 parent.replace_with(copy.copy(html_img_code))
                 tag_adapted_learning_object.html_text = str(html_img_code)
@@ -271,7 +233,7 @@ class AudioviewCreate(RetrieveAPIView):
             page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
                                                                           is_webpage=False,
                                                                           learning_object_id=page_learning_object.learning_object_id)
-            print("page_website_learning_object", page_website_learning_object)
+            #print("page_website_learning_object", page_website_learning_object)
 
         """Web Scraping"""
         div_soup_data, id_ref = bsd.templateAdaptationTag(tag_learning_object.id_class_ref)
@@ -325,12 +287,11 @@ class AudioviewCreate(RetrieveAPIView):
         div_soup_data.insert(1, button_text_data)
         tag_audio_div = bsd.templateAdaptedAudio(tag_aux, tag_learning_object.id_class_ref)
         tag_audio_div.append(div_soup_data)
-        tag.replace_with(tag_audio_div)
-
-        # create tag adapted
+        tag_container = bsd.templateContainerButtons(tag_learning_object.id_class_ref, tag_audio_div)
+        tag.replace_with(copy.copy(tag_container))
         data = None
         if not is_webpage:
-            data = self.__create_tag(request, request.data['text'])
+            data = self.__create_tag(request, request.data['text'], tag_container)
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
         return data
@@ -341,9 +302,7 @@ class AudioviewCreate(RetrieveAPIView):
         tag = file_html.find('audio', tag_learning_object.id_class_ref)
         tag_aux = str(tag)
         tag.insert(1, div_soup_data)
-
         new_text = ba.convertAudio_Text(request.data['path_system'])
-
         button_text_data = bsd.templateAudioTextButton(
             tag_learning_object.id_class_ref,
             new_text, page_learning_object.dir_len)
@@ -351,24 +310,23 @@ class AudioviewCreate(RetrieveAPIView):
         div_soup_data.insert(1, button_text_data)
         tag_audio_div = bsd.templateAdaptedAudio(tag_aux, tag_learning_object.id_class_ref)
         tag_audio_div.append(div_soup_data)
-        tag.replace_with(tag_audio_div)
+        tag_container = bsd.templateContainerButtons(tag_learning_object.id_class_ref, tag_audio_div)
+        tag.replace_with(copy.copy(tag_container))
 
         data = None
         if not is_webpage:
-            data = self.__create_tag(request, new_text)
+            data = self.__create_tag(request, new_text, tag_container)
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
         return data
 
-    def __create_tag(self, request, new_text):
-        print("new_text", new_text)
-
+    def __create_tag(self, request, new_text, tag):
         return TagAdapted.objects.create(
             tag_page_learning_object_id=request.data['tag_page_learning_object'],
             path_system=request.data['path_system'],
             id_ref=request.data['id_ref'],
             type=request.data['type'],
-            html_text=request.data['html_text'],
+            html_text=str(tag),
             path_src=request.data['path_src'],
             text=new_text
         )
@@ -378,20 +336,7 @@ class AudioView(RetrieveAPIView):
     def get(self, request, pk=None):
         pages = TagPageLearningObject.objects.filter(Q(page_learning_object_id=pk) & Q(tag='audio'))
         pages = serializers.TagsSerializerTagAdapted(pages, many=True)
-
-        '''
-        def get_queryset(self):
-                pages = super().get_queryset()
-                pages = pages.prefetch_related(
-                    Prefetch('tags_adapted')
-                )
-        '''
         return Response(pages.data, status=status.HTTP_200_OK)
-        '''
-        return Response({
-            'message': "the page has no audio"
-        }, status=status.HTTP_404_NOT_FOUND)
-        '''
 
     def put(self, request, pk=None):
 
@@ -413,7 +358,7 @@ class AudioView(RetrieveAPIView):
             page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
                                                                           is_webpage=False,
                                                                           learning_object_id=page_learning_object.learning_object_id)
-            print("page_website_learning_object", page_website_learning_object)
+            #print("page_website_learning_object", page_website_learning_object)
 
         """Validacion de envio de datos, para realizar la actualizacion """
         if (not request.data['text'].isspace()) & (request.data['text'] != ""):
@@ -460,19 +405,19 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
         page_learning_object = PageLearningObject.objects.get(type='adapted',
                                                               pk=tag_page_learning_object.page_learning_object_id)
 
-        print("page_learning_object", page_learning_object)
+        #print("page_learning_object", page_learning_object)
 
         if page_learning_object.is_webpage:
             name_filter = page_learning_object.file_name.replace('website_', '')
             page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
                                                                           is_webpage=False,
                                                                           learning_object_id=tag_page_learning_object.page_learning_object.learning_object_id)
-            print("page_website_learning_object", page_website_learning_object)
+            #print("page_website_learning_object", page_website_learning_object)
 
         try:
             tag_adapted = TagAdapted.objects.get(tag_page_learning_object_id=pk)
         except Exception as e:
-            print(type(e))
+            #print(type(e))
             tag_adapted = None
 
         if tag_adapted is not None:
@@ -540,9 +485,10 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
     def __update_text(self, request, tag_adapted, tag_page_learning_object, page_learning_object):
-        print("update page_learning_object.path", page_learning_object.path)
+        #print("update page_learning_object.path", page_learning_object.path)
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
-        tag_adaptation = file_html.find(id=tag_adapted.id_ref)
+        tag = file_html.find("div", id=tag_page_learning_object.id_class_ref)
+        tag_adaptation = tag.find(id=tag_adapted.id_ref)
 
         button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
             tag_page_learning_object.id_class_ref,
@@ -553,20 +499,20 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
         tag_adaptation.insert(1, button_text_data)
 
         tag_adapted.text = request.data['text']
-        tag_adapted.html_text = request.data['html_text']
+        tag_adapted.html_text = str(tag)
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
         tag_adapted.save()
 
     def __create_text(self, request, tag_page_learning_object, id_ref, div_soup_data, page_learning_object,
                       is_webpage=False):
-        print("create page_learning_object.path", page_learning_object.path)
+        #print("create page_learning_object.path", page_learning_object.path)
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find(tag_page_learning_object.tag, tag_page_learning_object.id_class_ref)
 
         tag.append(div_soup_data)
 
-        print("tag", tag)
+        #print("tag", tag)
 
         button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
             tag_page_learning_object.id_class_ref,
@@ -574,14 +520,17 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
         div_soup = tag.find(id=id_ref)
         div_soup.insert(1, button_text_data)
 
-        print("div_soup", div_soup)
+        #print("div_soup", div_soup)
+
+        tag_container = bsd.templateContainerButtons(tag_page_learning_object.id_class_ref, tag)
+        tag.replace_with(copy.copy(tag_container))
 
         data = None
 
         if not is_webpage:
             data = TagAdapted.objects.create(
                 text=request.data['text'],
-                html_text=request.data['html_text'],
+                html_text=str(tag_container),
                 type="p",
                 id_ref=id_ref,
                 tag_page_learning_object=tag_page_learning_object
@@ -591,7 +540,8 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
 
     def __update_file(self, request, tag_adapted, tag_page_learning_object, page_learning_object):
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
-        tag_adaptation = file_html.find(id=tag_adapted.id_ref)
+        tag = file_html.find("div", id=tag_page_learning_object.id_class_ref)
+        tag_adaptation = tag.find(id=tag_adapted.id_ref)
 
         learning_object = LearningObject.objects.get(pk=page_learning_object.learning_object_id)
         if (tag_adapted.path_system != '') and (tag_adapted.path_system is not None):
@@ -613,6 +563,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
         tag_adapted.path_src = path_src
         tag_adapted.path_preview = path_preview
         tag_adapted.path_system = path_system
+        tag_adapted.html_text = str(tag)
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
         tag_adapted.save()
@@ -640,6 +591,9 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
 
         div_soup.insert(len(div_soup) - 1, button_audio_data)
 
+        tag_container = bsd.templateContainerButtons(tag_page_learning_object.id_class_ref, tag)
+        tag.replace_with(copy.copy(tag_container))
+
         data = None
 
         if not is_webpage:
@@ -649,7 +603,8 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                 path_src=path_src,
                 path_preview=path_preview,
                 path_system=path_system,
-                tag_page_learning_object=tag_page_learning_object
+                tag_page_learning_object=tag_page_learning_object,
+                html_text=str(tag_container),
             )
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
         return data
@@ -710,7 +665,6 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
 
             serializers = self.get_serializer(tag_adapted)
 
-        # bsd.generate_new_htmlFile(file_html, page_learning_object.path)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
     def __create_audio(self, path_src, path_system, path_preview, tag_page_learning_object, div_soup_data, id_ref,
@@ -734,7 +688,8 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
                 path_src=path_src,
                 path_preview=path_preview,
                 path_system=path_system,
-                tag_page_learning_object=tag_page_learning_object
+                tag_page_learning_object=tag_page_learning_object,
+                html_text=str(tag)
             )
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
@@ -743,7 +698,8 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
     def __update_audio(self, path_src, path_system, path_preview, tag_page_learning_object, tag_adapted,
                        page_learning_object):
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
-        tag_adaptation = file_html.find(id=tag_adapted.id_ref)
+        tag = file_html.find("div", id=tag_page_learning_object.id_class_ref)
+        tag_adaptation = tag.find(id=tag_adapted.id_ref)
         button_audio_data, button_audio_tag_id = bsd.templateAdaptedAudioButton(
             tag_page_learning_object.id_class_ref, path_src, page_learning_object.dir_len)
 
@@ -755,6 +711,7 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
         tag_adapted.path_src = path_src
         tag_adapted.path_preview = path_preview
         tag_adapted.path_system = path_system
+        tag_adapted.html_text = str(tag)
 
         tag_adapted.save()
 
@@ -804,8 +761,8 @@ class VideoGenerateCreateAPIView(CreateAPIView):
             data_attribute = DataAttribute.objects.get(tag_page_learning_object_id=tag.id)
             learning_object = LearningObject.objects.get(pk=tag.page_learning_object.learning_object_id)
 
-            print("data_attribute", data_attribute)
-            print("learning_object", learning_object)
+            #print("data_attribute", data_attribute)
+            #print("learning_object", learning_object)
 
             if data_attribute.source == "local":
                 # generar subtititulos automaticamente
@@ -886,10 +843,6 @@ class VideoAddCreateAPIView(CreateAPIView):
             tag_adapted.html_text = str(video_template)
             tag_adapted.save()
 
-            # tag_adaptation = file_html.find("div", tag_adapted.id_ref)
-            # tag_adaptation.replace_with(video_template)
-            # bsd.generate_new_htmlFile(file_html, page_learning_object.path)
-
             self.__update_template_html("div", tag_adapted.id_ref, copy.copy(video_template),
                                         page_learning_object)
 
@@ -942,7 +895,7 @@ class VideoAddCreateAPIView(CreateAPIView):
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
                 except Exception as e:
-                    print("error in create tag adapted", e)
+                    #print("error in create tag adapted", e)
                     return Response({"status": "no adapted", "code": "error", "message": e.__str__()},
                                     status=status.HTTP_400_BAD_REQUEST)
             else:
@@ -994,14 +947,12 @@ def save_files(learning_object, file, code, language):
     except Exception as e:
         print("Error: %s ." % e)
 
-    print("path_srt", path_srt)
+    #print("path_srt", path_srt)
 
     path_vtt = ba.convert_str_to_vtt(path_srt)
     filename = file.name
     path_save_json = os.path.join(BASE_DIR, learning_object.path_adapted, "oer_resources",
                                   filename.split(".")[-2] + ".json")
-    # path_json = os.path.join(BASE_DIR, path_adapted, "oer_resources", file_name + ".json")
-    # learning_object.path_adapted, filename.split(".")[-2]
     path_json = ba.convert_str_to_json(path_srt, path_save_json)
 
     src = "oer_resources/" + file.name.split(".")[-2]
@@ -1047,28 +998,19 @@ def update_transcript_api_view(request, pk=None):
         transcript = get_object_or_404(Transcript, pk=pk)
         # print(request.data.get("data"))
         transcrips = Transcript.objects.filter(tag_adapted_id=transcript.tag_adapted, srclang=transcript.srclang)
-        print(len(transcrips))
+        #print(len(transcrips))
 
         file_vtt = [t for t in transcrips if t.type == "text/vtt"][0]
 
         file_json = [t for t in transcrips if t.type == "JSONcc"][0]
 
-        print(file_json.path_system)
+        #print(file_json.path_system)
 
         with open(transcript.path_system, 'w+', encoding='utf-8') as file:
             file.write(request.data.get("data"))
 
         srt_file = ba.convert_vtt_to_str(transcript.path_system)
         json_system = ba.convert_str_to_json(srt_file, file_json.path_system)
-
-        ''' 
-        with open(transcript.path_system, 'w+', encoding='utf-8') as file:
-            file.write(request.data.get("data"))
-
-        srt_file = convert_vtt_to_str(transcript.path_system)
-        #json_system = convert_str_to_json(srt_file, path_adapted, video_title + "_" + transcript.language_code)
-        '''
-
         return Response({"id": transcript.id, "data": "ok"}, status=status.HTTP_200_OK, )
 
 
@@ -1083,7 +1025,7 @@ def comprimeFileZip(request, pk=None):
             count_images_count, count_paragraphs_count, count_videos_count, count_audios_count = dev_count(
                 learning_object.id)
 
-            print(request.data)
+            #print(request.data)
 
             if request.data.get('latitude') is not None and request.data.get('longitude') is not None:
                 save_info_download(request, count_paragraphs_count, count_videos_count, count_audios_count,
@@ -1122,8 +1064,6 @@ def save_info_download(request, count_paragraphs_count, count_videos_count, coun
         pass
 
 
-
-
 def dev_count(id):
     count_images_count = 0
     count_paragraphs_count = 0
@@ -1154,3 +1094,199 @@ class returnObjectsAdapted(RetrieveAPIView):
             'paragraphs': count_paragraphs_count,
         }
         return Response({'tag_adapted': tag_objects})
+
+
+class revertImageRetrieveUpdateAPIView(RetrieveUpdateAPIView):
+    def put(self, request, pk, *args, **kwargs):
+        tag_page = get_object_or_404(TagPageLearningObject, pk=pk)
+        page_learning_object = tag_page.page_learning_object
+        adaptation = request.data.get('adaptation', False)
+        page_website_learning_object = None
+
+        if page_learning_object.is_webpage:
+            name_filter = page_learning_object.file_name.replace('website_', '')
+            page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
+                                                                          is_webpage=False,
+                                                                          learning_object_id=page_learning_object.learning_object_id)
+
+        try:
+            tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object__id=pk)
+        except:
+            return Response("ok", status=status.HTTP_200_OK)
+
+        if adaptation:
+            if tag_adapted_learning_object is not None:
+                if tag_adapted_learning_object.text_table is not None:
+                    html_remplace = bsd.convertElementBeautifulSoup(tag_adapted_learning_object.text_table)
+                else:
+                    html_remplace = bsd.convertElementBeautifulSoup(tag_adapted_learning_object.html_text)
+                self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
+                if page_website_learning_object is not None:
+                    self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
+
+        else:
+            html_remplace = bsd.convertElementBeautifulSoup(tag_page.html_text)
+            self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
+            if page_website_learning_object is not None:
+                #print("adapted page normal")
+                self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
+
+        tag_page.adaptation = adaptation
+        tag_page.save()
+
+        # serializers.TagsSerializerTagAdapted(tag_page)
+        return Response("ok", status=status.HTTP_200_OK)
+
+    def __update_page(self, tag_page, html_remplace, page_learning_object):
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+        tag = file_html.find('a', {"id": tag_page.id_class_ref})
+
+        if tag is None:
+            tag = file_html.find('figure', {"id": tag_page.id_class_ref})
+
+        if tag is None:
+            tag = file_html.find(tag_page.tag, tag_page.id_class_ref)
+
+        tag.replace_with(html_remplace)
+        bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+
+
+class revertParagraphRetrieveUpdateAPIView(RetrieveUpdateAPIView):
+    def put(self, request, pk, *args, **kwargs):
+        tag_page = get_object_or_404(TagPageLearningObject, pk=pk)
+        page_learning_object = tag_page.page_learning_object
+        adaptation = request.data.get('adaptation', False)
+        page_website_learning_object = None
+
+        if page_learning_object.is_webpage:
+            name_filter = page_learning_object.file_name.replace('website_', '')
+            page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
+                                                                          is_webpage=False,
+                                                                          learning_object_id=page_learning_object.learning_object_id)
+
+        try:
+            tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object__id=pk)
+        except:
+            return Response("ok", status=status.HTTP_200_OK)
+
+        if adaptation:
+            if tag_adapted_learning_object is not None:
+                html_remplace = bsd.convertElementBeautifulSoup(tag_adapted_learning_object.html_text)
+                #print("html_remplace true", html_remplace)
+                self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
+                if page_website_learning_object is not None:
+                    self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
+        else:
+            html_remplace = bsd.convertElementBeautifulSoup(tag_page.html_text)
+            #print("html_remplace false", html_remplace)
+            self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
+            if page_website_learning_object is not None:
+                #print("adapted page normal")
+                self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
+
+        tag_page.adaptation = adaptation
+        tag_page.save()
+
+        return Response("ok", status=status.HTTP_200_OK)
+
+    def __update_page(self, tag_page, html_remplace, page_learning_object):
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+        tag = file_html.find('div', {"id": tag_page.id_class_ref})
+        if tag is None:
+            tag = file_html.find(tag_page.tag, tag_page.id_class_ref)
+
+        tag.replace_with(html_remplace)
+        bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+
+
+class revertVideoRetrieveUpdateAPIView(RetrieveUpdateAPIView):
+    def put(self, request, pk, *args, **kwargs):
+        tag_page = get_object_or_404(TagPageLearningObject, pk=pk)
+        page_learning_object = tag_page.page_learning_object
+        adaptation = request.data.get('adaptation', False)
+        page_website_learning_object = None
+
+        if page_learning_object.is_webpage:
+            name_filter = page_learning_object.file_name.replace('website_', '')
+            page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
+                                                                          is_webpage=False,
+                                                                          learning_object_id=page_learning_object.learning_object_id)
+
+        try:
+            tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object__id=pk)
+        except:
+            return Response("ok", status=status.HTTP_200_OK)
+
+        if adaptation:
+            if tag_adapted_learning_object is not None:
+                html_remplace = bsd.convertElementBeautifulSoup(tag_adapted_learning_object.html_text)
+                self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
+                if page_website_learning_object is not None:
+                    self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
+        else:
+            html_remplace = bsd.convertElementBeautifulSoup(tag_page.html_text)
+            self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
+            if page_website_learning_object is not None:
+                self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
+
+        tag_page.adaptation = adaptation
+        tag_page.save()
+
+        return Response("ok", status=status.HTTP_200_OK)
+
+    def __update_page(self, tag_page, html_remplace, page_learning_object):
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+        tag = file_html.find('div', {"id": tag_page.id_class_ref})
+        if tag is None:
+            tag = file_html.find(tag_page.tag, tag_page.id_class_ref)
+
+        tag.replace_with(html_remplace)
+        bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+
+
+class revertAudioRetrieveUpdateAPIView(RetrieveUpdateAPIView):
+    def put(self, request, pk, *args, **kwargs):
+        tag_page = get_object_or_404(TagPageLearningObject, pk=pk)
+        page_learning_object = tag_page.page_learning_object
+        adaptation = request.data.get('adaptation', False)
+        page_website_learning_object = None
+
+        if page_learning_object.is_webpage:
+            name_filter = page_learning_object.file_name.replace('website_', '')
+            page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
+                                                                          is_webpage=False,
+                                                                          learning_object_id=page_learning_object.learning_object_id)
+
+        try:
+            tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object__id=pk)
+        except:
+            return Response("ok", status=status.HTTP_200_OK)
+
+        if adaptation:
+            if tag_adapted_learning_object is not None:
+
+                html_remplace = bsd.convertElementBeautifulSoup(tag_adapted_learning_object.html_text)
+                #print("html_remplace true", html_remplace)
+                self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
+                if page_website_learning_object is not None:
+                    self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
+
+        else:
+            html_remplace = bsd.convertElementBeautifulSoup(tag_page.html_text)
+            self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
+            if page_website_learning_object is not None:
+                self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
+
+        tag_page.adaptation = adaptation
+        tag_page.save()
+
+        return Response("ok", status=status.HTTP_200_OK)
+
+    def __update_page(self, tag_page, html_remplace, page_learning_object):
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+        tag = file_html.find('div', {"id": tag_page.id_class_ref})
+        if tag is None:
+            tag = file_html.find(tag_page.tag, tag_page.id_class_ref)
+
+        tag.replace_with(html_remplace)
+        bsd.generate_new_htmlFile(file_html, page_learning_object.path)

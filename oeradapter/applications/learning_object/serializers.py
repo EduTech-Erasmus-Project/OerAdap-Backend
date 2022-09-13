@@ -76,7 +76,7 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         # count data
         count_pages, count_images, count_paragraphs, count_videos, count_audios = count_data(instance)
 
-        print("adap", config_adaptability.data["areas"])
+        #print("adap", config_adaptability.data["areas"])
 
         data = {
             "id": instance.id,

@@ -109,17 +109,9 @@ def add_files_adaptation(html_files, directory, button=False, paragraph_script=F
                 pass
 
     if paragraph_script:
-        # """Add paragraph script on pages of learning object"""
-        # path_origin = os.path.join(BASE_DIR, 'resources', 'text_adaptation')
-        # path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'text_adaptation')
-        # path_save = copy_folder(path_origin, path_src)
         move_folder(directory, 'text_adaptation')
 
     if image:
-        # """Add paragraph script on pages of learning object"""
-        # path_origin = os.path.join(BASE_DIR, 'resources', 'lightbox')
-        # path_src = os.path.join(BASE_DIR, directory, 'oer_resources', 'lightbox')
-        # path_save = copy_folder(path_origin, path_src)
         move_folder(directory, 'lightbox')
 
     for file in html_files:
@@ -172,24 +164,7 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
         path_preview = path_preview.replace("http://", "https://")
 
     s.save(path_system)
-    # time.sleep(10)
 
-    """
-    path_src = 'oer_resources/' + id_ref + ".mp3"
-    path_system = os.path.join(BASE_DIR, directory, 'oer_resources', id_ref + ".mp3")
-    path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
-        "\\", "/")
-
-    if PROD['PROD']:
-        path_preview = path_preview.replace("http://", "https://")
-
-    engine = pyttsx3.init()
-    # Control the rate. Higher rate = more speed
-    engine.setProperty("rate", 150)
-    text = str(texo_adaptar)
-    engine.save_to_file(text, path_system)
-    engine.runAndWait()
-    """
 
     return path_src, path_system, path_preview
 
@@ -226,16 +201,6 @@ def convertAudio_Text(path_init):
         # print("error", e)
         remove(audio)
         raise e
-
-
-'''
-def add_paragraph_script(html_files, directory):
-    pass
-
-
-def remove_paragraph_script(html_files):
-    pass
-'''
 
 
 def create_transcript(transcript, tag_adapted):
@@ -289,7 +254,6 @@ def download_video1(tag, data_attribute, learning_object, request):
     else:
         # guardar video
         page_website_learning_object = None
-        uid = bsd.getUUID()
         if tag.page_learning_object.is_webpage:
             name_filter = tag.page_learning_object.file_name.replace('website_', '')
             page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
@@ -299,7 +263,7 @@ def download_video1(tag, data_attribute, learning_object, request):
         try:
             tag_adapted = TagAdapted.objects.create(
                 type="video",
-                id_ref=uid,
+                id_ref=tag.id_class_ref,
                 text=tittle,
                 path_src=path_src,
                 path_preview=path_preview,
@@ -339,10 +303,8 @@ def download_video1(tag, data_attribute, learning_object, request):
 
                 save_data_attribute(data_attribute, path_src, path_system, path_preview)
 
-                # transform html
                 video_template = bsd.templateVideoAdaptation(path_src, "video/mp4", tittle, captions,
-                                                             transcripts, uid)
-
+                                                             transcripts, tag.id_class_ref)
                 tag_adapted.html_text = str(video_template)
                 tag_adapted.save()
                 # save video youtube
@@ -383,22 +345,15 @@ def download_video1(tag, data_attribute, learning_object, request):
                                                         }})
 
         else:
-            # file_html = bsd.generateBeautifulSoupFile(tag.page_learning_object.path)
-            # tag_adaptation = file_html.find(tag.tag, tag.id_class_ref)
-
-            # transform html
             save_data_attribute(data_attribute, path_src, path_system, path_preview)
 
             video_template = bsd.templateVideoAdaptation(path_src, "video/mp4", tittle, captions,
-                                                         transcripts, uid)
+                                                         transcripts, tag.id_class_ref)
 
             tag_adapted.html_text = str(video_template)
             tag_adapted.save()
 
-            # tag_adaptation.replace_with(video_template)
-            # bsd.generate_new_htmlFile(file_html, tag.page_learning_object.path)
             save_video_on_html(tag, copy.copy(video_template), tag.page_learning_object)
-            # find web page
             if page_website_learning_object is not None:
                 save_video_on_html(tag, copy.copy(video_template), page_website_learning_object)
 
@@ -422,135 +377,6 @@ def save_video_on_html(tag, video_template, page_learning_object):
     bsd.generate_new_htmlFile(file_html, page_learning_object.path)
 
 
-'''
-
-        else:
-                async_to_sync(channel_layer.group_send)("channel_" + str(tag.id),
-                                                        {"type": "send_new_data", "text": {
-                                                            "status": "no_supported_transcript",
-                                                            "type": "transcript",
-                                                            "message": "No se pudo descargar los subtítulos.",
-                                                            "data": serializer.data
-                                                        }})
-                                                        
-try:
-    # socket_consumer = VideoConsumer
-    # path_system, path_preview, path_src, tittle = download_video_youtubedl(video_url, directory_adapted, request)
-    # return path_system, path_preview, path_src, tittle
-
-
-    
-
-
-    pass
-except Exception as e:
-    async_to_sync(channel_layer.group_send)("channel_" + str(tag.id), {"type": "send_new_data", "text": {
-        "status": "error",
-        "type": "transcript",
-        "message": e.__str__(),
-    }})
-    raise e
-'''
-
-'''
-def download_video(video_url, type_video, source, directory_adapted, request):
-    try:
-
-
-
-        # socket_consumer = VideoConsumer
-        # path_system, path_preview, path_src, tittle = download_video_youtubedl(video_url, directory_adapted, request)
-        # return path_system, path_preview, path_src, tittle
-        dl = YoutubeDLThread(video_url, directory_adapted, request)
-        path_system, path_preview, path_src, tittle = dl.download()
-        print("report download", path_system, path_preview, path_src, tittle)
-        return path_system, path_preview, path_src, tittle
-
-        # return None, None, None, None
-    except Exception as e:
-        raise e
-'''
-'''
-def process_bytes(progress):
-    q = Queue()
-    job_done = object()
-
-    if progress["status"] == "downloading":
-        # byte_chunk = progress["downloaded_bytes"]
-        # q.put(byte_chunk)
-        # q.join()
-        # print("progress downloading", progress)
-
-        channel_layer = get_channel_layer()
-        channel_layer.send("channel_name", {
-            "type": "chat.message",
-            "text": "Hello there!",
-        })
-
-    elif progress["status"] == "finished":
-        # q.put(job_done)
-        print("progress finished", progress)
-        # handle_finished(progress)
-
-
-class MyLogger(object):
-    def debug(self, msg):
-        print("msg logger", json.dumps(msg))
-        channel_layer = get_channel_layer()
-        channel_layer.send("channel_name", {
-            "type": "chat.message",
-            "text": "Hello there!",
-        })
-'''
-'''
-def download_video_youtubedl(video_url, directory_adapted, request):
-    video_id_title = str(shortuuid.ShortUUID().random(length=8))
-    path_system = os.path.join(BASE_DIR, directory_adapted, 'oer_resources')
-
-    ydl_opts = {
-        'outtmpl': path_system + '/' + video_id_title + '.%(ext)s'.strip(),
-        'format': '(mp4)[height<=480]',
-        # 'bestvideo[height<=480]+bestaudio/best[height<=480]', #'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-        # 'bestvideo[height<=480]+bestaudio/best[height<=480]',
-        'noplaylist': True,
-        # 'extract-audio': True,
-        'logger': MyLogger(),
-        'progress_hooks': [process_bytes],
-        # 'audio-format': 'mp3',
-
-    }
-
-    try:
-        with YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(video_url, download=True)
-
-            # print("in_download_archive", ydl.in_download_archive(info_dict))
-            # print("info_dict", info_dict)
-            filename = ydl.prepare_filename(info_dict)
-            print("filename", filename)
-            title = video_id_title  # re.sub("[^A-Za-z0-9]", "_", info_dict.get('title', None))
-            # print("title: ", title)
-            path_system = filename
-            path_split = path_system.split(os.sep)
-
-            path_preview = os.path.join(request._current_scheme_host, directory_adapted, 'oer_resources',
-                                        path_split[-1]).replace("\\", "/")
-
-            if PROD['PROD']:
-                path_preview = path_preview.replace("http://", "https://")
-
-            path_src = 'oer_resources/' + path_split[-1]
-
-            print("path_preview: ", path_preview)
-
-            return path_system, path_preview, path_src, title
-
-    except Exception as e:
-        print("error", e)
-        raise e
-'''
-
-
 def generate_transcript_youtube(video_url, video_title, path_adapted, request, dir_len):
     with YoutubeDL({}) as ydl:
         transcripts = []
@@ -561,7 +387,7 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request, d
             id_video = info_dict.get('id', None)
             transcript_list = YouTubeTranscriptApi.list_transcripts(id_video)
         except:
-            print("no supported transcriptions")
+            #print("no supported transcriptions")
             return transcripts, captions
 
         try:
@@ -590,8 +416,8 @@ def get_transcript_youtube(transcript_list, lang):
 
 
 def save_transcript(transcript, path_adapted, video_title, transcripts, captions, source, dir_len):
-    print("type transcript ", type(transcript))
-    print("type transcript 1", type(transcript.fetch()))
+    #print("type transcript ", type(transcript))
+    #print("type transcript 1", type(transcript.fetch()))
 
     vtt_formatterd = WebVTTFormatter().format_transcript(transcript.fetch())
 
@@ -615,7 +441,7 @@ def save_transcript(transcript, path_adapted, video_title, transcripts, captions
 
     json_system = convert_str_to_json(srt_file, path_json)
 
-    print("json_system ", json_system)
+    #print("json_system ", json_system)
 
     transcripts_obj = {
         "src": json_path,
