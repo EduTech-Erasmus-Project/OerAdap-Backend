@@ -7,7 +7,7 @@ from django.db.models import Q
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
         model = TagPageLearningObject
-        fields = ('id', 'text', 'html_text', 'page_learning_object')
+        fields = ('id', 'text', 'html_text', 'page_learning_object', 'adaptation')
 
 
 class TagsSerializerTagUpdate(serializers.ModelSerializer):
@@ -110,7 +110,7 @@ class TagsVideoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TagPageLearningObject
-        fields = ['id', 'text', 'html_text', 'page_learning_object', 'adapting', 'attributes', 'tags_adapted', ]
+        fields = ['id', 'text', 'html_text', 'page_learning_object', 'adapting', 'attributes', 'tags_adapted', 'adaptation']
 
 
 class LearningObjectSerializerAdaptation(serializers.ModelSerializer):

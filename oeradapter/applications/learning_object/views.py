@@ -69,13 +69,13 @@ def get_learning_objects_by_token(user_ref):
 
 
 def save_screenshot(learning_object):
-    print("page_learning_object")
+    #print("page_learning_object")
     page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
                                                              Q(file_name="website_index.html"))
     if len(page_learning_object) == 0:
         page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
                                                                  Q(file_name="index.html"))
-    print("page_learning_object", page_learning_object)
+    #print("page_learning_object", page_learning_object)
 
     th_take_screenshot = threading.Thread(target=ba.take_screenshot,
                                           args=[learning_object, page_learning_object[0], ])
