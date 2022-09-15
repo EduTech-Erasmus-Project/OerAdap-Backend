@@ -1,25 +1,15 @@
-# import the mailjet wrapper
-import json
-
-from django.core.exceptions import ImproperlyConfigured
 from mailjet_rest import Client
 import os
+import environ
+from unipath import Path
 
-with open(os.path.join("../", "config.json")) as f:
-    secret = json.loads(f.read())
-
-
-def get_secret_config(secret_name, secrets=secret):
-    try:
-        return secrets[secret_name]
-    except:
-        msg = "error the variable %s does not exist" % secret_name
-        raise ImproperlyConfigured(msg)
-
+env = environ.Env()
+BASE_DIR = Path(__file__).ancestor(4)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Get your environment Mailjet keys
-API_KEY = get_secret_config('MJ_APIKEY_PUBLIC')
-API_SECRET = get_secret_config('MJ_APIKEY_PRIVATE')
+API_KEY = env('MJ_APIKEY_PUBLIC')
+API_SECRET = env('MJ_APIKEY_PRIVATE')
 
 mailjet = Client(auth=(API_KEY, API_SECRET), version='v3.1')
 
@@ -40,8 +30,8 @@ def send_email_apikey(email_to, apikey):
         'Messages': [
             {
                 "From": {
-                    "Email": get_secret_config('API_EMAIL'),
-                    "Name": get_secret_config('API_NAME')
+                    "Email": env('API_EMAIL'),
+                    "Name": env('API_NAME')
                 },
                 "To": [
                     {
@@ -64,8 +54,8 @@ def send_email_contact(name, email, message):
         'Messages': [
             {
                 "From": {
-                    "Email": get_secret_config('API_EMAIL'),
-                    "Name": get_secret_config('API_NAME')
+                    "Email": env('API_EMAIL'),
+                    "Name": env('API_NAME')
                 },
                 "To": [
                     {

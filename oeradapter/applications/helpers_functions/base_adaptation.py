@@ -2,6 +2,7 @@ import copy
 import json
 import re
 from zipfile import ZipFile
+import environ
 import webvtt
 from unipath import Path
 from . import beautiful_soup_data as bsd
@@ -25,12 +26,12 @@ from channels.layers import get_channel_layer
 import imgkit
 
 channel_layer = get_channel_layer()
-
 BASE_DIR = Path(__file__).ancestor(3)
 
-PROD = None
-with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
-    PROD = json.loads(f.read())
+env = environ.Env(
+    PROD=(bool, False)
+)
+environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 
 def save_uploaded_file(path, file, resources_directory, request):
@@ -46,7 +47,7 @@ def save_uploaded_file(path, file, resources_directory, request):
     path_preview = os.path.join(request._current_scheme_host, resources_directory, 'oer_resources', file.name).replace(
         "\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         path_preview = path_preview.replace("http://", "https://")
 
     return path_preview, path_system
@@ -160,7 +161,7 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
     path_preview = os.path.join(request._current_scheme_host, directory, 'oer_resources', id_ref + ".mp3").replace(
         "\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         path_preview = path_preview.replace("http://", "https://")
 
     s.save(path_system)
@@ -607,7 +608,7 @@ def compress_file(request, learning_object):
     path_zip_file = os.path.join(request._current_scheme_host, learning_object.path_adapted + '.zip').replace(
         "\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         path_zip_file = path_zip_file.replace("http://", "https://")
 
     # print("Creado el archivo:", new_path)

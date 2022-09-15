@@ -1,6 +1,6 @@
 import copy
 import threading
-import json
+import environ
 from geopy import Nominatim
 from rest_framework.generics import RetrieveAPIView, CreateAPIView, RetrieveUpdateAPIView, GenericAPIView
 from rest_framework.decorators import api_view
@@ -20,11 +20,6 @@ from ..helpers_functions import base_adaptation as ba
 from bs4 import BeautifulSoup
 
 BASE_DIR = Path(__file__).ancestor(3)
-
-PROD = None
-with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
-    PROD = json.loads(f.read())
-
 
 class ParagraphView(RetrieveAPIView):
     queryset = TagPageLearningObject.objects.all()
@@ -148,17 +143,15 @@ class AdaptedImagePreviewRetrieveUpdateAPIView(RetrieveUpdateAPIView):
     def put(self, request, pk=None):
         preview = request.data.get('preview')
         page_learning_object = get_object_or_404(PageLearningObject,
-                                                 tag_page_learning_object__id=pk)  # PageLearningObject.objects.get(tag_page_learning_object__id=pk)
+                                                 tag_page_learning_object__id=pk)
         page_website_learning_object = None
         tag_adapted_learning_object = TagAdapted.objects.get(tag_page_learning_object__id=pk)
-
         tag_class_ref = tag_adapted_learning_object.id_ref
         if page_learning_object.is_webpage:
             name_filter = page_learning_object.file_name.replace('website_', '')
             page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
                                                                           is_webpage=False,
                                                                           learning_object_id=page_learning_object.learning_object_id)
-
         try:
             tag_adapted_learning_object = self.__update_image(tag_adapted_learning_object, preview,
                                                               page_learning_object, tag_class_ref)
@@ -233,7 +226,7 @@ class AudioviewCreate(RetrieveAPIView):
             page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
                                                                           is_webpage=False,
                                                                           learning_object_id=page_learning_object.learning_object_id)
-            #print("page_website_learning_object", page_website_learning_object)
+            # print("page_website_learning_object", page_website_learning_object)
 
         """Web Scraping"""
         div_soup_data, id_ref = bsd.templateAdaptationTag(tag_learning_object.id_class_ref)
@@ -358,7 +351,7 @@ class AudioView(RetrieveAPIView):
             page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
                                                                           is_webpage=False,
                                                                           learning_object_id=page_learning_object.learning_object_id)
-            #print("page_website_learning_object", page_website_learning_object)
+            # print("page_website_learning_object", page_website_learning_object)
 
         """Validacion de envio de datos, para realizar la actualizacion """
         if (not request.data['text'].isspace()) & (request.data['text'] != ""):
@@ -405,19 +398,19 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
         page_learning_object = PageLearningObject.objects.get(type='adapted',
                                                               pk=tag_page_learning_object.page_learning_object_id)
 
-        #print("page_learning_object", page_learning_object)
+        # print("page_learning_object", page_learning_object)
 
         if page_learning_object.is_webpage:
             name_filter = page_learning_object.file_name.replace('website_', '')
             page_website_learning_object = PageLearningObject.objects.get(file_name=name_filter,
                                                                           is_webpage=False,
                                                                           learning_object_id=tag_page_learning_object.page_learning_object.learning_object_id)
-            #print("page_website_learning_object", page_website_learning_object)
+            # print("page_website_learning_object", page_website_learning_object)
 
         try:
             tag_adapted = TagAdapted.objects.get(tag_page_learning_object_id=pk)
         except Exception as e:
-            #print(type(e))
+            # print(type(e))
             tag_adapted = None
 
         if tag_adapted is not None:
@@ -485,7 +478,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
     def __update_text(self, request, tag_adapted, tag_page_learning_object, page_learning_object):
-        #print("update page_learning_object.path", page_learning_object.path)
+        # print("update page_learning_object.path", page_learning_object.path)
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find("div", id=tag_page_learning_object.id_class_ref)
         tag_adaptation = tag.find(id=tag_adapted.id_ref)
@@ -506,13 +499,13 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
 
     def __create_text(self, request, tag_page_learning_object, id_ref, div_soup_data, page_learning_object,
                       is_webpage=False):
-        #print("create page_learning_object.path", page_learning_object.path)
+        # print("create page_learning_object.path", page_learning_object.path)
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find(tag_page_learning_object.tag, tag_page_learning_object.id_class_ref)
 
         tag.append(div_soup_data)
 
-        #print("tag", tag)
+        # print("tag", tag)
 
         button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
             tag_page_learning_object.id_class_ref,
@@ -520,7 +513,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
         div_soup = tag.find(id=id_ref)
         div_soup.insert(1, button_text_data)
 
-        #print("div_soup", div_soup)
+        # print("div_soup", div_soup)
 
         tag_container = bsd.templateContainerButtons(tag_page_learning_object.id_class_ref, tag)
         tag.replace_with(copy.copy(tag_container))
@@ -761,8 +754,8 @@ class VideoGenerateCreateAPIView(CreateAPIView):
             data_attribute = DataAttribute.objects.get(tag_page_learning_object_id=tag.id)
             learning_object = LearningObject.objects.get(pk=tag.page_learning_object.learning_object_id)
 
-            #print("data_attribute", data_attribute)
-            #print("learning_object", learning_object)
+            # print("data_attribute", data_attribute)
+            # print("learning_object", learning_object)
 
             if data_attribute.source == "local":
                 # generar subtititulos automaticamente
@@ -895,7 +888,7 @@ class VideoAddCreateAPIView(CreateAPIView):
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
                 except Exception as e:
-                    #print("error in create tag adapted", e)
+                    # print("error in create tag adapted", e)
                     return Response({"status": "no adapted", "code": "error", "message": e.__str__()},
                                     status=status.HTTP_400_BAD_REQUEST)
             else:
@@ -947,7 +940,7 @@ def save_files(learning_object, file, code, language):
     except Exception as e:
         print("Error: %s ." % e)
 
-    #print("path_srt", path_srt)
+    # print("path_srt", path_srt)
 
     path_vtt = ba.convert_str_to_vtt(path_srt)
     filename = file.name
@@ -998,13 +991,13 @@ def update_transcript_api_view(request, pk=None):
         transcript = get_object_or_404(Transcript, pk=pk)
         # print(request.data.get("data"))
         transcrips = Transcript.objects.filter(tag_adapted_id=transcript.tag_adapted, srclang=transcript.srclang)
-        #print(len(transcrips))
+        # print(len(transcrips))
 
         file_vtt = [t for t in transcrips if t.type == "text/vtt"][0]
 
         file_json = [t for t in transcrips if t.type == "JSONcc"][0]
 
-        #print(file_json.path_system)
+        # print(file_json.path_system)
 
         with open(transcript.path_system, 'w+', encoding='utf-8') as file:
             file.write(request.data.get("data"))
@@ -1025,7 +1018,7 @@ def comprimeFileZip(request, pk=None):
             count_images_count, count_paragraphs_count, count_videos_count, count_audios_count = dev_count(
                 learning_object.id)
 
-            #print(request.data)
+            # print(request.data)
 
             if request.data.get('latitude') is not None and request.data.get('longitude') is not None:
                 save_info_download(request, count_paragraphs_count, count_videos_count, count_audios_count,
@@ -1128,7 +1121,7 @@ class revertImageRetrieveUpdateAPIView(RetrieveUpdateAPIView):
             html_remplace = bsd.convertElementBeautifulSoup(tag_page.html_text)
             self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
             if page_website_learning_object is not None:
-                #print("adapted page normal")
+                # print("adapted page normal")
                 self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
 
         tag_page.adaptation = adaptation
@@ -1172,16 +1165,16 @@ class revertParagraphRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         if adaptation:
             if tag_adapted_learning_object is not None:
                 html_remplace = bsd.convertElementBeautifulSoup(tag_adapted_learning_object.html_text)
-                #print("html_remplace true", html_remplace)
+                # print("html_remplace true", html_remplace)
                 self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
                 if page_website_learning_object is not None:
                     self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
         else:
             html_remplace = bsd.convertElementBeautifulSoup(tag_page.html_text)
-            #print("html_remplace false", html_remplace)
+            # print("html_remplace false", html_remplace)
             self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
             if page_website_learning_object is not None:
-                #print("adapted page normal")
+                # print("adapted page normal")
                 self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)
 
         tag_page.adaptation = adaptation
@@ -1266,7 +1259,7 @@ class revertAudioRetrieveUpdateAPIView(RetrieveUpdateAPIView):
             if tag_adapted_learning_object is not None:
 
                 html_remplace = bsd.convertElementBeautifulSoup(tag_adapted_learning_object.html_text)
-                #print("html_remplace true", html_remplace)
+                # print("html_remplace true", html_remplace)
                 self.__update_page(tag_page, copy.copy(html_remplace), page_learning_object)
                 if page_website_learning_object is not None:
                     self.__update_page(tag_page, copy.copy(html_remplace), page_website_learning_object)

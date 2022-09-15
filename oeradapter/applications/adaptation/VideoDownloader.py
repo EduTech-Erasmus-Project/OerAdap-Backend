@@ -1,8 +1,7 @@
-import json
 import os
 import threading
 
-# import redis
+import environ
 from asgiref.sync import async_to_sync
 from unipath import Path
 import shortuuid
@@ -10,12 +9,12 @@ from youtube_dl import YoutubeDL
 from channels.layers import get_channel_layer
 
 BASE_DIR = Path(__file__).ancestor(3)
-PROD = None
 channel_layer = get_channel_layer()
 
-with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
-    PROD = json.loads(f.read())
-
+env = environ.Env(
+    PROD=(bool, False)
+)
+environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 class YoutubeDLThread(threading.Thread):
 
@@ -57,7 +56,7 @@ class YoutubeDLThread(threading.Thread):
         if status['status'] == 'finished':
             print("finished", status)
             self.is_finished = True
-            async_to_sync(channel_layer.group_send)("channel_"+str(self.tag.id), {"type": "send_new_data", "text": {
+            async_to_sync(channel_layer.group_send)("channel_" + str(self.tag.id), {"type": "send_new_data", "text": {
                 "status": "video_finished",
                 "type": "video",
                 "message": "Video descargado."
@@ -68,7 +67,7 @@ class YoutubeDLThread(threading.Thread):
             # self.redis_client.set('chanel1', 'It is working!')
             self.is_finished = False
             # Report progress
-            async_to_sync(channel_layer.group_send)("channel_"+str(self.tag.id), {"type": "send_new_data", "text": {
+            async_to_sync(channel_layer.group_send)("channel_" + str(self.tag.id), {"type": "send_new_data", "text": {
                 "status": "downloading",
                 "type": "video",
                 "message": "Descargando video…",
@@ -90,7 +89,7 @@ class YoutubeDLThread(threading.Thread):
             path_split = path_system.split(os.sep)
             path_preview = os.path.join(self.request._current_scheme_host, self.directory_adapted, 'oer_resources',
                                         path_split[-1]).replace("\\", "/")
-            if PROD['PROD']:
+            if env('PROD'):
                 path_preview = path_preview.replace("http://", "https://")
             path_src = 'oer_resources/' + path_split[-1]
             print("path_preview: ", path_preview)

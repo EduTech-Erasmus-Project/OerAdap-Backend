@@ -1,6 +1,6 @@
 import threading
 from datetime import datetime
-
+import environ
 from django.db.models import Q, Sum, Count
 from pytz import utc
 from rest_framework import status
@@ -9,7 +9,6 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from . import serializers
 import shortuuid
-import json
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, TagAdapted, \
@@ -25,10 +24,16 @@ from rest_framework import generics
 
 BASE_DIR = Path(__file__).ancestor(3)
 
+env = environ.Env(
+    PROD=(bool, False)
+)
+environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
+
+''' 
 PROD = None
 with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
     PROD = json.loads(f.read())
-
+'''
 
 def adaptation_settings(areas, files, directory, root_dirs):
     button = False
@@ -69,13 +74,13 @@ def get_learning_objects_by_token(user_ref):
 
 
 def save_screenshot(learning_object):
-    #print("page_learning_object")
+    # print("page_learning_object")
     page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
                                                              Q(file_name="website_index.html"))
     if len(page_learning_object) == 0:
         page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
                                                                  Q(file_name="index.html"))
-    #print("page_learning_object", page_learning_object)
+    # print("page_learning_object", page_learning_object)
 
     th_take_screenshot = threading.Thread(target=ba.take_screenshot,
                                           args=[learning_object, page_learning_object[0], ])
@@ -100,7 +105,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
     preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         preview_origin = preview_origin.replace("http://", "https://")
         preview_adapted = preview_adapted.replace("http://", "https://")
 

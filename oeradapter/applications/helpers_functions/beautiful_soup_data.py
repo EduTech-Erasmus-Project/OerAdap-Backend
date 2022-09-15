@@ -1,7 +1,6 @@
-import json
 from urllib.parse import urlparse
+import environ
 from unipath import Path
-import pathlib
 from . import metadata as meta
 from bs4 import BeautifulSoup, Comment
 import os
@@ -11,10 +10,10 @@ from ..learning_object.models import PageLearningObject, TagPageLearningObject, 
 
 BASE_DIR = Path(__file__).ancestor(3)
 
-PROD = None
-with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
-    PROD = json.loads(f.read())
-
+env = environ.Env(
+    PROD=(bool, False)
+)
+environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 def split_path(preview_path):
     path = os.path.normpath(preview_path)
@@ -170,7 +169,7 @@ def create_page_learning_object(learningObject, directory, directory_origin, req
     directory_file = os.path.join(BASE_DIR, directory, file['file'])
     preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         preview_path = preview_path.replace("http://", "https://")
 
     soup_data = generateBeautifulSoupFile(directory_file)
@@ -202,7 +201,7 @@ def create_page_learning_object(learningObject, directory, directory_origin, req
 
     directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
     preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
-    if PROD['PROD']:
+    if env('PROD'):
         preview_path_origin = preview_path_origin.replace("http://", "https://")
 
     PageLearningObject.objects.create(
@@ -444,7 +443,7 @@ def save_video_tag(tag, class_uuid, tag_identify, attribute_src, page_adapted, d
 
     # path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         path_preview = path_preview.replace("http://", "https://")
 
     path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
