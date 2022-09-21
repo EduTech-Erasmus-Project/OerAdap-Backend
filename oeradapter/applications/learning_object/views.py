@@ -7,6 +7,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.status import HTTP_404_NOT_FOUND
+
 from . import serializers
 import shortuuid
 import os
@@ -22,6 +24,8 @@ from ..helpers_functions import automatic_adaptation as aa
 from ..helpers_functions import email as email_handler
 from rest_framework import generics
 
+from ..helpers_functions.base_adaptation import get_index_imsmanisfest
+
 BASE_DIR = Path(__file__).ancestor(3)
 
 env = environ.Env(
@@ -34,6 +38,7 @@ PROD = None
 with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
     PROD = json.loads(f.read())
 '''
+
 
 def adaptation_settings(areas, files, directory, root_dirs):
     button = False
@@ -87,19 +92,16 @@ def save_screenshot(learning_object):
     th_take_screenshot.start()
 
 
-def create_learning_object(request, user_token, Serializer, areas, method):
-    uuid = str(shortuuid.ShortUUID().random(length=8))
-    file = request.FILES['file']
-
-    file._name = file._name.split('.')[0] + "_" + uuid + "." + file._name.split('.')[1]
-
-    # Extract file
-    path = "uploads"
-    file_name = file._name
+def create_learning_object(request, user_token, Serializer, areas, method, path, file):
     try:
-        directory_origin, directory_adapted = ba.extract_zip_file(path, file_name, file)
-    except:
-        return None, None, True
+        directory_origin, directory_adapted = ba.extract_zip_file(path, file)
+    except Exception as e:
+        raise Exception("Objeto de Aprendizaje adaptado")
+
+    path_imsmanisfest = ba.findXmlIMSorSCORM(os.path.join(BASE_DIR, directory_origin))
+    if path_imsmanisfest is None:
+        raise Exception("Objeto de Aprendizaje aceptados por el adaptador es IMS y SCORM")
+
 
     # save the learning object preview path
     preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
@@ -114,7 +116,9 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
 
     if is_adapted:
-        return None, None, is_adapted
+        print('is_adapted', is_adapted)
+        ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
+        raise Exception("Objeto de Aprendizaje adaptado")
 
     learning_object = LearningObject.objects.create(
         title=soup_data.find('title').text,
@@ -123,7 +127,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
         user_ref=user_token,
         preview_origin=preview_origin,
         preview_adapted=preview_adapted,
-        file_folder=os.path.join(path, file_name.split('.')[0])
+        file_folder=os.path.join(path, file._name.split('.')[0])
     )
     serializer = Serializer(learning_object)
 
@@ -151,7 +155,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
 
     save_screenshot(learning_object)
 
-    return serializer, learning_object, is_adapted
+    return serializer, learning_object
 
 
 def dev_count(id):
@@ -258,27 +262,36 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
             "expires_at"
         """
 
+        uuid = str(shortuuid.ShortUUID().random(length=8))
+        file = request.FILES['file']
+        file._name = file._name.split('.')[0] + "_" + uuid + "." + file._name.split('.')[1]
+        path = "uploads"
+        #file_name = file._name
+        print("file", file)
+        print("file._name", file._name)
+        print("uuid", uuid)
+
+        ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
+
         if ('HTTP_AUTHORIZATION' in request.META) and (len(self.request.object_ref) > 0):
             user_token = request.META['HTTP_AUTHORIZATION']
         else:
             user_token = str(shortuuid.ShortUUID().random(length=64))
 
         areas = request.data['areas'].split(sep=',')
-
+        if 'all' in areas:
+            areas.remove('all')
         if len(areas) <= 0:
             return Response({"state": "Array Areas Empty", "code": "areas_empty"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            serializer, learning_object, is_adapted = create_learning_object(request, user_token,
-                                                                             LearningObjectSerializer,
-                                                                             areas,
-                                                                             request.data['method'])
+            serializer, learning_object = create_learning_object(request, user_token,
+                                                                 LearningObjectSerializer,
+                                                                 areas,
+                                                                 request.data['method'], path, file)
         except Exception as e:
+            ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
             return Response({"state": "error", "message": e.__str__()},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if is_adapted:
-            return Response({"state": "error", "code": "learning_object_odapted", "message": "Adapted"},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if request.data['method'] == "handbook":

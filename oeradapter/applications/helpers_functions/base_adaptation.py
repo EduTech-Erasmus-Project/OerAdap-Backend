@@ -1,4 +1,5 @@
 import copy
+import glob
 import json
 import re
 from zipfile import ZipFile
@@ -24,6 +25,8 @@ from ..adaptation.views import save_data_attribute
 from ..learning_object.models import TagAdapted, Transcript, PageLearningObject
 from channels.layers import get_channel_layer
 import imgkit
+from bs4 import BeautifulSoup as bs
+from ..helpers_functions import base_adaptation as ba
 
 channel_layer = get_channel_layer()
 BASE_DIR = Path(__file__).ancestor(3)
@@ -165,7 +168,6 @@ def convertText_Audio(texo_adaptar, directory, id_ref, request):
         path_preview = path_preview.replace("http://", "https://")
 
     s.save(path_system)
-
 
     return path_src, path_system, path_preview
 
@@ -388,7 +390,7 @@ def generate_transcript_youtube(video_url, video_title, path_adapted, request, d
             id_video = info_dict.get('id', None)
             transcript_list = YouTubeTranscriptApi.list_transcripts(id_video)
         except:
-            #print("no supported transcriptions")
+            # print("no supported transcriptions")
             return transcripts, captions
 
         try:
@@ -417,8 +419,8 @@ def get_transcript_youtube(transcript_list, lang):
 
 
 def save_transcript(transcript, path_adapted, video_title, transcripts, captions, source, dir_len):
-    #print("type transcript ", type(transcript))
-    #print("type transcript 1", type(transcript.fetch()))
+    # print("type transcript ", type(transcript))
+    # print("type transcript 1", type(transcript.fetch()))
 
     vtt_formatterd = WebVTTFormatter().format_transcript(transcript.fetch())
 
@@ -442,7 +444,7 @@ def save_transcript(transcript, path_adapted, video_title, transcripts, captions
 
     json_system = convert_str_to_json(srt_file, path_json)
 
-    #print("json_system ", json_system)
+    # print("json_system ", json_system)
 
     transcripts_obj = {
         "src": json_path,
@@ -564,42 +566,28 @@ def check_files(directory_name):
         return 0
 
 
-def extract_zip_file(path, file_name, file):
+def extract_zip_file(path, file):
     """
         Extrae un archivo zip en una ruta determinada
         :param path:
-        :param file_name:
         :param file:
         :return:
         """
-    var_name = os.path.join(path, file_name)
-    if var_name.find('.zip.zip') >= 0:
-        test_file_aux = file_name.split('.')[0]
-        test_file_aux = test_file_aux.rstrip(".zip")
-    else:
-        test_file_aux = file_name.split('.')[0]
+    try:
+        file_name = file._name
+        directory_extract = os.path.join(BASE_DIR, path, file_name.split('.')[0], file_name.split('.')[0] + "_origin")
 
-    directory_origin = os.path.join(path, file_name.split('.')[0], test_file_aux + "_origin")
+        with ZipFile(file, 'r') as zip_file:
+            zip_file.extractall(directory_extract)
+            directory_origin = os.path.join(path, file_name.split('.')[0], file_name.split('.')[0] + "_origin")
+            directory_adapted = os.path.join(path, file_name.split('.')[0], file_name.split('.')[0] + "_adapted")
+            shutil.copytree(os.path.join(BASE_DIR, directory_origin), os.path.join(BASE_DIR, directory_adapted))
+            zip_file.close()
 
-    with ZipFile(file, 'r') as zip_file:
-        # zip.printdir()
-        zip_file.extractall(directory_origin)
-
-    if check_files(directory_origin) == 0:
-        aux_path_o = os.path.join(directory_origin, listdir(directory_origin)[0])
-        source = aux_path_o
-        destination = directory_origin
-        files = os.listdir(source)
-        for file in files:
-            new_path = shutil.move(f"{source}/{file}", destination)
-            # print(new_path)
-        os.rmdir(aux_path_o)
-        # print("directory_name", str(directory_origin))
-
-    directory_adapted = os.path.join(path, file_name.split('.')[0], test_file_aux + "_adapted")
-    shutil.copytree(directory_origin, directory_adapted)
-
-    return directory_origin, directory_adapted
+        return directory_origin, directory_adapted
+    except Exception as e:
+        print("error in extract ", e)
+        # raise Exception("Objeto de Aprendizaje aceptados por el adaptador es IMS y SCORM")
 
 
 def compress_file(request, learning_object):
@@ -610,8 +598,6 @@ def compress_file(request, learning_object):
 
     if env('PROD'):
         path_zip_file = path_zip_file.replace("http://", "https://")
-
-    # print("Creado el archivo:", new_path)
 
     return path_zip_file
 
@@ -630,3 +616,36 @@ def take_screenshot(learning_object, page_learning_object):
     except Exception as e:
         print(e)
         pass
+
+
+def get_index_imsmanisfest(filename):
+    if filename is None:
+        return None
+
+    result = None
+    try:
+        # print("filename[:-1]", filename[:-1])
+        if filename[:-1] != BASE_DIR:
+            with open(filename, "r") as file:
+                content = file.readlines()
+                content = "".join(content)
+                bs_content = bs(content, "lxml")
+                resource = bs_content.find("file")
+                if resource:
+                    result = resource['href']
+                return result
+    except Exception as e:
+        # print("error get_index_imsmanisfest", e)
+        return None
+
+
+def findXmlIMSorSCORM(path):
+    try:
+        files_standar_xml = ["imsmanifest.xml", "imsmanifest_nuevo.xml", "catalogacionLomes.xml"]
+        os.chdir(path)
+        for file in glob.glob("*.xml"):
+            if file in files_standar_xml:
+                return get_index_imsmanisfest(os.path.join(path, file))
+        return None
+    except:
+        return None
