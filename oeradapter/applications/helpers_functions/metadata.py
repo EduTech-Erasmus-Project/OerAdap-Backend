@@ -19,19 +19,11 @@ def get_metadata(areas):
     :return:
         - object[] metadata_filter - Array de metadatos filtrados
     """
-    # print("areas", areas)
-    # print("metadata", metadata)
-
     metadata_filter = list()
     for area in areas:
-        # print("area", area)
-        # print("area in array", metadata[area])
         metadata_filter.append({
             "area": area,
             "metadata": metadata[area]
         })
     return metadata_filter
 
-
-def save_metadata_in_xml(path_directory, areas):
-    pass

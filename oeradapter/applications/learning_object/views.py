@@ -7,8 +7,6 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.status import HTTP_404_NOT_FOUND
-
 from . import serializers
 import shortuuid
 import os
@@ -24,20 +22,12 @@ from ..helpers_functions import automatic_adaptation as aa
 from ..helpers_functions import email as email_handler
 from rest_framework import generics
 
-from ..helpers_functions.base_adaptation import get_index_imsmanisfest
-
 BASE_DIR = Path(__file__).ancestor(3)
 
 env = environ.Env(
     PROD=(bool, False)
 )
 environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
-
-''' 
-PROD = None
-with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
-    PROD = json.loads(f.read())
-'''
 
 
 def adaptation_settings(areas, files, directory, root_dirs):
@@ -85,8 +75,6 @@ def save_screenshot(learning_object):
     if len(page_learning_object) == 0:
         page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
                                                                  Q(file_name="index.html"))
-    # print("page_learning_object", page_learning_object)
-
     th_take_screenshot = threading.Thread(target=ba.take_screenshot,
                                           args=[learning_object, page_learning_object[0], ])
     th_take_screenshot.start()

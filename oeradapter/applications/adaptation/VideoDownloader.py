@@ -1,6 +1,5 @@
 import os
 import threading
-
 import environ
 from asgiref.sync import async_to_sync
 from unipath import Path
@@ -16,27 +15,23 @@ env = environ.Env(
 )
 environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
+
 class YoutubeDLThread(threading.Thread):
 
     def __init__(self, video_url, directory_adapted, request, tag):
         threading.Thread.__init__(self)
-        print("video_url", video_url)
-        print("directory_adapted", directory_adapted)
-        # self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=1)
 
         self.tag = tag
-
         self.request = request
         self.directory_adapted = directory_adapted
-
         self.video_id_title = str(shortuuid.ShortUUID().random(length=8))
         self.path_system = os.path.join(BASE_DIR, self.directory_adapted, 'oer_resources')
 
         self.ydl_opts = {
             'outtmpl': self.path_system + '/' + self.video_id_title + '.%(ext)s'.strip(),
             'format': '(mp4)[height<=480]',
-            # 'bestvideo[height<=480]+bestaudio/best[height<=480]', #'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            # 'bestvideo[height<=480]+bestaudio/best[height<=480]',
+            # 'bestvideo[height<=480]+bestaudio/best[height<=480]', #'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[
+            # ext=mp4]/best', 'bestvideo[height<=480]+bestaudio/best[height<=480]',
             'noplaylist': True,
             # 'extract-audio': True,
             # 'logger': MyLogger(),
@@ -49,7 +44,6 @@ class YoutubeDLThread(threading.Thread):
         self.scram_dl.add_default_info_extractors()
         self.is_finished = False
         self.urls = video_url
-
         # self.download()
 
     def hook_progress(self, status):
@@ -63,8 +57,6 @@ class YoutubeDLThread(threading.Thread):
             }})
 
         else:
-            # print("download", status)
-            # self.redis_client.set('chanel1', 'It is working!')
             self.is_finished = False
             # Report progress
             async_to_sync(channel_layer.group_send)("channel_" + str(self.tag.id), {"type": "send_new_data", "text": {
