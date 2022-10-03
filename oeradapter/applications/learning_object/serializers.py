@@ -68,15 +68,9 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
         exclude = "__all__"
 
     def to_representation(self, instance):
-        # config_adaptability = AdaptationLearningObject.objects.get(pk=instance.id)
-
         config_adaptability = AdaptationLearningObject.objects.get(learning_object=instance.id)
         config_adaptability = AdaptationLearningObjectSerializer(config_adaptability)
-
-        # count data
         count_pages, count_images, count_paragraphs, count_videos, count_audios = count_data(instance)
-
-        #print("adap", config_adaptability.data["areas"])
 
         data = {
             "id": instance.id,
@@ -96,8 +90,6 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
                 "audios": count_audios
             },
             "config_adaptability": config_adaptability.data,
-            # "pages_adapted": pages_adapted.data,
-            # "pages_origin": pages_origin.data,
             "file_download": instance.file_adapted,
             "complete_adaptation": instance.complete_adaptation,
             "button_adaptation": instance.button_adaptation,
@@ -122,15 +114,10 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
             Q(learning_object_id=instance.id) & Q(disabled=False) & Q(type='adapted'));
 
         pages_adapted = PagesSerializer(pages_adapted, many=True)
-
         data['pages_adapted'] = pages_adapted.data
-
         pages_origin = PageLearningObject.objects.filter(type='origin', learning_object=instance.id)
-
         pages_origin = PagesSerializer(pages_origin, many=True)
-
         data['pages_origin'] = pages_origin.data
-
         return data
 
 
@@ -146,11 +133,8 @@ class ApiLearningObjectDetailSerializer(serializers.ModelSerializer):
         exclude = "__all__"
 
     def to_representation(self, instance):
-        # config_adaptability = AdaptationLearningObject.objects.get(pk=instance.id)
-
         config_adaptability = AdaptationLearningObject.objects.filter(learning_object_id=instance.id)
         config_adaptability = AdaptationLearningObjectSerializer(config_adaptability, many=True)
-
         count_pages, count_images, count_paragraphs, count_videos, count_audios = count_data(instance)
 
         # count resumen adaptation
