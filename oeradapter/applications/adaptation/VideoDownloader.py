@@ -1,8 +1,6 @@
-import json
 import os
 import threading
-
-# import redis
+import environ
 from asgiref.sync import async_to_sync
 from unipath import Path
 import shortuuid
@@ -10,34 +8,30 @@ from youtube_dl import YoutubeDL
 from channels.layers import get_channel_layer
 
 BASE_DIR = Path(__file__).ancestor(3)
-PROD = None
 channel_layer = get_channel_layer()
 
-with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
-    PROD = json.loads(f.read())
+env = environ.Env(
+    PROD=(bool, False)
+)
+environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 
 class YoutubeDLThread(threading.Thread):
 
     def __init__(self, video_url, directory_adapted, request, tag):
         threading.Thread.__init__(self)
-        print("video_url", video_url)
-        print("directory_adapted", directory_adapted)
-        # self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=1)
 
         self.tag = tag
-
         self.request = request
         self.directory_adapted = directory_adapted
-
         self.video_id_title = str(shortuuid.ShortUUID().random(length=8))
         self.path_system = os.path.join(BASE_DIR, self.directory_adapted, 'oer_resources')
 
         self.ydl_opts = {
             'outtmpl': self.path_system + '/' + self.video_id_title + '.%(ext)s'.strip(),
             'format': '(mp4)[height<=480]',
-            # 'bestvideo[height<=480]+bestaudio/best[height<=480]', #'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            # 'bestvideo[height<=480]+bestaudio/best[height<=480]',
+            # 'bestvideo[height<=480]+bestaudio/best[height<=480]', #'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[
+            # ext=mp4]/best', 'bestvideo[height<=480]+bestaudio/best[height<=480]',
             'noplaylist': True,
             # 'extract-audio': True,
             # 'logger': MyLogger(),
@@ -50,25 +44,22 @@ class YoutubeDLThread(threading.Thread):
         self.scram_dl.add_default_info_extractors()
         self.is_finished = False
         self.urls = video_url
-
         # self.download()
 
     def hook_progress(self, status):
         if status['status'] == 'finished':
             print("finished", status)
             self.is_finished = True
-            async_to_sync(channel_layer.group_send)("channel_"+str(self.tag.id), {"type": "send_new_data", "text": {
+            async_to_sync(channel_layer.group_send)("channel_" + str(self.tag.id), {"type": "send_new_data", "text": {
                 "status": "video_finished",
                 "type": "video",
                 "message": "Video descargado."
             }})
 
         else:
-            # print("download", status)
-            # self.redis_client.set('chanel1', 'It is working!')
             self.is_finished = False
             # Report progress
-            async_to_sync(channel_layer.group_send)("channel_"+str(self.tag.id), {"type": "send_new_data", "text": {
+            async_to_sync(channel_layer.group_send)("channel_" + str(self.tag.id), {"type": "send_new_data", "text": {
                 "status": "downloading",
                 "type": "video",
                 "message": "Descargando video…",
@@ -90,7 +81,7 @@ class YoutubeDLThread(threading.Thread):
             path_split = path_system.split(os.sep)
             path_preview = os.path.join(self.request._current_scheme_host, self.directory_adapted, 'oer_resources',
                                         path_split[-1]).replace("\\", "/")
-            if PROD['PROD']:
+            if env('PROD'):
                 path_preview = path_preview.replace("http://", "https://")
             path_src = 'oer_resources/' + path_split[-1]
             print("path_preview: ", path_preview)

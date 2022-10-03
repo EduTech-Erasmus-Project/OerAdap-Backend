@@ -1,17 +1,9 @@
 import threading
-
 from django.db.models import Q
-from pytz import unicode
-
 from ..helpers_functions import beautiful_soup_data as bsd
 from ..helpers_functions import base_adaptation as ba
 from ..helpers_functions import process as process
-
 from ..learning_object.models import TagPageLearningObject, PageLearningObject, TagAdapted, DataAttribute, Transcript
-
-
-def adaptation(areas=None, files=None, request=None):
-    pass
 
 
 def convertAudioToText(tag_learning_object, page, learning_object, request):
