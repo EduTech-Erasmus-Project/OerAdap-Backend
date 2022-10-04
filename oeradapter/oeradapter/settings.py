@@ -38,6 +38,7 @@ THIRD_PARTY_APPS = [
     'drf_yasg',
     'corsheaders',
     'channels',
+    #'django_crontab'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -87,6 +88,7 @@ CHANNEL_LAYERS = {
 }
 
 ALLOWED_HOSTS = [
+    '127.0.0.1',
     'localhost',
     'oeradap.edutech-project.org',
     '172.16.42.60'
@@ -139,6 +141,11 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+''' 
+CRONJOBS = [
+    ('*/1 * * * *', 'oeradapter.cron_job.my_cron_job', '>> ' + os.path.join(BASE_DIR, 'test.log'))
+]
+'''
 
 STATIC_URL = '/uploads/'
 STATICFILES_DIRS = [BASE_DIR.child('uploads')]
