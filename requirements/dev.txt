@@ -75,4 +75,5 @@ youtube-dl==2021.6.6
 youtube-transcript-api==0.4.2
 zope.interface==5.4.0
 django-environ
+imgkit==1.2.2
 
