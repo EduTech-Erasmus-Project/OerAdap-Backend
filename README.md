@@ -1,6 +1,14 @@
 # OerAdap-Backend
 Backend Adaptador de Objetos de aprendizaje
 
+## Pre-requisitos 📄
+
+* Python
+* PostgresSQL
+* wkhtmltopdf y wkhtmltoimage
+* FFmpeg
+
+
 ## Variables de entorno 📋
 Crear un archivo .env en la raiz del proyecto 
 
