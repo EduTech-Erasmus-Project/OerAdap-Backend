@@ -1,7 +1,7 @@
 # OerAdap-Backend
 Backend Adaptador de Objetos de aprendizaje
 
-## Variables de entorno
+## Variables de entorno 📋
 Crear un archivo .env en la raiz del proyecto 
 
 ```.env
@@ -19,7 +19,7 @@ API_EMAIL=email registered in mailjet_server email
 API_NAME=EduTech
 ```
 
-## Instalación de librerías
+## Instalación de librerías 🔧
 
 En la carpeta requirements se encuentran las librerias para desarrollo en windows y producción en linux 
 
@@ -27,7 +27,7 @@ En la carpeta requirements se encuentran las librerias para desarrollo en window
 > pip install -r requirements/dev.txt
 ```
 
-## Ejecución de proyecto 
+## Ejecución de proyecto 🚀
 
 Para la ejecucucion del proyecto situarse a la altura del archivo manage.py
 
