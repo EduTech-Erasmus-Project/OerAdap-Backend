@@ -201,7 +201,6 @@ def convertAudio_Text(path_init):
         remove(audio)
         return text_new
     except Exception as e:
-        # print("error", e)
         remove(audio)
         raise e
 
@@ -218,7 +217,16 @@ def create_transcript(transcript, tag_adapted):
     )
 
 
-def download_video1(tag, data_attribute, learning_object, request):
+def download_video(tag, data_attribute, learning_object, request):
+    """
+    Método para descargar el video y los subtítulos, usa channel_layer para la comunicación por Sockets.
+
+    :param tag: Tag original del video
+    :param data_attribute: Objeto de la clase DataAttribute
+    :param learning_object: Objeto de la clase LearningObject
+    :param request: Objeto Request
+
+    """
     serializer = TagsVideoSerializer(tag)
     path_system = None
     path_preview = None
@@ -255,7 +263,6 @@ def download_video1(tag, data_attribute, learning_object, request):
             "data": serializer.data
         }})
     else:
-        # guardar video
         page_website_learning_object = None
         if tag.page_learning_object.is_webpage:
             name_filter = tag.page_learning_object.file_name.replace('website_', '')

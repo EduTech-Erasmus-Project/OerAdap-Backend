@@ -593,7 +593,6 @@ def generate_new_htmlFile(file_beautiful_soup, path):
 
     :param file_beautiful_soup: archivo generado por BeautifulSoup
     :param path: directorio en donde se encuentra ubicado el archivo
-
     """
 
     html = file_beautiful_soup.prettify('utf-8')
@@ -608,6 +607,12 @@ def generate_new_htmlFile(file_beautiful_soup, path):
 
 
 def templateInfusion(dir_len):
+    """
+    Archivos para barra de accesibilidad y videos.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del HTML
+    """
     headInfusion = """
    <!---------------------------------------Begin infusion plugin adaptability------------------------------------------------------->
 
@@ -656,6 +661,12 @@ def templateInfusion(dir_len):
 
 
 def templateBodyButtonInfusion(dir_len):
+    """
+    Métodos y clases para la barra de accesibilidad.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del HTML
+    """
     bodyInfusion = """ 
              <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
         <script>
@@ -698,6 +709,12 @@ def templateBodyButtonInfusion(dir_len):
 
 
 def templateBodyVideoInfusion(dir_len):
+    """
+    Métodos y clases para el reproductor de video accesible.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del HTML
+    """
     bodyInfusion = """ 
                 <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
            <script>
@@ -738,6 +755,12 @@ def templateBodyVideoInfusion(dir_len):
 
 
 def templateTextAdaptation(dir_len):
+    """
+    Archivos y métodos para la adaptación de textos y audios.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del header y body HTML
+    """
     head_adaptation = """ 
         <!---------------------------------------Begin text adaptability------------------------------------------------------->
         
@@ -760,6 +783,12 @@ def templateTextAdaptation(dir_len):
 
 
 def templateImageAdaptation(dir_len):
+    """
+    Archivos y métodos para la adaptación de Imagenes.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del header y body HTML
+    """
     head_adaptation = """ 
         <!---------------------------------------Begin image lightbox------------------------------------------------------->
         
@@ -782,6 +811,15 @@ def templateImageAdaptation(dir_len):
 
 
 def templateImagePreview(id_class_ref, src_img, alt_img, tag):
+    """
+    Crea el contenedor para la previsualización de imagen.
+
+    :param id_class_ref: ID de referencia de la clase del tag.
+    :param src_img: Atributo SRC de la imagen
+    :param alt_img: Atributo ALT de la imagen
+    :param tag: El tag de la imagen
+    :return: Objeto BeautifulSoup del HTML.
+    """
     tag_image_adapted = """
                     <a href="%s" id="%s"
                             title="%s"
@@ -793,7 +831,12 @@ def templateImagePreview(id_class_ref, src_img, alt_img, tag):
     return soup_data
 
 
-def templateAdaptationTag(id_class_ref):
+def templateAdaptationTag():
+    """
+    Template del contenedor HTML para el botón de audio.
+
+    :return: (soup_data, id_ref) Instancia Beautifull de HTML y la referencia id.
+    """
     id_ref = getUUID()
     tag_text_Adapted = """
                 <div id="%s" class="text-adaptation">
@@ -837,12 +880,11 @@ def templateAdaptedTextButton(id_class_ref, text, dir_len):
     """
     Crea el template para generar el boton de adaptabilidad de lectura facil
 
-    :param id_class_ref:  id de referencia donde para encontrar el elemento en HTML
-    :param text: texto alternativo
-    :param dir_len: representacion de la logitud del directorio "../../"
-
+    :param id_class_ref: ID de referencia donde para encontrar el elemento en HTML
+    :param text: Texto alternativo
+    :param dir_len: Representacion de la logitud del directorio "../../"
+    :return: Instancia Beautifull de HTML.
     """
-
     button_tag_id = getUUID()
     tag_button = """
      <div class="tooltip text-container" id="{0}">
@@ -857,11 +899,12 @@ def templateAdaptedTextButton(id_class_ref, text, dir_len):
 
 def templateAudioTextButton(id_class_ref, text, dir_len):
     """
-    Crear template de conversion de audio a texto con webscraping
+    Crear template HTML de conversion de audio a texto.
 
-    :param id_class_ref:  id de referencia donde para encontrar el elemento en HTML
+    :param id_class_ref:  id de referencia donde para encontrar del elemento en HTML.
     :param text: texto alternativo
-    :param dir_len: representacion de la logitud del directorio "../../"
+    :param dir_len: Representación de la longitud del directorio "../../"
+    :return: Instancia Beautifull de HTML.
     """
 
     button_tag_id = getUUID()
@@ -877,7 +920,7 @@ def templateAudioTextButton(id_class_ref, text, dir_len):
 
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
     """
-    Crea un template que envuelve el audio en una clase para adaptarla al HTML
+    Crea un template que envuelve el codigo de audio en una DIV para adaptarla al HTML
 
     :param original_tag_audio: texto HTLM que contiene la etiqueta audio <audio>...</audio>
     :param id_class_ref: id de referencia donde para encontrar el elemento en HTML
@@ -893,6 +936,13 @@ def templateAdaptedAudio(original_tag_audio, id_class_ref):
 
 
 def templateContainerButtons(id_class_ref, tag):
+    """
+     Crea un template que envuelve el tag en una DIV para adaptarla al HTML
+
+    :param id_class_ref: Identificador del tag
+    :param tag: Tag HTML
+    :return: Instancia Beautifull de HTML.
+    """
     tag_container = """
         <div id="{0}">
             {1}
@@ -934,6 +984,18 @@ def convertElementBeautifulSoup(html_code):
 
 
 def templateVideoAdaptation(video_src, video_type, video_title, captions, transcripts, tag_id):
+    """
+    Crea un el código HTM del contenedor del video y los subtítulos.
+
+    :param video_src: Atributo SRC del video.
+    :param video_type: Tipo de video.
+    :param video_title: Titulo del video.
+    :param captions: Subtítulos en formato STR.
+    :param transcripts: Subtítulos en formato JSON.
+    :param tag_id: ID de referencia del tag
+    :return: Objeto BeautifulSoup del codigo HTML
+    """
+
     player_uid = getUUID()
     video_bsd = """ 
      <div class="ui-video-adaptability" id="%s">

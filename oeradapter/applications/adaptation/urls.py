@@ -22,10 +22,10 @@ urlpatterns = [
     path('adapter/gettranscript/<int:pk>', views.transcript_api_view),
     path('adapter/updatetranscript/<int:pk>', views.update_transcript_api_view),
 
-    path('revert/image/<int:pk>', views.revertImageRetrieveUpdateAPIView.as_view()),
-    path('revert/audio/<int:pk>', views.revertAudioRetrieveUpdateAPIView.as_view()),
-    path('revert/paragraph/<int:pk>', views.revertParagraphRetrieveUpdateAPIView.as_view()),
-    path('revert/video/<int:pk>', views.revertVideoRetrieveUpdateAPIView.as_view()),
+    path('revert/image/<int:pk>', views.RevertImageRetrieveUpdateAPIView.as_view()),
+    path('revert/audio/<int:pk>', views.RevertAudioRetrieveUpdateAPIView.as_view()),
+    path('revert/paragraph/<int:pk>', views.RevertParagraphRetrieveUpdateAPIView.as_view()),
+    path('revert/video/<int:pk>', views.RevertVideoRetrieveUpdateAPIView.as_view()),
 ]
 
 
