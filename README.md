@@ -12,7 +12,7 @@ Backend Adaptador de Objetos de aprendizaje
 ## Variables de entorno 📋
 Crear un archivo .env en la raiz del proyecto 
 
-```.env
+```
 SECRET_KEY=Secret Key
 DEBUG=True
 PROD=False
@@ -57,7 +57,7 @@ Instalación de la librería wkhtmltopdf y wkhtmltoimage en windows
  
 Para descargar la librería en Windows descarga del enlace https://wkhtmltopdf.org/downloads.html 
 
-Cuando se instale agregar la ruta de instalación y la carpeta bin a las variables de entorno de Windows C:\Program Files\wkhtmltopdf\bin
+Cuando se instale agregar la ruta de instalación y la carpeta bin a las variables de entorno de Windows `C:\Program Files\wkhtmltopdf\bin`
 
 ## FFmpeg en windows
 
@@ -65,7 +65,7 @@ Para la conversión de audio a texto se usa la librería FFmpeg.
 
 Para descargar ingres al enlace https://ffmpeg.org/download.html
 
-Descarga los binarios de Windows y agrega la ruta de la carpeta bin a las variables de entorno Ej. C:\ffmpeg\bin
+Descarga los binarios de Windows y agrega la ruta de la carpeta bin a las variables de entorno Ej. `C:\ffmpeg\bin`
 
 ## Métodos de adaptación
 
