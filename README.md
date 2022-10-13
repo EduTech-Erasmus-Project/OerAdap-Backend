@@ -67,7 +67,7 @@ Para descargar ingres al enlace https://ffmpeg.org/download.html
 
 Descarga los binarios de Windows y agrega la ruta de la carpeta bin a las variables de entorno Ej. C:\ffmpeg\bin
 
-## Métodos relevantes
+## Métodos de adaptación
 
 ### Carga de archivos necesarios en el HTML
 
