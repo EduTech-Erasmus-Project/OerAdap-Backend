@@ -1,6 +1,6 @@
 import threading
 from datetime import datetime
-
+import environ
 from django.db.models import Q, Sum, Count
 from pytz import utc
 from rest_framework import status
@@ -9,7 +9,6 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from . import serializers
 import shortuuid
-import json
 import os
 from unipath import Path
 from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, TagAdapted, \
@@ -25,9 +24,10 @@ from rest_framework import generics
 
 BASE_DIR = Path(__file__).ancestor(3)
 
-PROD = None
-with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
-    PROD = json.loads(f.read())
+env = environ.Env(
+    PROD=(bool, False)
+)
+environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 
 def adaptation_settings(areas, files, directory, root_dirs):
@@ -69,38 +69,33 @@ def get_learning_objects_by_token(user_ref):
 
 
 def save_screenshot(learning_object):
-    #print("page_learning_object")
+    # print("page_learning_object")
     page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
                                                              Q(file_name="website_index.html"))
     if len(page_learning_object) == 0:
         page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
                                                                  Q(file_name="index.html"))
-    #print("page_learning_object", page_learning_object)
-
     th_take_screenshot = threading.Thread(target=ba.take_screenshot,
                                           args=[learning_object, page_learning_object[0], ])
     th_take_screenshot.start()
 
 
-def create_learning_object(request, user_token, Serializer, areas, method):
-    uuid = str(shortuuid.ShortUUID().random(length=8))
-    file = request.FILES['file']
-
-    file._name = file._name.split('.')[0] + "_" + uuid + "." + file._name.split('.')[1]
-
-    # Extract file
-    path = "uploads"
-    file_name = file._name
+def create_learning_object(request, user_token, Serializer, areas, method, path, file):
     try:
-        directory_origin, directory_adapted = ba.extract_zip_file(path, file_name, file)
-    except:
-        return None, None, True
+        directory_origin, directory_adapted = ba.extract_zip_file(path, file)
+    except Exception as e:
+        raise Exception("object_adapted") #Objeto de Aprendizaje adaptado
+
+    path_imsmanisfest = ba.findXmlIMSorSCORM(os.path.join(BASE_DIR, directory_origin))
+    if path_imsmanisfest is None:
+        raise Exception("object_format_invalid") #Objeto de Aprendizaje aceptados por el adaptador es IMS y SCORM
+
 
     # save the learning object preview path
     preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
     preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         preview_origin = preview_origin.replace("http://", "https://")
         preview_adapted = preview_adapted.replace("http://", "https://")
 
@@ -109,7 +104,9 @@ def create_learning_object(request, user_token, Serializer, areas, method):
     files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
 
     if is_adapted:
-        return None, None, is_adapted
+        # print('is_adapted', is_adapted)
+        ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
+        raise Exception("Objeto de Aprendizaje adaptado")
 
     learning_object = LearningObject.objects.create(
         title=soup_data.find('title').text,
@@ -118,7 +115,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
         user_ref=user_token,
         preview_origin=preview_origin,
         preview_adapted=preview_adapted,
-        file_folder=os.path.join(path, file_name.split('.')[0])
+        file_folder=os.path.join(path, file._name.split('.')[0])
     )
     serializer = Serializer(learning_object)
 
@@ -146,7 +143,7 @@ def create_learning_object(request, user_token, Serializer, areas, method):
 
     save_screenshot(learning_object)
 
-    return serializer, learning_object, is_adapted
+    return serializer, learning_object
 
 
 def dev_count(id):
@@ -253,27 +250,36 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
             "expires_at"
         """
 
+        uuid = str(shortuuid.ShortUUID().random(length=8))
+        file = request.FILES['file']
+        file._name = file._name.split('.')[0] + "_" + uuid + "." + file._name.split('.')[1]
+        path = "uploads"
+        # file_name = file._name
+        # print("file", file)
+        # print("file._name", file._name)
+        # print("uuid", uuid)
+
+        ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
+
         if ('HTTP_AUTHORIZATION' in request.META) and (len(self.request.object_ref) > 0):
             user_token = request.META['HTTP_AUTHORIZATION']
         else:
             user_token = str(shortuuid.ShortUUID().random(length=64))
 
         areas = request.data['areas'].split(sep=',')
-
+        if 'all' in areas:
+            areas.remove('all')
         if len(areas) <= 0:
             return Response({"state": "Array Areas Empty", "code": "areas_empty"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            serializer, learning_object, is_adapted = create_learning_object(request, user_token,
-                                                                             LearningObjectSerializer,
-                                                                             areas,
-                                                                             request.data['method'])
+            serializer, learning_object = create_learning_object(request, user_token,
+                                                                 LearningObjectSerializer,
+                                                                 areas,
+                                                                 request.data['method'], path, file)
         except Exception as e:
-            return Response({"state": "error", "message": e.__str__()},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if is_adapted:
-            return Response({"state": "error", "code": "learning_object_odapted", "message": "Adapted"},
+            ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
+            return Response({"status": "error", "message": e.__str__(), "code": e.__str__()},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if request.data['method'] == "handbook":
@@ -476,7 +482,7 @@ def api_upload(request):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            print("error ", e)
+            # print("error ", e)
             return Response(
                 {"status": False, "message": "The access key to the api is not valid", "code": "invalid_api_key"},
                 status=status.HTTP_401_UNAUTHORIZED)
@@ -490,7 +496,7 @@ def api_get_files(request):
             serializer = ApiLearningObjectDetailSerializer(learning_objects, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print("error ", e)
+            # print("error ", e)
             return Response(
                 {"status": False, "message": "The access key to the api is not valid", "code": "invalid_api_key"},
                 status=status.HTTP_401_UNAUTHORIZED)
@@ -508,7 +514,7 @@ def api_get_file(request, pk=None):
             serializer = ApiLearningObjectDetailSerializer(learning_object)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print("error ", e)
+            # print("error ", e)
             return Response(
                 {"status": False, "message": "The file does not exist please check the file id",
                  "code": "file_not_found"},

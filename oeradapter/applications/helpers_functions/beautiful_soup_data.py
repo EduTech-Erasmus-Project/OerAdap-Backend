@@ -1,7 +1,6 @@
-import json
 from urllib.parse import urlparse
+import environ
 from unipath import Path
-import pathlib
 from . import metadata as meta
 from bs4 import BeautifulSoup, Comment
 import os
@@ -11,9 +10,10 @@ from ..learning_object.models import PageLearningObject, TagPageLearningObject, 
 
 BASE_DIR = Path(__file__).ancestor(3)
 
-PROD = None
-with open(os.path.join(Path(__file__).ancestor(4), "prod.json")) as f:
-    PROD = json.loads(f.read())
+env = environ.Env(
+    PROD=(bool, False)
+)
+environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 
 def split_path(preview_path):
@@ -170,7 +170,7 @@ def create_page_learning_object(learningObject, directory, directory_origin, req
     directory_file = os.path.join(BASE_DIR, directory, file['file'])
     preview_path = os.path.join(request_host, directory, file['file_name']).replace("\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         preview_path = preview_path.replace("http://", "https://")
 
     soup_data = generateBeautifulSoupFile(directory_file)
@@ -202,7 +202,7 @@ def create_page_learning_object(learningObject, directory, directory_origin, req
 
     directory_file_origin = os.path.join(BASE_DIR, directory_origin, file['file'])
     preview_path_origin = os.path.join(request_host, directory_origin, file['file_name']).replace("\\", "/")
-    if PROD['PROD']:
+    if env('PROD'):
         preview_path_origin = preview_path_origin.replace("http://", "https://")
 
     PageLearningObject.objects.create(
@@ -331,23 +331,9 @@ def webs_scraping_img(soup_data, page_adapted, file, directory, request_host, so
 
 def save_tag_img(tag, class_uuid, tag_identify, attribute_img, page_adapted, directory, request_host):
     path_split = split_path(page_adapted.preview_path)
-    '''
-            if len(tag.get('class', [])) > 0:
-                tag['class'].append(class_uuid)
-            else:
-                tag['class'] = class_uuid
-            '''
     tag['class'] = tag.get('class', []) + [class_uuid]
-
-    '''
-    if tag.get('alt') is not None:
-        text_alt = tag.get('alt')
-    else:
-        tag['alt'] = text_alt
-    '''
     text_alt = tag.get('alt', '')
     tag['alt'] = text_alt
-
     tag['tabindex'] = "1"
 
     tag_page = TagPageLearningObject.objects.create(
@@ -422,12 +408,6 @@ def webs_scraping_video(soup_data, page_adapted, file, tag_identify, directory, 
 
 def save_video_tag(tag, class_uuid, tag_identify, attribute_src, page_adapted, directory):
     path_split = split_path(page_adapted.preview_path)
-    '''
-            if len(tag.get('class', [])) > 0:
-                tag['class'].append(class_uuid)
-            else:
-                tag['class'] = class_uuid
-            '''
     tag['class'] = tag.get('class', []) + [class_uuid]
 
     tag_page = TagPageLearningObject.objects.create(
@@ -444,7 +424,7 @@ def save_video_tag(tag, class_uuid, tag_identify, attribute_src, page_adapted, d
 
     # path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
 
-    if PROD['PROD']:
+    if env('PROD'):
         path_preview = path_preview.replace("http://", "https://")
 
     path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
@@ -482,14 +462,8 @@ def webs_scraping_audio(soup_data, page_adapted, file, tag_identify, directory, 
 
     for tag in soup_data.find_all(tag_identify):
         class_uuid = tag_identify + '-' + getUUID()
-
-        #print("class_uuid", class_uuid)
-        # print("tag audio", tag)
-        #print("is none", tag.get('src', None))
-
         if soup_data_website is not None:
             tag_webdata = find_tag_in_webpage(tag, soup_data_website)
-            #print("tag_webdata", tag_webdata)
             save_tag_audio(tag_webdata, class_uuid, tag_identify, page_adapted_website, directory)
 
         save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory)
@@ -619,7 +593,6 @@ def generate_new_htmlFile(file_beautiful_soup, path):
 
     :param file_beautiful_soup: archivo generado por BeautifulSoup
     :param path: directorio en donde se encuentra ubicado el archivo
-
     """
 
     html = file_beautiful_soup.prettify('utf-8')
@@ -634,6 +607,12 @@ def generate_new_htmlFile(file_beautiful_soup, path):
 
 
 def templateInfusion(dir_len):
+    """
+    Archivos para barra de accesibilidad y videos.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del HTML
+    """
     headInfusion = """
    <!---------------------------------------Begin infusion plugin adaptability------------------------------------------------------->
 
@@ -682,6 +661,12 @@ def templateInfusion(dir_len):
 
 
 def templateBodyButtonInfusion(dir_len):
+    """
+    Métodos y clases para la barra de accesibilidad.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del HTML
+    """
     bodyInfusion = """ 
              <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
         <script>
@@ -724,6 +709,12 @@ def templateBodyButtonInfusion(dir_len):
 
 
 def templateBodyVideoInfusion(dir_len):
+    """
+    Métodos y clases para el reproductor de video accesible.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del HTML
+    """
     bodyInfusion = """ 
                 <!---------------------------------------Begin infusion script adaptability------------------------------------------------------->
            <script>
@@ -764,6 +755,12 @@ def templateBodyVideoInfusion(dir_len):
 
 
 def templateTextAdaptation(dir_len):
+    """
+    Archivos y métodos para la adaptación de textos y audios.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del header y body HTML
+    """
     head_adaptation = """ 
         <!---------------------------------------Begin text adaptability------------------------------------------------------->
         
@@ -786,6 +783,12 @@ def templateTextAdaptation(dir_len):
 
 
 def templateImageAdaptation(dir_len):
+    """
+    Archivos y métodos para la adaptación de Imagenes.
+
+    :param dir_len: Longitud del directorio "../../"
+    :return: Objeto BeautifulSoup del header y body HTML
+    """
     head_adaptation = """ 
         <!---------------------------------------Begin image lightbox------------------------------------------------------->
         
@@ -808,6 +811,15 @@ def templateImageAdaptation(dir_len):
 
 
 def templateImagePreview(id_class_ref, src_img, alt_img, tag):
+    """
+    Crea el contenedor para la previsualización de imagen.
+
+    :param id_class_ref: ID de referencia de la clase del tag.
+    :param src_img: Atributo SRC de la imagen
+    :param alt_img: Atributo ALT de la imagen
+    :param tag: El tag de la imagen
+    :return: Objeto BeautifulSoup del HTML.
+    """
     tag_image_adapted = """
                     <a href="%s" id="%s"
                             title="%s"
@@ -819,7 +831,12 @@ def templateImagePreview(id_class_ref, src_img, alt_img, tag):
     return soup_data
 
 
-def templateAdaptationTag(id_class_ref):
+def templateAdaptationTag():
+    """
+    Template del contenedor HTML para el botón de audio.
+
+    :return: (soup_data, id_ref) Instancia Beautifull de HTML y la referencia id.
+    """
     id_ref = getUUID()
     tag_text_Adapted = """
                 <div id="%s" class="text-adaptation">
@@ -863,12 +880,11 @@ def templateAdaptedTextButton(id_class_ref, text, dir_len):
     """
     Crea el template para generar el boton de adaptabilidad de lectura facil
 
-    :param id_class_ref:  id de referencia donde para encontrar el elemento en HTML
-    :param text: texto alternativo
-    :param dir_len: representacion de la logitud del directorio "../../"
-
+    :param id_class_ref: ID de referencia donde para encontrar el elemento en HTML
+    :param text: Texto alternativo
+    :param dir_len: Representacion de la logitud del directorio "../../"
+    :return: Instancia Beautifull de HTML.
     """
-
     button_tag_id = getUUID()
     tag_button = """
      <div class="tooltip text-container" id="{0}">
@@ -883,11 +899,12 @@ def templateAdaptedTextButton(id_class_ref, text, dir_len):
 
 def templateAudioTextButton(id_class_ref, text, dir_len):
     """
-    Crear template de conversion de audio a texto con webscraping
+    Crear template HTML de conversion de audio a texto.
 
-    :param id_class_ref:  id de referencia donde para encontrar el elemento en HTML
+    :param id_class_ref:  id de referencia donde para encontrar del elemento en HTML.
     :param text: texto alternativo
-    :param dir_len: representacion de la logitud del directorio "../../"
+    :param dir_len: Representación de la longitud del directorio "../../"
+    :return: Instancia Beautifull de HTML.
     """
 
     button_tag_id = getUUID()
@@ -903,7 +920,7 @@ def templateAudioTextButton(id_class_ref, text, dir_len):
 
 def templateAdaptedAudio(original_tag_audio, id_class_ref):
     """
-    Crea un template que envuelve el audio en una clase para adaptarla al HTML
+    Crea un template que envuelve el codigo de audio en una DIV para adaptarla al HTML
 
     :param original_tag_audio: texto HTLM que contiene la etiqueta audio <audio>...</audio>
     :param id_class_ref: id de referencia donde para encontrar el elemento en HTML
@@ -919,6 +936,13 @@ def templateAdaptedAudio(original_tag_audio, id_class_ref):
 
 
 def templateContainerButtons(id_class_ref, tag):
+    """
+     Crea un template que envuelve el tag en una DIV para adaptarla al HTML
+
+    :param id_class_ref: Identificador del tag
+    :param tag: Tag HTML
+    :return: Instancia Beautifull de HTML.
+    """
     tag_container = """
         <div id="{0}">
             {1}
@@ -960,6 +984,18 @@ def convertElementBeautifulSoup(html_code):
 
 
 def templateVideoAdaptation(video_src, video_type, video_title, captions, transcripts, tag_id):
+    """
+    Crea un el código HTM del contenedor del video y los subtítulos.
+
+    :param video_src: Atributo SRC del video.
+    :param video_type: Tipo de video.
+    :param video_title: Titulo del video.
+    :param captions: Subtítulos en formato STR.
+    :param transcripts: Subtítulos en formato JSON.
+    :param tag_id: ID de referencia del tag
+    :return: Objeto BeautifulSoup del codigo HTML
+    """
+
     player_uid = getUUID()
     video_bsd = """ 
      <div class="ui-video-adaptability" id="%s">
