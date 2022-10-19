@@ -48,7 +48,7 @@ class YoutubeDLThread(threading.Thread):
 
     def hook_progress(self, status):
         if status['status'] == 'finished':
-            print("finished", status)
+            #print("finished", status)
             self.is_finished = True
             async_to_sync(channel_layer.group_send)("channel_" + str(self.tag.id), {"type": "send_new_data", "text": {
                 "status": "video_finished",
@@ -74,7 +74,7 @@ class YoutubeDLThread(threading.Thread):
         try:
             info_dict = self.scram_dl.extract_info(self.urls, download=True)
             filename = self.scram_dl.prepare_filename(info_dict)
-            print("filename", filename)
+            #print("filename", filename)
             title = self.video_id_title  # re.sub("[^A-Za-z0-9]", "_", info_dict.get('title', None))
             # print("title: ", title)
             path_system = filename
@@ -84,7 +84,7 @@ class YoutubeDLThread(threading.Thread):
             if env('PROD'):
                 path_preview = path_preview.replace("http://", "https://")
             path_src = 'oer_resources/' + path_split[-1]
-            print("path_preview: ", path_preview)
+            # print("path_preview: ", path_preview)
             return path_system, path_preview, path_src, title
         except Exception as e:
             raise e

@@ -235,7 +235,7 @@ class AudioviewCreate(RetrieveAPIView):
             tag_learning_object = TagPageLearningObject.objects.get(pk=pk)
             page_learning_object = PageLearningObject.objects.get(pk=tag_learning_object.page_learning_object_id)
         except Exception as e:
-            print("error", e)
+            # print("error", e)
             return Response({'message': e.__str__(), 'status': 'error'},
                             status=status.HTTP_404_NOT_FOUND)
 
@@ -263,7 +263,7 @@ class AudioviewCreate(RetrieveAPIView):
                     return Response(audioSerializer.data, status=status.HTTP_200_OK)
 
                 except Exception as e:
-                    print("error", e)
+                    # print("error", e)
                     return Response({'message': e.__str__(), 'status': 'error'},
                                     status=status.HTTP_400_BAD_REQUEST)
 
@@ -885,7 +885,7 @@ class VideoAddCreateAPIView(CreateAPIView):
             serializer = self.get_serializer(tag_adapted)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print("Error", e)
+            # print("Error", e)
             if tag_adapted is not None:
                 return Response({"status": "no adapted", "code": "error", "message": e.__str__()},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -931,7 +931,7 @@ class VideoAddCreateAPIView(CreateAPIView):
                     return Response({"status": "no adapted", "code": "error", "message": e.__str__()},
                                     status=status.HTTP_400_BAD_REQUEST)
             else:
-                print("is local")
+                # print("is local")
                 return Response({"status": "no adapted", "code": "error", "message": "Automatic transcript developing"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -1069,7 +1069,7 @@ def comprimeFileZip(request, pk=None):
             learning_object.save()
             return Response({'path': path_zip_file, 'status': 'create zip'}, status=status.HTTP_200_OK)
         except Exception as e:
-            print(e)
+            # print(e)
             return Response({'message': e.__str__(), 'status': 'error'}, status=status.HTTP_400_BAD_REQUEST)
 
 

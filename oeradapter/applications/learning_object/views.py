@@ -84,11 +84,11 @@ def create_learning_object(request, user_token, Serializer, areas, method, path,
     try:
         directory_origin, directory_adapted = ba.extract_zip_file(path, file)
     except Exception as e:
-        raise Exception("Objeto de Aprendizaje adaptado")
+        raise Exception("object_adapted") #Objeto de Aprendizaje adaptado
 
     path_imsmanisfest = ba.findXmlIMSorSCORM(os.path.join(BASE_DIR, directory_origin))
     if path_imsmanisfest is None:
-        raise Exception("Objeto de Aprendizaje aceptados por el adaptador es IMS y SCORM")
+        raise Exception("object_format_invalid") #Objeto de Aprendizaje aceptados por el adaptador es IMS y SCORM
 
 
     # save the learning object preview path
@@ -104,7 +104,7 @@ def create_learning_object(request, user_token, Serializer, areas, method, path,
     files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
 
     if is_adapted:
-        print('is_adapted', is_adapted)
+        # print('is_adapted', is_adapted)
         ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
         raise Exception("Objeto de Aprendizaje adaptado")
 
@@ -254,10 +254,10 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         file = request.FILES['file']
         file._name = file._name.split('.')[0] + "_" + uuid + "." + file._name.split('.')[1]
         path = "uploads"
-        #file_name = file._name
-        print("file", file)
-        print("file._name", file._name)
-        print("uuid", uuid)
+        # file_name = file._name
+        # print("file", file)
+        # print("file._name", file._name)
+        # print("uuid", uuid)
 
         ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
 
@@ -279,7 +279,7 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
                                                                  request.data['method'], path, file)
         except Exception as e:
             ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
-            return Response({"state": "error", "message": e.__str__()},
+            return Response({"status": "error", "message": e.__str__(), "code": e.__str__()},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if request.data['method'] == "handbook":
@@ -482,7 +482,7 @@ def api_upload(request):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            print("error ", e)
+            # print("error ", e)
             return Response(
                 {"status": False, "message": "The access key to the api is not valid", "code": "invalid_api_key"},
                 status=status.HTTP_401_UNAUTHORIZED)
@@ -496,7 +496,7 @@ def api_get_files(request):
             serializer = ApiLearningObjectDetailSerializer(learning_objects, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print("error ", e)
+            # print("error ", e)
             return Response(
                 {"status": False, "message": "The access key to the api is not valid", "code": "invalid_api_key"},
                 status=status.HTTP_401_UNAUTHORIZED)
@@ -514,7 +514,7 @@ def api_get_file(request, pk=None):
             serializer = ApiLearningObjectDetailSerializer(learning_object)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print("error ", e)
+            # print("error ", e)
             return Response(
                 {"status": False, "message": "The file does not exist please check the file id",
                  "code": "file_not_found"},
