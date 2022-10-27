@@ -34,14 +34,27 @@ LOCAL_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'channels',
     'rest_framework',
     'drf_yasg',
     'corsheaders',
-    'channels',
-    #'django_crontab'
+    # 'django_crontab'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
+
+WSGI_APPLICATION = 'oeradapter.wsgi.application'
+ASGI_APPLICATION = 'oeradapter.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # 'CONFIG': {
+        #    "hosts": [(env('REDIS_HOST'), env('REDIS_PORT'))],
+        # },
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,17 +88,6 @@ TEMPLATES = [
         },
     },
 ]
-
-WSGI_APPLICATION = 'oeradapter.wsgi.application'
-ASGI_APPLICATION = "oeradapter.asgi.application"
-CHANNEL_LAYERS = {
-    'default': {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-        # 'CONFIG': {
-        # "hosts": [(get_secret_config('REDIS_HOST'), get_secret_config('REDIS_PORT'))],
-        # },
-    },
-}
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
