@@ -490,7 +490,7 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
 
             if 'file' in request.data:
 
-                print("adapter file")
+                # print("adapter file")
 
                 try:
                     data = self.__create_file(request, tag_page_learning_object, id_ref, copy.copy(div_soup_data),
@@ -524,16 +524,14 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
                         {"message": "Text is empty", "code": "empty_data"},
                         status=status.HTTP_400_BAD_REQUEST)
 
-
-
     def __update_text(self, request, tag_adapted, tag_page_learning_object, page_learning_object):
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
-        print("tag_page_learning_object.id_class_ref", tag_page_learning_object.id_class_ref)
+        # print("tag_page_learning_object.id_class_ref", tag_page_learning_object.id_class_ref)
         tag = file_html.find("div", id=tag_page_learning_object.id_class_ref)
-        print("tag", tag)
-        print("id_ref", tag_adapted.id_ref)
+        # print("tag", tag)
+        # print("id_ref", tag_adapted.id_ref)
         tag_adaptation = tag.find(id=tag_adapted.id_ref)
-        print("tag_adaptation", tag_adaptation)
+        # print("tag_adaptation", tag_adaptation)
         button_text_data, button_text_tag_id = bsd.templateAdaptedTextButton(
             tag_page_learning_object.id_class_ref,
             request.data['text'], page_learning_object.dir_len)
@@ -616,10 +614,10 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
 
     def __create_file(self, request, tag_page_learning_object, id_ref, div_soup_data, page_learning_object,
                       is_webpage=False):
-        print("div_soup_data", div_soup_data)
+        # print("div_soup_data", div_soup_data)
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find(tag_page_learning_object.tag, tag_page_learning_object.id_class_ref)
-        print("tag", tag)
+        # print("tag", tag)
         tag.append(div_soup_data)
 
         learning_object = LearningObject.objects.get(pk=page_learning_object.learning_object_id)

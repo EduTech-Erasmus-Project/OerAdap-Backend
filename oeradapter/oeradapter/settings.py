@@ -31,6 +31,7 @@ LOCAL_APPS = [
     'applications.learning_object',
     'applications.adaptation',
     'applications.helpers_functions',
+    'applications.integration',
 ]
 
 THIRD_PARTY_APPS = [
