@@ -25,10 +25,9 @@ def receive_file(request):
     file_name = request.data["file"].split("/")[-1]
     path_file = os.path.join(BASE_DIR, "uploads", file_name)
     response = requests.get(request.data["file"])
-    #print("response", request.data["file"].split("/")[-1])
+    # print("response", request.data["file"].split("/")[-1])
     open(path_file, "wb").write(response.content)
-    #print("file", file)
-
+    # print("file", file)
 
     try:
         file = open(path_file, "r")
@@ -43,7 +42,5 @@ def receive_file(request):
         print("learning_object", learning_object)
     except Exception as e:
         print("error", e)
-
-
 
     return Response(path_file, status=status.HTTP_200_OK)

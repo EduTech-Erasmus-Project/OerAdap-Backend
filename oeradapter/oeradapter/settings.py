@@ -1,13 +1,13 @@
 import os
 import environ
-from unipath import Path
+from pathlib import Path
 
 env = environ.Env(
     DEBUG=(bool, False)
 )
 
-BASE_DIR = Path(__file__).ancestor(2)
-environ.Env.read_env(os.path.join(Path(__file__).ancestor(3), '.env'))
+BASE_DIR = Path(__file__).resolve().parent.parent
+environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -151,7 +151,7 @@ CRONJOBS = [
 '''
 
 STATIC_URL = '/uploads/'
-STATICFILES_DIRS = [BASE_DIR.child('uploads')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'uploads')]
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
