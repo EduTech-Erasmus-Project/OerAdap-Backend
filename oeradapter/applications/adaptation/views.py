@@ -15,7 +15,7 @@ import os
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
-from ..helpers_functions import beautiful_soup_data as bsd
+from ..helpers_functions import beautiful_soup_data as bsd, metadata
 from ..helpers_functions import base_adaptation as ba
 from bs4 import BeautifulSoup
 
@@ -228,12 +228,15 @@ class AudioviewCreate(RetrieveAPIView):
     def post(self, request, *args, **kwargs):
 
         page_website_learning_object = None
-
         """Consulta de datos"""
         try:
             pk = request.data['tag_page_learning_object']
             tag_learning_object = TagPageLearningObject.objects.get(pk=pk)
             page_learning_object = PageLearningObject.objects.get(pk=tag_learning_object.page_learning_object_id)
+
+            # add metadata in xml
+            metadata.save_metadata_audio(page_learning_object.learning_object.path_xml)
+
         except Exception as e:
             # print("error", e)
             return Response({'message': e.__str__(), 'status': 'error'},
@@ -560,6 +563,9 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
         :return: None si es una página de tipo webpage o una instancia de la creación
         """
 
+        # add metadata in xml
+        metadata.save_metadata_paragraph(page_learning_object.learning_object.path_xml)
+
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find(tag_page_learning_object.tag, tag_page_learning_object.id_class_ref)
         tag.append(div_soup_data)
@@ -614,6 +620,10 @@ class AdapterParagraphTestRetrieveAPIView(RetrieveUpdateAPIView):
 
     def __create_file(self, request, tag_page_learning_object, id_ref, div_soup_data, page_learning_object,
                       is_webpage=False):
+
+        # add metadata in xml
+        metadata.save_metadata_paragraph(page_learning_object.learning_object.path_xml)
+
         # print("div_soup_data", div_soup_data)
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find(tag_page_learning_object.tag, tag_page_learning_object.id_class_ref)
@@ -715,6 +725,10 @@ class CovertTextToAudioRetrieveAPIView(RetrieveAPIView):
 
     def __create_audio(self, path_src, path_system, path_preview, tag_page_learning_object, div_soup_data, id_ref,
                        page_learning_object, is_webpage=False):
+
+        # add metadata in xml
+        metadata.save_metadata_paragraph(page_learning_object.learning_object.path_xml)
+
         file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
         tag = file_html.find(tag_page_learning_object.tag, tag_page_learning_object.id_class_ref)
         tag.append(div_soup_data)
@@ -805,6 +819,9 @@ class VideoGenerateCreateAPIView(CreateAPIView):
             data_attribute = DataAttribute.objects.get(tag_page_learning_object_id=tag.id)
             learning_object = LearningObject.objects.get(pk=tag.page_learning_object.learning_object_id)
 
+            # add metadata in xml
+            metadata.save_metadata_video(learning_object.path_xml)
+
             if data_attribute.source == "local":
                 return Response({"message": "Local translations under development", "code": "developing"},
                                 status=status.HTTP_200_OK)
@@ -843,6 +860,9 @@ class VideoAddCreateAPIView(CreateAPIView):
         captions = []
         tag_adapted = None
         page_website_learning_object = None
+
+        # add metadata in xml
+        metadata.save_metadata_video(learning_object.path_xml)
 
         if tag.page_learning_object.is_webpage:
             name_filter = tag.page_learning_object.file_name.replace('website_', '')
@@ -1065,7 +1085,7 @@ def comprimeFileZip(request, pk=None):
                 learning_object.id)
 
             # print(request.data)
-            print("data", request.data)
+            # print("data", request.data)
 
             if request.data.get('latitude') is not None and request.data.get('longitude') is not None:
                 save_info_download(request, count_paragraphs_count, count_videos_count, count_audios_count,

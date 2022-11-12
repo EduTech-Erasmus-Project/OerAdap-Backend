@@ -35,6 +35,7 @@ class LearningObject(models.Model):
     image_adaptation = models.BooleanField(default=False, null=True)
     paragraph_adaptation = models.BooleanField(default=False, null=True)
     video_adaptation = models.BooleanField(default=False, null=True)
+    path_xml = models.CharField(max_length=250, null=True, blank=True)
 
 
 class AdaptationLearningObject(models.Model):

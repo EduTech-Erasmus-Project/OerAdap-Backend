@@ -1,7 +1,7 @@
 from urllib.parse import urlparse
 import environ
 from unipath import Path
-from . import metadata as meta
+from . import metadata as meta, metadata
 from bs4 import BeautifulSoup, Comment
 import os
 import shortuuid
@@ -157,7 +157,7 @@ def save_filesHTML_db(files, learning_object, directory, directory_origin, reque
         web_scraping_paragraph(soup_data, page_adapted, file['file'], soup_data_website, page_adapted_website,
                                file_website)
         webs_scraping_img(soup_data, page_adapted, file['file'], directory, request_host, soup_data_website,
-                          page_adapted_website, file_website)
+                          page_adapted_website, file_website, learning_object.path_xml)
         webs_scraping_audio(soup_data, page_adapted, file['file'], 'audio', directory, request_host, soup_data_website,
                             page_adapted_website, file_website)
         webs_scraping_video(soup_data, page_adapted, file['file'], 'video', directory, request_host, soup_data_website,
@@ -294,9 +294,10 @@ def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, pag
 
 
 def webs_scraping_img(soup_data, page_adapted, file, directory, request_host, soup_data_website, page_adapted_website,
-                      file_website):
+                      file_website, path_xml):
     """
     Vamos a extraer el alt de las imagenes y crear clases en las imagenes
+
 
     :param file_website:
     :param page_adapted_website:
@@ -306,13 +307,15 @@ def webs_scraping_img(soup_data, page_adapted, file, directory, request_host, so
     :param file: nombre del archivo
     :param directory:  directorio del archivo
     :param request_host: direccion del host
-
+    :param path_xml: archivo xml de metadatos.
     """
 
     tag_identify = "img"
     attribute_img = "src"
 
     for tag in soup_data.find_all(tag_identify):
+        # save metadata image
+        metadata.save_metadata_img(path_xml)
 
         class_uuid = tag_identify + '-' + getUUID()
         # agregar a la etiqueta website
@@ -1056,16 +1059,23 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
     return video_bsd
 
 
+''' 
 def find_xml_in_directory(directory):
+    print("find_xml_in_directory")
     file_xml = None
     bs_data_xml = None
     type_standard = ""
-    for root, dirs, files in os.walk(directory):
+    print("directory", directory)
+    print("os.walk(directory)", os.walk(os.path.join(BASE_DIR, directory)))
+    for root, dirs, files in os.walk(os.path.join(BASE_DIR, directory)):
+        print("files", files)
         for file in files:
             if file.endswith(".xml"):
                 file_path = os.path.join(root, file)
+                print("file_path", file_path)
                 bs_data = generateBeautifulSoupFile(file_path)
                 data = bs_data.find("lom")
+                print("data", data)
                 if data is not None:
                     file_xml = file_path
                     bs_data_xml = bs_data
@@ -1074,12 +1084,16 @@ def find_xml_in_directory(directory):
                     file_xml = file_path
                     bs_data_xml = bs_data
                     type_standard = "lomes:lom"
-
     return file_xml, bs_data_xml, type_standard
+'''
 
-
+'''
 def save_metadata_in_xml(path_directory, areas):
+    print("save_metadata_in_xml")
     file_xml, bs_data_xml, type_standard = find_xml_in_directory(path_directory)
+    print("file_xml", file_xml)
+    print("bs_data_xml", bs_data_xml)
+    print("type_standard", type_standard)
     if file_xml is None and bs_data_xml is None:
         return
     metadata_filter = meta.get_metadata(areas)
@@ -1091,11 +1105,13 @@ def save_metadata_in_xml(path_directory, areas):
             lom_data = bs_data_xml.find("lomes:lom")
 
         for metadata in metadata_filter:
+            print("metadata", metadata)
             for data in metadata["metadata"]:
+                print("data", data)
 
                 bs_data = lom_data.find("accesibility")
-                if bs_data is None and (
-                        data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+                if bs_data is None and (data["property"].lower() != "alignmenttype" and data["property"].lower() != "accessmode"):
+
                     lom_data.insert(-1, BeautifulSoup("<accesibility></accesibility>", 'html.parser'))
                     bs_data = lom_data.find("accesibility")
 
@@ -1201,6 +1217,7 @@ def save_metadata_in_xml(path_directory, areas):
 
         generate_new_htmlFile(bs_data_xml, file_xml)
         return True
+'''
 
 
 def codeAxuliarLomesRespla():

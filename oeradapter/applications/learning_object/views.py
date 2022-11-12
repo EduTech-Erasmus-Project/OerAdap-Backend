@@ -17,6 +17,7 @@ from .permission import IsPermissionToken
 from .serializers import LearningObjectSerializer, ApiLearningObjectDetailSerializer, LearningObjectDetailSerializer
 from ..adaptation.serializers import TagsSerializerTagAdapted, TagsVideoSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
+from ..helpers_functions import metadata as metadata
 from ..helpers_functions import base_adaptation as ba
 from ..helpers_functions import automatic_adaptation as aa
 from ..helpers_functions import email as email_handler
@@ -30,13 +31,14 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 
-def adaptation_settings(areas, files, directory, root_dirs):
+def adaptation_settings(areas, files, directory, root_dirs, path_xml):
     button = False
     paragraph_script = False
     video = False
     image = False
     if 'image' in areas:
         image = True
+        #metadata.save_metadata_img(path_xml)
 
     if 'video' in areas:
         video = True
@@ -46,6 +48,7 @@ def adaptation_settings(areas, files, directory, root_dirs):
 
     if 'button' in areas:
         button = True
+        metadata.save_metadata_button(path_xml)
 
     if 'paragraph' in areas:
         paragraph_script = True
@@ -127,8 +130,11 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
         learning_object=learning_object
     )
 
+    learning_object.path_xml = metadata.find_xml_in_directory(directory_adapted)
+    metadata.tag_accesibility(learning_object.path_xml)
+
     # files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
-    adaptation_settings(areas, files, directory_adapted, root_dirs)
+    adaptation_settings(areas, files, directory_adapted, root_dirs, learning_object.path_xml)
 
     # print("files", files)
     files_website = [file for file in files if "website_" in file['file_name']]
@@ -139,9 +145,13 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     bsd.save_filesHTML_db(files_normal, learning_object, directory_adapted, directory_origin,
                           host, files_website)
     learning_object.button_adaptation = True
+
     learning_object.save()
 
-    bsd.save_metadata_in_xml(directory_adapted, areas)
+    # Error no entra a la funcion
+    # print("directory_adapted", directory_adapted)
+    # print("areas", areas)
+    # bsd.save_metadata_in_xml(directory_adapted, areas)
 
     save_screenshot(learning_object)
 
@@ -256,10 +266,6 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         file = request.FILES['file']
         file._name = file._name.split('.')[0] + "_" + uuid + "." + file._name.split('.')[1]
         path = "uploads"
-        # file_name = file._name
-        # print("file", file)
-        # print("file._name", file._name)
-        # print("uuid", uuid)
 
         ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
 
