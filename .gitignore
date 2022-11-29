@@ -71,6 +71,11 @@ cover/
 # Translations
 *.mo
 
+# Migrations
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
+
 # Django stuff:
 
 # Flask stuff:
