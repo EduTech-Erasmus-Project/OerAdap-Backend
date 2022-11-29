@@ -1,13 +1,13 @@
 import os
 import environ
-from unipath import Path
+from pathlib import Path
 
 env = environ.Env(
     DEBUG=(bool, False)
 )
 
-BASE_DIR = Path(__file__).ancestor(2)
-environ.Env.read_env(os.path.join(Path(__file__).ancestor(3), '.env'))
+BASE_DIR = Path(__file__).resolve().parent.parent
+environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -31,17 +31,31 @@ LOCAL_APPS = [
     'applications.learning_object',
     'applications.adaptation',
     'applications.helpers_functions',
+    'applications.integration',
 ]
 
 THIRD_PARTY_APPS = [
+    'channels',
     'rest_framework',
     'drf_yasg',
     'corsheaders',
-    'channels',
-    #'django_crontab'
+    # 'django_crontab'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
+
+WSGI_APPLICATION = 'oeradapter.wsgi.application'
+ASGI_APPLICATION = 'oeradapter.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # 'CONFIG': {
+        #    "hosts": [(env('REDIS_HOST'), env('REDIS_PORT'))],
+        # },
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,17 +89,6 @@ TEMPLATES = [
         },
     },
 ]
-
-WSGI_APPLICATION = 'oeradapter.wsgi.application'
-ASGI_APPLICATION = "oeradapter.asgi.application"
-CHANNEL_LAYERS = {
-    'default': {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-        # 'CONFIG': {
-        # "hosts": [(get_secret_config('REDIS_HOST'), get_secret_config('REDIS_PORT'))],
-        # },
-    },
-}
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
@@ -148,7 +151,7 @@ CRONJOBS = [
 '''
 
 STATIC_URL = '/uploads/'
-STATICFILES_DIRS = [BASE_DIR.child('uploads')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'uploads')]
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/

@@ -17,6 +17,7 @@ from .permission import IsPermissionToken
 from .serializers import LearningObjectSerializer, ApiLearningObjectDetailSerializer, LearningObjectDetailSerializer
 from ..adaptation.serializers import TagsSerializerTagAdapted, TagsVideoSerializer
 from ..helpers_functions import beautiful_soup_data as bsd
+from ..helpers_functions import metadata as metadata
 from ..helpers_functions import base_adaptation as ba
 from ..helpers_functions import automatic_adaptation as aa
 from ..helpers_functions import email as email_handler
@@ -30,13 +31,14 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 
-def adaptation_settings(areas, files, directory, root_dirs):
+def adaptation_settings(areas, files, directory, root_dirs, path_xml):
     button = False
     paragraph_script = False
     video = False
     image = False
     if 'image' in areas:
         image = True
+        #metadata.save_metadata_img(path_xml)
 
     if 'video' in areas:
         video = True
@@ -46,6 +48,7 @@ def adaptation_settings(areas, files, directory, root_dirs):
 
     if 'button' in areas:
         button = True
+        metadata.save_metadata_button(path_xml)
 
     if 'paragraph' in areas:
         paragraph_script = True
@@ -68,36 +71,29 @@ def get_learning_objects_by_token(user_ref):
     return serializer
 
 
-def save_screenshot(learning_object):
-    # print("page_learning_object")
-    page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
-                                                             Q(file_name="website_index.html"))
-    if len(page_learning_object) == 0:
-        page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
-                                                                 Q(file_name="index.html"))
-    th_take_screenshot = threading.Thread(target=ba.take_screenshot,
-                                          args=[learning_object, page_learning_object[0], ])
-    th_take_screenshot.start()
 
 
-def create_learning_object(request, user_token, Serializer, areas, method, path, file):
+
+def create_learning_object(host, user_token, Serializer, areas, method, path, file):
     try:
         directory_origin, directory_adapted = ba.extract_zip_file(path, file)
     except Exception as e:
-        raise Exception("object_adapted") #Objeto de Aprendizaje adaptado
+        raise Exception("object_adapted")  # Objeto de Aprendizaje adaptado
 
     path_imsmanisfest = ba.findXmlIMSorSCORM(os.path.join(BASE_DIR, directory_origin))
     if path_imsmanisfest is None:
-        raise Exception("object_format_invalid") #Objeto de Aprendizaje aceptados por el adaptador es IMS y SCORM
-
+        raise Exception("object_format_invalid")  # Objeto de Aprendizaje aceptados por el adaptador es IMS y SCORM
 
     # save the learning object preview path
-    preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
-    preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
-
+    # preview_origin = os.path.join(request._current_scheme_host, directory_origin, 'index.html').replace("\\", "/")
+    # preview_adapted = os.path.join(request._current_scheme_host, directory_adapted, 'index.html').replace("\\", "/")
+    preview_origin = os.path.join(host, directory_origin, 'index.html').replace("\\", "/")
+    preview_adapted = os.path.join(host, directory_adapted, 'index.html').replace("\\", "/")
+    ''' 
     if env('PROD'):
         preview_origin = preview_origin.replace("http://", "https://")
         preview_adapted = preview_adapted.replace("http://", "https://")
+    '''
 
     soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
@@ -125,8 +121,14 @@ def create_learning_object(request, user_token, Serializer, areas, method, path,
         learning_object=learning_object
     )
 
+    learning_object.path_xml = metadata.find_xml_in_directory(directory_adapted)
+    metadata.tag_verify(learning_object.path_xml, "accesibility")
+    metadata.tag_verify(learning_object.path_xml, "annotation")
+    metadata.tag_verify(learning_object.path_xml, "classification")
+    metadata.save_metadata_default(learning_object.path_xml)
+
     # files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
-    adaptation_settings(areas, files, directory_adapted, root_dirs)
+    adaptation_settings(areas, files, directory_adapted, root_dirs, learning_object.path_xml)
 
     # print("files", files)
     files_website = [file for file in files if "website_" in file['file_name']]
@@ -135,13 +137,17 @@ def create_learning_object(request, user_token, Serializer, areas, method, path,
     # print("files normal", files_normal)
 
     bsd.save_filesHTML_db(files_normal, learning_object, directory_adapted, directory_origin,
-                          request._current_scheme_host, files_website)
+                          host, files_website)
     learning_object.button_adaptation = True
+
     learning_object.save()
 
-    bsd.save_metadata_in_xml(directory_adapted, areas)
+    # Error no entra a la funcion
+    # print("directory_adapted", directory_adapted)
+    # print("areas", areas)
+    # bsd.save_metadata_in_xml(directory_adapted, areas)
 
-    save_screenshot(learning_object)
+    ba.save_screenshot(learning_object)
 
     return serializer, learning_object
 
@@ -254,10 +260,6 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
         file = request.FILES['file']
         file._name = file._name.split('.')[0] + "_" + uuid + "." + file._name.split('.')[1]
         path = "uploads"
-        # file_name = file._name
-        # print("file", file)
-        # print("file._name", file._name)
-        # print("uuid", uuid)
 
         ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
 
@@ -273,11 +275,12 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
             return Response({"state": "Array Areas Empty", "code": "areas_empty"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            serializer, learning_object = create_learning_object(request, user_token,
+            serializer, learning_object = create_learning_object(env("HOST"), user_token,
                                                                  LearningObjectSerializer,
                                                                  areas,
                                                                  request.data['method'], path, file)
         except Exception as e:
+            print("error ", e)
             ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
             return Response({"status": "error", "message": e.__str__(), "code": e.__str__()},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -472,7 +475,7 @@ def api_upload(request):
         try:
             api_data = RequestApi.objects.get(api_key=request.GET.get('api_key', None))
             areas = request.GET.get('adaptation', None).split(sep=',')
-            serializer, learning_object, is_adapted = create_learning_object(request, api_data.api_key,
+            serializer, learning_object, is_adapted = create_learning_object(env("HOST"), api_data.api_key,
                                                                              ApiLearningObjectDetailSerializer,
                                                                              areas, "automatic")
             if is_adapted:

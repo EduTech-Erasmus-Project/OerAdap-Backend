@@ -13,17 +13,16 @@ from channels.auth import AuthMiddlewareStack
 from django.core.asgi import get_asgi_application
 from . import routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'oeradapter.settings.prod')
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'oeradapter.settings')
 # application = get_asgi_application()
 # socket connection url
 application = ProtocolTypeRouter({
-    # Django's ASGI application to handle traditional HTTP requests
-    "http": get_asgi_application(),
-
-    # WebSocket
-    "websocket": AuthMiddlewareStack(
+    'http': get_asgi_application(),
+    'websocket': AuthMiddlewareStack(
         URLRouter(
-                routing.websocket_urlpatterns
-        ),
-    ),
+            routing.websocket_urlpatterns
+        )
+    )
 })
+
