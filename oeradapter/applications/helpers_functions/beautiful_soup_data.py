@@ -315,6 +315,7 @@ def webs_scraping_img(soup_data, page_adapted, file, directory, request_host, so
 
     for tag in soup_data.find_all(tag_identify):
         # save metadata image
+
         metadata.save_metadata_img(path_xml)
 
         class_uuid = tag_identify + '-' + getUUID()

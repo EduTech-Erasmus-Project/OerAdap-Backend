@@ -11,9 +11,10 @@ metadata = None
 try:
     with open(os.path.join(Path(__file__).ancestor(4), "metadata.json")) as f:
         metadata = json.loads(f.read())
-        f.close()
+        # print("json metadata", metadata)
+        # f.close()
 except Exception as e:
-    print("Error", e)
+    print("Error json", e)
 
 
 def get_metadata(areas):
@@ -27,7 +28,7 @@ def get_metadata(areas):
     for area in areas:
         metadata_filter.append({
             "area": area,
-            "metadata": metadata[area]
+            "metadata": metadata.get(area)
         })
     return metadata_filter
 
@@ -51,9 +52,12 @@ def append_metadata(xml_path, metadata_tag):
     if len(lom) == 0:
         lom = xml.getElementsByTagName("lom")[0]
 
-    accesibility = lom.getElementsByTagName("accesibility")[0]
     for metadata in metadata_tag:
-        properties = lom.getElementsByTagName(metadata.get("property").lower())
+        source = lom.getElementsByTagName(metadata.get("source").lower())[0]
+        properties = source.getElementsByTagName(metadata.get("property").lower())
+        if metadata.get("name", None) is not None:
+            properties = source.getElementsByTagName(metadata.get("name").lower())
+
         if len(properties) > 0:
             values = properties[0].getElementsByTagName("value")
             if not exist_property(values, metadata.get("type")):
@@ -63,40 +67,56 @@ def append_metadata(xml_path, metadata_tag):
                 properties[0].appendChild(value)
         else:
             property = xml.createElement(metadata.get("property").lower())
-            accesibility.appendChild(property)
+            if metadata.get("name", None) is not None:
+                property = xml.createElement(metadata.get("name").lower())
+                property.setAttribute("uniqueElementName", metadata.get("name").lower())
+
+            source.appendChild(property)
 
             value = xml.createElement('value')
             value.setAttribute("uniqueElementName", "value")
             value.appendChild(xml.createTextNode(metadata.get("type")))
             property.appendChild(value)
+
     save_xml(xml_path, xml)
 
 
 def save_metadata_img(xml_path):
-    print("metadata image", metadata.get("image"))
     append_metadata(xml_path, metadata.get("image"))
 
 
 def save_metadata_video(xml_path):
-    print("metadata video", metadata.get("video"))
     append_metadata(xml_path, metadata.get("video"))
 
 
 def save_metadata_audio(xml_path):
-    print("metadata audio", metadata.get("audio"))
     append_metadata(xml_path, metadata.get("audio"))
 
 
 def save_metadata_button(xml_path):
-    print("metadata button", metadata.get("button"))
     append_metadata(xml_path, metadata.get("button"))
 
 
 def save_metadata_paragraph(xml_path):
-    print("metadata paragraph", metadata.get("paragraph"))
     append_metadata(xml_path, metadata.get("paragraph"))
 
 
+def save_metadata_default(xml_path):
+    append_metadata(xml_path, metadata.get("default"))
+
+
+def tag_verify(xml_path, tag):
+    xml = minidom.parse(xml_path)
+    lom = xml.getElementsByTagName("lomes:lom")
+    if len(lom) == 0:
+        lom = xml.getElementsByTagName("lom")[0]
+    accesibility = lom.getElementsByTagName(tag)
+    if len(accesibility) == 0:
+        accesibility = xml.createElement(tag)
+        lom.appendChild(accesibility)
+        save_xml(xml_path, xml)
+
+''' 
 def tag_accesibility(xml_path):
     xml = minidom.parse(xml_path)
     lom = xml.getElementsByTagName("lomes:lom")
@@ -109,10 +129,46 @@ def tag_accesibility(xml_path):
         save_xml(xml_path, xml)
 
 
+def tag_annotation(xml_path):
+    xml = minidom.parse(xml_path)
+    lom = xml.getElementsByTagName("lomes:lom")
+    if len(lom) == 0:
+        lom = xml.getElementsByTagName("lom")[0]
+    accesibility = lom.getElementsByTagName("annotation")
+    if len(accesibility) == 0:
+        accesibility = xml.createElement('annotation')
+        lom.appendChild(accesibility)
+        save_xml(xml_path, xml)
+
+
+def tag_annotation(xml_path):
+    xml = minidom.parse(xml_path)
+    lom = xml.getElementsByTagName("lomes:lom")
+    if len(lom) == 0:
+        lom = xml.getElementsByTagName("lom")[0]
+    accesibility = lom.getElementsByTagName("annotation")
+    if len(accesibility) == 0:
+        accesibility = xml.createElement('annotation')
+        lom.appendChild(accesibility)
+        save_xml(xml_path, xml)
+
+
+def tag_classification(xml_path):
+    xml = minidom.parse(xml_path)
+    lom = xml.getElementsByTagName("lomes:lom")
+    if len(lom) == 0:
+        lom = xml.getElementsByTagName("lom")[0]
+    accesibility = lom.getElementsByTagName("classification")
+    if len(accesibility) == 0:
+        accesibility = xml.createElement('classification')
+        lom.appendChild(accesibility)
+        save_xml(xml_path, xml)
+'''
+
 def save_xml(path, xml):
     with open(path, 'w', encoding="utf-8") as f:
         f.write(xml.toxml())
-        f.close()
+        # f.close()
 
 
 def find_xml_in_directory(directory):

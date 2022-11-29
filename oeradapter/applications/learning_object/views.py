@@ -71,16 +71,7 @@ def get_learning_objects_by_token(user_ref):
     return serializer
 
 
-def save_screenshot(learning_object):
-    # print("page_learning_object")
-    page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
-                                                             Q(file_name="website_index.html"))
-    if len(page_learning_object) == 0:
-        page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
-                                                                 Q(file_name="index.html"))
-    th_take_screenshot = threading.Thread(target=ba.take_screenshot,
-                                          args=[learning_object, page_learning_object[0], ])
-    th_take_screenshot.start()
+
 
 
 def create_learning_object(host, user_token, Serializer, areas, method, path, file):
@@ -131,7 +122,10 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     )
 
     learning_object.path_xml = metadata.find_xml_in_directory(directory_adapted)
-    metadata.tag_accesibility(learning_object.path_xml)
+    metadata.tag_verify(learning_object.path_xml, "accesibility")
+    metadata.tag_verify(learning_object.path_xml, "annotation")
+    metadata.tag_verify(learning_object.path_xml, "classification")
+    metadata.save_metadata_default(learning_object.path_xml)
 
     # files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
     adaptation_settings(areas, files, directory_adapted, root_dirs, learning_object.path_xml)
@@ -153,7 +147,7 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     # print("areas", areas)
     # bsd.save_metadata_in_xml(directory_adapted, areas)
 
-    save_screenshot(learning_object)
+    ba.save_screenshot(learning_object)
 
     return serializer, learning_object
 
@@ -286,6 +280,7 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
                                                                  areas,
                                                                  request.data['method'], path, file)
         except Exception as e:
+            print("error ", e)
             ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
             return Response({"status": "error", "message": e.__str__(), "code": e.__str__()},
                             status=status.HTTP_400_BAD_REQUEST)

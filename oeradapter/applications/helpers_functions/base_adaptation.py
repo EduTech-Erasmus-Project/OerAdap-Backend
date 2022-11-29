@@ -2,9 +2,11 @@ import copy
 import glob
 import json
 import re
+import threading
 from zipfile import ZipFile
 import environ
 import webvtt
+from django.db.models import Q
 from unipath import Path
 from . import beautiful_soup_data as bsd
 from youtube_dl import YoutubeDL
@@ -611,6 +613,7 @@ def compress_file(request, learning_object):
 
 def take_screenshot(learning_object, page_learning_object):
     try:
+        print("save_screenshot", page_learning_object.preview_path)
         options = {
             'format': 'png',
             'height': '1000',
@@ -621,7 +624,7 @@ def take_screenshot(learning_object, page_learning_object):
                         os.path.join(BASE_DIR, learning_object.path_adapted, 'img-prev.png'), options=options)
 
     except Exception as e:
-        print(e)
+        print("take_screenshot error", e)
         pass
 
 
@@ -656,3 +659,14 @@ def findXmlIMSorSCORM(path):
         return None
     except:
         return None
+
+
+def save_screenshot(learning_object):
+    page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
+                                                             Q(file_name="website_index.html"))
+    if len(page_learning_object) == 0:
+        page_learning_object = PageLearningObject.objects.filter(Q(learning_object_id=learning_object.id) &
+                                                                 Q(file_name="index.html"))
+    th_take_screenshot = threading.Thread(target=ba.take_screenshot,
+                                          args=[learning_object, page_learning_object[0], ])
+    th_take_screenshot.start()

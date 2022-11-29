@@ -19,6 +19,8 @@ from ..helpers_functions import beautiful_soup_data as bsd, metadata
 from ..helpers_functions import base_adaptation as ba
 from bs4 import BeautifulSoup
 
+
+
 BASE_DIR = Path(__file__).ancestor(3)
 
 
@@ -1080,6 +1082,8 @@ def comprimeFileZip(request, pk=None):
         """generamos le zip del nuevo objeto de aprendizaje adaptado"""
         try:
             learning_object = LearningObject.objects.get(pk=pk)
+
+            ba.save_screenshot(learning_object)
 
             count_images_count, count_paragraphs_count, count_videos_count, count_audios_count = dev_count(
                 learning_object.id)
