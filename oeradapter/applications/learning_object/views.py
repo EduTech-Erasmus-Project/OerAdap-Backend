@@ -38,7 +38,7 @@ def adaptation_settings(areas, files, directory, root_dirs, path_xml):
     image = False
     if 'image' in areas:
         image = True
-        #metadata.save_metadata_img(path_xml)
+        # metadata.save_metadata_img(path_xml)
 
     if 'video' in areas:
         video = True
@@ -71,13 +71,11 @@ def get_learning_objects_by_token(user_ref):
     return serializer
 
 
-
-
-
-def create_learning_object(host, user_token, Serializer, areas, method, path, file):
+def create_learning_object(host, user_token, Serializer, areas, method, path, file, file_name):
     try:
-        directory_origin, directory_adapted = ba.extract_zip_file(path, file)
+        directory_origin, directory_adapted = ba.extract_zip_file(path, file, file_name)
     except Exception as e:
+        #print("extract_zip_file", e)
         raise Exception("object_adapted")  # Objeto de Aprendizaje adaptado
 
     path_imsmanisfest = ba.findXmlIMSorSCORM(os.path.join(BASE_DIR, directory_origin))
@@ -101,7 +99,7 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
 
     if is_adapted:
         # print('is_adapted', is_adapted)
-        ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
+        ba.remove_folder(os.path.join(BASE_DIR, path, file_name.split('.')[0]))
         raise Exception("Objeto de Aprendizaje adaptado")
 
     learning_object = LearningObject.objects.create(
@@ -111,7 +109,7 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
         user_ref=user_token,
         preview_origin=preview_origin,
         preview_adapted=preview_adapted,
-        file_folder=os.path.join(path, file._name.split('.')[0])
+        file_folder=os.path.join(path, file_name.split('.')[0])
     )
     serializer = Serializer(learning_object)
 
@@ -275,10 +273,11 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
             return Response({"state": "Array Areas Empty", "code": "areas_empty"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            file_name = file._name
             serializer, learning_object = create_learning_object(env("HOST"), user_token,
                                                                  LearningObjectSerializer,
                                                                  areas,
-                                                                 request.data['method'], path, file)
+                                                                 request.data['method'], path, file, file_name)
         except Exception as e:
             print("error ", e)
             ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
