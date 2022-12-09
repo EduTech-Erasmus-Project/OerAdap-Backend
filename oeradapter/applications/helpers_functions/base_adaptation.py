@@ -575,7 +575,7 @@ def check_files(directory_name):
         return 0
 
 
-def extract_zip_file(path, file):
+def extract_zip_file(path, file, file_name):
     """
         Extrae un archivo zip en una ruta determinada
         :param path:
@@ -583,10 +583,13 @@ def extract_zip_file(path, file):
         :return:
         """
     try:
-        file_name = file._name
+        #file_name = file._name
         directory_extract = os.path.join(BASE_DIR, path, file_name.split('.')[0], file_name.split('.')[0] + "_origin")
 
-        with ZipFile(file, 'r') as zip_file:
+        print("path file zip", file)
+
+        with ZipFile(file, "r") as zip_file:
+            zip_file.printdir()
             zip_file.extractall(directory_extract)
             directory_origin = os.path.join(path, file_name.split('.')[0], file_name.split('.')[0] + "_origin")
             directory_adapted = os.path.join(path, file_name.split('.')[0], file_name.split('.')[0] + "_adapted")
@@ -596,6 +599,7 @@ def extract_zip_file(path, file):
         return directory_origin, directory_adapted
     except Exception as e:
         print("error in extract ", e)
+        raise e
         # raise Exception("Objeto de Aprendizaje aceptados por el adaptador es IMS y SCORM")
 
 
