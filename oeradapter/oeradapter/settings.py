@@ -95,15 +95,15 @@ ALLOWED_HOSTS = [
     'localhost',
     'oeradap.edutech-project.org',
     '172.16.42.60',
-    '192.168.223.68',
-    '192.168.223.24',
+    '192.168.137.91',
+    '192.168.137.1',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
     'https://oeradap.edutech-project.org',
-    'http://192.168.223.68:8000',
-    'http://192.168.223.24:8000',
+    'http://192.168.137.91:4200',
+    'http://192.168.137.1:4200',
 ]
 
 # CORS_ORIGIN_ALLOW_ALL=False
@@ -111,15 +111,15 @@ CORS_ORIGIN_WHITELIST = [
     'http://127.0.0.1:4200',
     'http://localhost:4200',
     'https://oeradap.edutech-project.org'
-'http://192.168.223.68:8000',
-    'http://192.168.223.24:8000',
+    'http://192.168.137.91:4200',
+    'http://192.168.137.1:4200',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:4200',
     'https://oeradap.edutech-project.org'
-'http://192.168.223.68:8000',
-    'http://192.168.223.24:8000',
+    'http://192.168.137.91:4200',
+    'http://192.168.137.1:4200',
 ]
 
 DATABASES = {
