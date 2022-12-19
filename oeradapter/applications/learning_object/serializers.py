@@ -22,6 +22,7 @@ class LearningObjectSerializer(serializers.ModelSerializer):
             "expires_at": instance.expires_at,
             "preview_origin": instance.preview_origin,
             "preview_adapted": instance.preview_adapted,
+            "roa": instance.roa
         }
 
 
@@ -97,7 +98,8 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
             "image_adaptation": instance.image_adaptation,
             "paragraph_adaptation": instance.paragraph_adaptation,
             "video_adaptation": instance.video_adaptation,
-            "metadata": metadata.get_metadata(config_adaptability.data["areas"])
+            "metadata": metadata.get_metadata(config_adaptability.data["areas"]),
+            "roa": instance.roa
         }
 
         page_lea_ob = PageLearningObject.objects.filter(type='adapted', learning_object=instance.id)

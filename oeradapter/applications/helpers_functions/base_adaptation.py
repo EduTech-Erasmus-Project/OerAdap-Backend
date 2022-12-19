@@ -586,10 +586,10 @@ def extract_zip_file(path, file, file_name):
         #file_name = file._name
         directory_extract = os.path.join(BASE_DIR, path, file_name.split('.')[0], file_name.split('.')[0] + "_origin")
 
-        print("path file zip", file)
+        #print("path file zip", file)
 
         with ZipFile(file, "r") as zip_file:
-            zip_file.printdir()
+            #zip_file.printdir()
             zip_file.extractall(directory_extract)
             directory_origin = os.path.join(path, file_name.split('.')[0], file_name.split('.')[0] + "_origin")
             directory_adapted = os.path.join(path, file_name.split('.')[0], file_name.split('.')[0] + "_adapted")

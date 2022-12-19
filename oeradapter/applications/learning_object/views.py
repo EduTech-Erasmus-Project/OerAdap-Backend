@@ -1,5 +1,7 @@
 import threading
 from datetime import datetime
+from django.utils import timezone
+
 import environ
 from django.db.models import Q, Sum, Count
 from pytz import utc
@@ -71,7 +73,7 @@ def get_learning_objects_by_token(user_ref):
     return serializer
 
 
-def create_learning_object(host, user_token, Serializer, areas, method, path, file, file_name):
+def create_learning_object(host, user_token, Serializer, areas, method, path, file, file_name, roa=False):
     try:
         directory_origin, directory_adapted = ba.extract_zip_file(path, file, file_name)
     except Exception as e:
@@ -111,6 +113,11 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
         preview_adapted=preview_adapted,
         file_folder=os.path.join(path, file_name.split('.')[0])
     )
+    if roa:
+        learning_object.roa = roa
+        learning_object.expires_at = timezone.now() + timezone.timedelta(days=7)
+        learning_object.save()
+
     serializer = Serializer(learning_object)
 
     AdaptationLearningObject.objects.create(
