@@ -1,4 +1,3 @@
-aioredis==1.3.1
 asgiref==3.4.1
 async-timeout==4.0.2
 attrs==21.4.0
@@ -9,7 +8,6 @@ certifi==2021.5.30
 cffi==1.15.0
 channels==3.0.4
 charset-normalizer==2.0.5
-click==8.0.3
 colorama==0.4.4
 comtypes==1.1.10
 constantly==15.1.0
@@ -27,7 +25,6 @@ geographiclib==1.52
 geopy==2.2.0
 gTTS==2.2.3
 gunicorn==20.1.0
-hiredis==2.0.0
 hyperlink==21.0.0
 idna==3.2
 incremental==21.3.0
@@ -51,14 +48,10 @@ pyttsx3==2.90
 pytz==2021.1
 redis==4.3.4
 requests==2.26.0
-ruamel.yaml==0.17.16
-ruamel.yaml.clib==0.2.6
 service-identity==21.1.0
 shortuuid==1.0.1
 six==1.16.0
-soupsieve==2.2.1
 SpeechRecognition==3.8.1
-sqlparse==0.4.2
 txaio==22.2.1
 typing_extensions==4.2.0
 Unipath==1.1
