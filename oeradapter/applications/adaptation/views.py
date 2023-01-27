@@ -1,6 +1,7 @@
 import copy
 import threading
 import environ
+from django.views.decorators.http import require_GET, require_POST
 from geopy import Nominatim
 from rest_framework.generics import RetrieveAPIView, CreateAPIView, RetrieveUpdateAPIView, GenericAPIView
 from rest_framework.decorators import api_view
@@ -1039,7 +1040,8 @@ class VideoGenericAPIView(GenericAPIView):
     pass
 
 
-@api_view(['GET'])
+#@api_view(['GET'])
+@require_GET
 def transcript_api_view(request, pk=None):
     # print(request)
     if request.method == 'GET':
@@ -1053,7 +1055,8 @@ def transcript_api_view(request, pk=None):
             return Response({"id": transcript.id, "transcript": file_content}, status=status.HTTP_200_OK, )
 
 
-@api_view(['POST'])
+#@api_view(['POST'])
+@require_POST
 def update_transcript_api_view(request, pk=None):
     if request.method == 'POST':
         transcript = get_object_or_404(Transcript, pk=pk)
@@ -1075,7 +1078,8 @@ def update_transcript_api_view(request, pk=None):
         return Response({"id": transcript.id, "data": "ok"}, status=status.HTTP_200_OK, )
 
 
-@api_view(['POST'])
+#@api_view(['POST'])
+@require_POST
 def comprimeFileZip(request, pk=None):
     if request.method == 'POST':
         """Recibe latitud, longitud y user_agend """
