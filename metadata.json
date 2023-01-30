@@ -1,0 +1,232 @@
+{
+    "audio": [
+        {
+            "property": "accessibilityFeatures",
+            "type": "transcript",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessMode",
+            "type": "textual",
+            "source": "annotation"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "highContrastAudioSwitchableBackground",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "highContrastAudioReducedBackground",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "higtcontrastaudio",
+            "source": "accesibility"
+        }
+    ],
+    "button": [
+        {
+            "property": "accessibilityFeatures",
+            "type": "displayTransformability/background-color",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "displayTransformability/font-family",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "displayTransformability/font-size",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "displayTransformability/color",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "displayTransformability/word-spacing",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "displayTransformability/line-height",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "captions",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "synchronizedAudioText",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "highContrastDisplay",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "transcript",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "structuralNavigation",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "readingOrder",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "tableOfContents",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "index",
+            "source": "accesibility"
+        }
+    ],
+    "image": [
+        {
+            "property": "accessibilityFeatures",
+            "type": "alternativeText",
+            "source": "accesibility"
+        }
+    ],
+    "paragraph": [
+        {
+            "property": "alignmentType",
+            "type": "textComplexity",
+            "source": "classification",
+            "name": "purpose"
+        },
+        {
+            "property": "alignmentType",
+            "type": "readingLevel",
+            "source": "classification",
+            "name": "purpose"
+        },
+        {
+            "property": "accessMode",
+            "type": "auditory",
+            "source": "annotation"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "ttsMarkup",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "longdescription",
+            "source": "accesibility"
+        },
+        {
+            "property": "alignmentType",
+            "type": "complexitylevel",
+            "source": "classification",
+            "name": "purpose"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "annotations",
+            "source": "accesibility"
+        }
+    ],
+    "video": [
+        {
+            "property": "accessibilityFeatures",
+            "type": "caption",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "synchronizedAudioText",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "higtcontrastaudio",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "highContrastAudioReducedBackground",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "highContrastAudioSwitchableBackground",
+            "source": "accesibility"
+        }
+    ],
+    "default": [
+        {
+            "property": "accessibilityControl",
+            "type": "fullmousecontrol",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityControl",
+            "type": "fullkeyvoicecontrol",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityControl",
+            "type": "fullkeytouchcontrol",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessModeSufficient",
+            "type": "tactile",
+            "source": "annotation"
+        },
+        {
+            "property": "accessMode",
+            "type": "textual",
+            "source": "annotation"
+        },
+        {
+            "property": "accessMode",
+            "type": "tactile",
+            "source": "annotation"
+        },
+        {
+            "property": "accessibilityControl",
+            "type": "fullkeyboardcontrol",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityHazard",
+            "type": "nosoundHazard",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityHazard",
+            "type": "noflashingHazard",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityHazard",
+            "type": "nomotionsimulationHazard",
+            "source": "accesibility"
+        },
+        {
+            "property": "accessibilityFeatures",
+            "type": "bookmarks",
+            "source": "accesibility"
+        }
+    ]
+}
