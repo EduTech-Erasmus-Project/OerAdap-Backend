@@ -29,7 +29,7 @@ def get_path_preview(src, path_split):
     vec_filter = list(filter(lambda x: '..' in x, attribute_src_split))
     if len(vec_filter) > 0:
         path_split = path_split[:-len(vec_filter)]
-    path_preview = ("/".join(path_split) + "/" + attribute_src_split[-1]).replace("http:/", "http://")
+    path_preview = ("/".join(path_split) + "/" + attribute_src_split[-1]).replace("http://", "https://")
     return path_preview
 
 

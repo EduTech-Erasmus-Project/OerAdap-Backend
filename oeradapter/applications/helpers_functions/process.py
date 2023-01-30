@@ -7,9 +7,9 @@ def easy_reading(text_content):
     :return: Retorno un string de una etiqueta parrafo en html.
     """
 
-    text_content = "<p>hola mundo, como estan hoy.</p>"
+    text = "<p>hola mundo, como estan hoy.</p>"
 
-    return text_content
+    return text
 
 def video_transcript(path_video):
     transcripts = []

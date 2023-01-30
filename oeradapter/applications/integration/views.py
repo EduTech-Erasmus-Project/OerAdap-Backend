@@ -1,19 +1,16 @@
 import base64
 import os.path
 from io import BytesIO
-
 import environ
 import shortuuid
+from django.views.decorators.http import require_POST
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from unipath import Path
 import requests
-
 from ..learning_object.serializers import LearningObjectSerializer
 from ..learning_object.views import create_learning_object
-
-from zipfile import ZipFile
 
 BASE_DIR = Path(__file__).ancestor(3)
 
@@ -23,7 +20,8 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 
-@api_view(['POST'])
+#@api_view(['POST'])
+@require_POST
 def receive_file(request):
     if request.data["file"] is None:
         return Response({"status": "error", "message": "File is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -61,6 +59,7 @@ def receive_file(request):
         # print("file", zip)
         # zip_file.extractall(path_ex)
         # zip_file.printdir()
+        BytesIO(response.content)
 
         serializer, learning_object = create_learning_object(env("HOST"), request.data["user_key"],
                                                              LearningObjectSerializer,
