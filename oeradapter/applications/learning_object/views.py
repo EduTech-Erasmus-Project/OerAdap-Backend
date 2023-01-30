@@ -1,9 +1,8 @@
-import threading
 from datetime import datetime
 from django.utils import timezone
-
 import environ
 from django.db.models import Q, Sum, Count
+from django.views.decorators.http import require_POST, require_GET
 from pytz import utc
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -13,7 +12,7 @@ from . import serializers
 import shortuuid
 import os
 from unipath import Path
-from .models import LearningObject, AdaptationLearningObject, PageLearningObject, TagPageLearningObject, TagAdapted, \
+from .models import LearningObject, AdaptationLearningObject, TagPageLearningObject, TagAdapted, \
     RequestApi, MetadataInfo
 from .permission import IsPermissionToken
 from .serializers import LearningObjectSerializer, ApiLearningObjectDetailSerializer, LearningObjectDetailSerializer
@@ -77,7 +76,7 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     try:
         directory_origin, directory_adapted = ba.extract_zip_file(path, file, file_name)
     except Exception as e:
-        #print("extract_zip_file", e)
+        # print("extract_zip_file", e)
         raise Exception("object_adapted")  # Objeto de Aprendizaje adaptado
 
     path_imsmanisfest = ba.findXmlIMSorSCORM(os.path.join(BASE_DIR, directory_origin))
@@ -451,7 +450,8 @@ class RequestApiEmail(generics.CreateAPIView):
         return Response(res_email.json(), status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+# @api_view(['POST'])
+@require_POST
 def email_contact_api_view(request):
     """
     Envío de email de contacto.
@@ -464,7 +464,8 @@ def email_contact_api_view(request):
         return Response(res_email.json(), status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+# @api_view(['POST'])
+@require_POST
 def api_upload(request):
     if request.method == 'POST':
         if "file" not in request.FILES:
@@ -479,11 +480,20 @@ def api_upload(request):
                 status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            file = request.FILES['file']
+            file_name = file._name
             api_data = RequestApi.objects.get(api_key=request.GET.get('api_key', None))
             areas = request.GET.get('adaptation', None).split(sep=',')
-            serializer, learning_object, is_adapted = create_learning_object(env("HOST"), api_data.api_key,
+
+            serializer, learning_object, is_adapted = create_learning_object(env("HOST"),
+                                                                             api_data.api_key,
                                                                              ApiLearningObjectDetailSerializer,
-                                                                             areas, "automatic")
+                                                                             areas,
+                                                                             "automatic",
+                                                                             "uploads",
+                                                                             file,
+                                                                             file_name
+                                                                             )
             if is_adapted:
                 return Response({"state": "learning_Object_Adapted"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -497,7 +507,8 @@ def api_upload(request):
                 status=status.HTTP_401_UNAUTHORIZED)
 
 
-@api_view(['GET'])
+# @api_view(['GET'])
+@require_GET
 def api_get_files(request):
     if request.method == 'GET':
         try:
@@ -511,7 +522,8 @@ def api_get_files(request):
                 status=status.HTTP_401_UNAUTHORIZED)
 
 
-@api_view(['GET'])
+# @api_view(['GET'])
+@require_GET
 def api_get_file(request, pk=None):
     if request.method == 'GET':
         if request.GET.get('api_key', None) is None:
