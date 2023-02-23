@@ -451,7 +451,7 @@ class RequestApiEmail(generics.CreateAPIView):
 
 
 # @api_view(['POST'])
-@require_POST
+@api_view(['POST'])
 def email_contact_api_view(request):
     """
     Envío de email de contacto.
@@ -465,7 +465,7 @@ def email_contact_api_view(request):
 
 
 # @api_view(['POST'])
-@require_POST
+@api_view(['POST'])
 def api_upload(request):
     if request.method == 'POST':
         if "file" not in request.FILES:
@@ -508,7 +508,7 @@ def api_upload(request):
 
 
 # @api_view(['GET'])
-@require_GET
+@api_view(['GET'])
 def api_get_files(request):
     if request.method == 'GET':
         try:
@@ -523,7 +523,7 @@ def api_get_files(request):
 
 
 # @api_view(['GET'])
-@require_GET
+@api_view(['GET'])
 def api_get_file(request, pk=None):
     if request.method == 'GET':
         if request.GET.get('api_key', None) is None:

@@ -1041,7 +1041,7 @@ class VideoGenericAPIView(GenericAPIView):
 
 
 #@api_view(['GET'])
-@require_GET
+@api_view(['GET'])
 def transcript_api_view(request, pk=None):
     # print(request)
     if request.method == 'GET':
@@ -1056,7 +1056,7 @@ def transcript_api_view(request, pk=None):
 
 
 #@api_view(['POST'])
-@require_POST
+@api_view(['POST'])
 def update_transcript_api_view(request, pk=None):
     if request.method == 'POST':
         transcript = get_object_or_404(Transcript, pk=pk)
@@ -1079,12 +1079,14 @@ def update_transcript_api_view(request, pk=None):
 
 
 #@api_view(['POST'])
-@require_POST
+#@api_view(['POST'])
+@api_view(['POST'])
 def comprimeFileZip(request, pk=None):
     if request.method == 'POST':
         """Recibe latitud, longitud y user_agend """
         """generamos le zip del nuevo objeto de aprendizaje adaptado"""
         try:
+            print("post zip", pk)
             learning_object = LearningObject.objects.get(pk=pk)
 
             ba.save_screenshot(learning_object)

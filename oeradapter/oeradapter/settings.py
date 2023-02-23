@@ -107,22 +107,6 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.137.1:4200',
 ]
 
-# CORS_ORIGIN_ALLOW_ALL=False
-CORS_ORIGIN_WHITELIST = [
-    'http://127.0.0.1:4200',
-    'http://localhost:4200',
-    'https://oeradap.edutech-project.org'
-    'http://192.168.137.91:4200',
-    'http://192.168.137.1:4200',
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:4200',
-    'https://oeradap.edutech-project.org'
-    'http://192.168.137.91:4200',
-    'http://192.168.137.1:4200',
-]
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
