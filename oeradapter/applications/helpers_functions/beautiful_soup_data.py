@@ -256,7 +256,8 @@ def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, pag
                 if soup_data_website is not None:
                     tag_webdata = soup_data_website.find(lambda
                                                              tag_find: tag_find.name == tag_identify and tag.get_text().strip() in tag_find.get_text().strip())
-                    save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
+                    if tag_webdata is not None:
+                        save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
 
                 save_paragraph(tag_identify, tag, page_adapted, class_uuid)
 
@@ -270,7 +271,9 @@ def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, pag
                     tag_webdata = soup_data_website.find(
                         lambda
                             tag_find: tag_find.name == tag_identify and tag.get_text().strip() in tag_find.get_text().strip())
-                    save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
+
+                    if tag_webdata is not None:
+                        save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
 
                 save_paragraph(tag_identify, tag, page_adapted, class_uuid)
 
@@ -284,7 +287,9 @@ def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, pag
                     tag_webdata = soup_data_website.find(
                         lambda
                             tag_find: tag_find.name == tag_identify and tag.get_text().strip() in tag_find.get_text().strip())
-                    save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
+
+                    if tag_webdata is not None:
+                        save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
 
                 save_paragraph(tag_identify, tag, page_adapted, class_uuid)
 
@@ -323,7 +328,9 @@ def webs_scraping_img(soup_data, page_adapted, file, directory, request_host, so
 
         if soup_data_website is not None:
             tag_webdata = soup_data_website.find("img", {"src": tag.get('src', []), "alt": tag.get('alt', [])})
-            save_tag_img(tag_webdata, class_uuid, tag_identify, attribute_img, page_adapted_website, directory,
+
+            if tag_webdata is not None:
+                save_tag_img(tag_webdata, class_uuid, tag_identify, attribute_img, page_adapted_website, directory,
                          request_host)
 
         save_tag_img(tag, class_uuid, tag_identify, attribute_img, page_adapted, directory, request_host)
@@ -401,7 +408,9 @@ def webs_scraping_video(soup_data, page_adapted, file, tag_identify, directory, 
                                                                                           '') in tag_find.findChild(
                     "source").get("src", '') and tag.findChild("source").get("type", '') in tag_find.findChild(
                     "source").get("type", ''))
-            save_video_tag(tag_webdata, class_uuid, tag_identify, attribute_src, page_adapted_website, directory)
+
+            if tag_webdata is not None:
+                save_video_tag(tag_webdata, class_uuid, tag_identify, attribute_src, page_adapted_website, directory)
 
         save_video_tag(tag, class_uuid, tag_identify, attribute_src, page_adapted, directory)
 
@@ -468,7 +477,9 @@ def webs_scraping_audio(soup_data, page_adapted, file, tag_identify, directory, 
         class_uuid = tag_identify + '-' + getUUID()
         if soup_data_website is not None:
             tag_webdata = find_tag_in_webpage(tag, soup_data_website)
-            save_tag_audio(tag_webdata, class_uuid, tag_identify, page_adapted_website, directory)
+
+            if tag_webdata is not None:
+                save_tag_audio(tag_webdata, class_uuid, tag_identify, page_adapted_website, directory)
 
         save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory)
 
@@ -547,7 +558,8 @@ def webs_scraping_iframe(file_beautiful_soup, page_adapted, file, soup_data_webs
 
         if soup_data_website is not None:
             tag_webdata = soup_data_website.find(tag_identify, {"src": tag.get('src', []), "alt": tag.get('alt', [])})
-            save_tag_iframe(tag_webdata, class_uuid, tag_identify, attribute_src, page_adapted_website)
+            if tag_webdata is not None:
+                save_tag_iframe(tag_webdata, class_uuid, tag_identify, attribute_src, page_adapted_website)
 
         save_tag_iframe(tag, class_uuid, tag_identify, attribute_src, page_adapted)
 
