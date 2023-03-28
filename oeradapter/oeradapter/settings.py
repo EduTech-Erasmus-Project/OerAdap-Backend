@@ -50,11 +50,11 @@ ASGI_APPLICATION = 'oeradapter.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-        # "BACKEND": "channels_redis.core.RedisChannelLayer",
-        # 'CONFIG': {
-        #    "hosts": [(env('REDIS_HOST'), env('REDIS_PORT'))],
-        # },
+        #"BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        'CONFIG': {
+           "hosts": [(env('REDIS_HOST'), env('REDIS_PORT'))],
+        },
     },
 }
 

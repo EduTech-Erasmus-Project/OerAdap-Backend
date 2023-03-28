@@ -76,7 +76,7 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     try:
         directory_origin, directory_adapted = ba.extract_zip_file(path, file, file_name)
     except Exception as e:
-        # print("extract_zip_file", e)
+        print("extract_zip_file", e)
         raise Exception("object_adapted")  # Objeto de Aprendizaje adaptado
 
     path_imsmanisfest = ba.findXmlIMSorSCORM(os.path.join(BASE_DIR, directory_origin))
@@ -94,14 +94,20 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
         preview_adapted = preview_adapted.replace("http://", "https://")
     '''
 
+
+
     soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
     files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
+
+
 
     if is_adapted:
         # print('is_adapted', is_adapted)
         ba.remove_folder(os.path.join(BASE_DIR, path, file_name.split('.')[0]))
         raise Exception("Objeto de Aprendizaje adaptado")
+
+
 
     learning_object = LearningObject.objects.create(
         title=soup_data.find('title').text,
@@ -125,11 +131,15 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
         learning_object=learning_object
     )
 
+
+
     learning_object.path_xml = metadata.find_xml_in_directory(directory_adapted)
     metadata.tag_verify(learning_object.path_xml, "accesibility")
     metadata.tag_verify(learning_object.path_xml, "annotation")
     metadata.tag_verify(learning_object.path_xml, "classification")
     metadata.save_metadata_default(learning_object.path_xml)
+
+
 
     # files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
     adaptation_settings(areas, files, directory_adapted, root_dirs, learning_object.path_xml)
@@ -140,9 +150,13 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     files_normal = [file for file in files if "website_" not in file['file_name']]
     # print("files normal", files_normal)
 
+
+
     bsd.save_filesHTML_db(files_normal, learning_object, directory_adapted, directory_origin,
                           host, files_website)
     learning_object.button_adaptation = True
+
+
 
     learning_object.save()
 
@@ -150,6 +164,8 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     # print("directory_adapted", directory_adapted)
     # print("areas", areas)
     # bsd.save_metadata_in_xml(directory_adapted, areas)
+
+
 
     ba.save_screenshot(learning_object)
 
@@ -285,7 +301,7 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
                                                                  areas,
                                                                  request.data['method'], path, file, file_name)
         except Exception as e:
-            print("error ", e)
+            print("error -- ", e)
             ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
             return Response({"status": "error", "message": e.__str__(), "code": e.__str__()},
                             status=status.HTTP_400_BAD_REQUEST)
