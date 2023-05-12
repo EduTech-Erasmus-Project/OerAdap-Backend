@@ -610,7 +610,7 @@ def generate_new_htmlFile(file_beautiful_soup, path):
     :param file_beautiful_soup: archivo generado por BeautifulSoup
     :param path: directorio en donde se encuentra ubicado el archivo
     """
-
+    ''' 
     html = file_beautiful_soup.prettify('utf-8')
     new_direction = path
     if os.path.exists(new_direction):
@@ -620,7 +620,17 @@ def generate_new_htmlFile(file_beautiful_soup, path):
         os.mkdir(new_direction)
         with open(new_direction, "wb") as file:
             file.write(html)
-
+    '''
+    new_direction = path
+    if os.path.exists(new_direction):
+        if file_beautiful_soup is not None:
+            with open(new_direction, "w", encoding="utf-8") as file:
+                file.write(str(file_beautiful_soup))
+    else:
+        os.mkdir(new_direction)
+        if file_beautiful_soup is not None:
+            with open(new_direction, "w", encoding="utf-8") as file:
+                file.write(str(file_beautiful_soup))
 
 def templateInfusion(dir_len):
     """
