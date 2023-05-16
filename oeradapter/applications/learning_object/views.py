@@ -2,7 +2,6 @@ from datetime import datetime
 from django.utils import timezone
 import environ
 from django.db.models import Q, Sum, Count
-from django.views.decorators.http import require_POST, require_GET
 from pytz import utc
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -94,20 +93,14 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
         preview_adapted = preview_adapted.replace("http://", "https://")
     '''
 
-
-
     soup_data = bsd.generateBeautifulSoupFile(os.path.join(BASE_DIR, directory_origin, 'index.html'))
 
     files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
-
-
 
     if is_adapted:
         # print('is_adapted', is_adapted)
         ba.remove_folder(os.path.join(BASE_DIR, path, file_name.split('.')[0]))
         raise Exception("Objeto de Aprendizaje adaptado")
-
-
 
     learning_object = LearningObject.objects.create(
         title=soup_data.find('title').text,
@@ -131,15 +124,11 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
         learning_object=learning_object
     )
 
-
-
     learning_object.path_xml = metadata.find_xml_in_directory(directory_adapted)
     metadata.tag_verify(learning_object.path_xml, "accesibility")
     metadata.tag_verify(learning_object.path_xml, "annotation")
     metadata.tag_verify(learning_object.path_xml, "classification")
     metadata.save_metadata_default(learning_object.path_xml)
-
-
 
     # files, root_dirs, is_adapted = bsd.read_html_files(os.path.join(BASE_DIR, directory_adapted))
     adaptation_settings(areas, files, directory_adapted, root_dirs, learning_object.path_xml)
@@ -150,13 +139,9 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     files_normal = [file for file in files if "website_" not in file['file_name']]
     # print("files normal", files_normal)
 
-
-
     bsd.save_filesHTML_db(files_normal, learning_object, directory_adapted, directory_origin,
                           host, files_website)
     learning_object.button_adaptation = True
-
-
 
     learning_object.save()
 
@@ -164,8 +149,6 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     # print("directory_adapted", directory_adapted)
     # print("areas", areas)
     # bsd.save_metadata_in_xml(directory_adapted, areas)
-
-
 
     ba.save_screenshot(learning_object)
 
@@ -552,6 +535,39 @@ def api_get_file(request, pk=None):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             # print("error ", e)
+            return Response(
+                {"status": False, "message": "The file does not exist please check the file id",
+                 "code": "file_not_found"},
+                status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def api_get_delete_files(request, pk=None):
+    if request.method == 'GET':
+        try:
+            requ = request.GET["key"]
+            if env("KEY_DELETE") != requ:
+                return Response(
+                    {"status": False, "message": "Not found",
+                     "code": "not_found"},
+                    status=status.HTTP_404_NOT_FOUND)
+
+            current_date = timezone.now()
+            learning_objects = LearningObject.objects.filter(expires_at__lt=current_date)
+            resum = len(learning_objects)
+
+            for object in learning_objects:
+                if os.path.exists(os.path.join(BASE_DIR, object.file_folder)):
+                    ba.remove_folder(os.path.join(BASE_DIR, object.file_folder))
+                    object.delete()
+                else:
+                    object.delete()
+
+            return Response(
+                {"status": True, "message": "Delete files", "code": "ok", "data": resum},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
             return Response(
                 {"status": False, "message": "The file does not exist please check the file id",
                  "code": "file_not_found"},

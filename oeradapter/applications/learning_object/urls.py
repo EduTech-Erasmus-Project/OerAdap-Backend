@@ -18,5 +18,7 @@ urlpatterns = [
     path('v1/oeradapter/files', views.api_get_files),
     path('v1/oeradapter/files/<int:pk>', views.api_get_file),
 
+    path('delete/', views.api_get_delete_files),
+
     path('', include('applications.adaptation.urls'))
 ]
