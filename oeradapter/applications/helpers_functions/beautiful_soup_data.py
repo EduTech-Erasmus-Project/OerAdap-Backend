@@ -130,9 +130,11 @@ def save_filesHTML_db(files, learning_object, directory, directory_origin, reque
     :param request_host: direccion del host
 
     """
-    pages_convert = []
+    # pages_convert = []
 
     for file in files:
+
+        # print("origin file", file['file_name'])
 
         soup_data_website = None
         page_adapted_website = None
@@ -142,9 +144,9 @@ def save_filesHTML_db(files, learning_object, directory, directory_origin, reque
                                                               request_host,
                                                               file)
 
-        # print("origin file", file['file_name'])
-
         find_website = [file_w for file_w in files_website if file['file_name'] in file_w['file_name']]
+
+        # print("find_website ", find_website)
 
         # print("file_website", find_website)
         if len(find_website) > 0:
@@ -156,12 +158,20 @@ def save_filesHTML_db(files, learning_object, directory, directory_origin, reque
         # Se procesa las etiquetas html
         web_scraping_paragraph(soup_data, page_adapted, file['file'], soup_data_website, page_adapted_website,
                                file_website)
+
+        # print("Data enter in section --", file)
+
         webs_scraping_img(soup_data, page_adapted, file['file'], directory, request_host, soup_data_website,
                           page_adapted_website, file_website, learning_object.path_xml)
-        webs_scraping_audio(soup_data, page_adapted, file['file'], 'audio', directory, request_host, soup_data_website,
+
+        webs_scraping_audio(soup_data, page_adapted, file['file'], 'audio', directory, request_host,
+                            soup_data_website,
                             page_adapted_website, file_website)
-        webs_scraping_video(soup_data, page_adapted, file['file'], 'video', directory, request_host, soup_data_website,
+
+        webs_scraping_video(soup_data, page_adapted, file['file'], 'video', directory, request_host,
+                            soup_data_website,
                             page_adapted_website, file_website)
+
         webs_scraping_iframe(soup_data, page_adapted, file['file'], soup_data_website, page_adapted_website,
                              file_website)
 
@@ -248,8 +258,13 @@ def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, pag
     """
     tag_identify = "p"
     length_text = 200
+
     for tag in soup_data.find_all(tag_identify):
-        if tag.string:
+
+        if tag.string is not None:
+
+            # print("tag.string", tag.string)
+
             if len(tag.string) >= length_text:
                 class_uuid = tag_identify + '-' + getUUID()
 
@@ -263,7 +278,7 @@ def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, pag
 
     tag_identify = "span"
     for tag in soup_data.find_all(tag_identify):
-        if tag.string:
+        if tag.string is not None:
             if len(tag.string) >= length_text:
                 class_uuid = tag_identify + '-' + getUUID()
 
@@ -279,7 +294,7 @@ def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, pag
 
     tag_identify = "li"
     for tag in soup_data.find_all(tag_identify):
-        if tag.string:
+        if tag.string is not None:
             if len(tag.string) >= length_text:
                 class_uuid = tag_identify + '-' + getUUID()
 
@@ -331,7 +346,7 @@ def webs_scraping_img(soup_data, page_adapted, file, directory, request_host, so
 
             if tag_webdata is not None:
                 save_tag_img(tag_webdata, class_uuid, tag_identify, attribute_img, page_adapted_website, directory,
-                         request_host)
+                             request_host)
 
         save_tag_img(tag, class_uuid, tag_identify, attribute_img, page_adapted, directory, request_host)
 
@@ -433,19 +448,19 @@ def save_video_tag(tag, class_uuid, tag_identify, attribute_src, page_adapted, d
     # subtag = tag.find_all('source')
     subtag = tag.findChild('source')
 
-    path_preview = get_path_preview(subtag.get('src'), path_split)
+    path_preview = get_path_preview(subtag.get('src', ''), path_split)
 
     # path_preview = os.path.join(request_host, directory, str(subtag.get('src'))).replace("\\", "/")
 
     if env('PROD'):
         path_preview = path_preview.replace("http://", "https://")
 
-    path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src')))
+    path_system = os.path.join(BASE_DIR, directory, str(subtag.get('src', '')))
 
     data_attribute = DataAttribute(
         attribute=attribute_src,
-        data_attribute=str(subtag.get('src')),
-        type=str(subtag.get('type')),
+        data_attribute=str(subtag.get('src', '')),
+        type=str(subtag.get('type', '')),
         tag_page_learning_object=tag_page,
         path_preview=path_preview,
         path_system=path_system,
@@ -506,7 +521,7 @@ def find_tag_in_webpage(tag, soup_data_website):
 
 
 def save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory):
-    src = tag.get('src', None)
+    src = tag.get('src', '')
     path_split = split_path(page_adapted.preview_path)
     tag['class'] = tag.get('class', []) + [class_uuid]
     tag_page = TagPageLearningObject.objects.create(
@@ -519,7 +534,7 @@ def save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory):
     if src is not None:
         path_preview = get_path_preview(tag.get('src', ''), path_split)
     else:
-        child_src = tag.findChild("source").get("src", None)
+        child_src = tag.findChild("source").get("src", '')
         if child_src is None:
             return
         path_preview = get_path_preview(child_src, path_split)
@@ -529,7 +544,7 @@ def save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory):
         data_attribute=path_preview,
         tag_page_learning_object=tag_page,
         type=tag_identify,
-        path_system=str(os.path.join(BASE_DIR, directory, tag.get('src', []))),
+        path_system=str(os.path.join(BASE_DIR, directory, tag.get('src', ''))),
     )
 
 
@@ -551,7 +566,7 @@ def webs_scraping_iframe(file_beautiful_soup, page_adapted, file, soup_data_webs
     attribute_src = "src"
 
     for tag in file_beautiful_soup.find_all(tag_identify):
-        if '.com' not in str(tag.get('src')):
+        if '.com' not in str(tag.get('src', '')):
             continue
 
         class_uuid = tag_identify + '-' + getUUID()
@@ -591,13 +606,13 @@ def save_tag_iframe(tag, class_uuid, tag_identify, attribute_src, page_adapted):
         id_class_ref=class_uuid
     )
 
-    domain = urlparse(str(tag.get('src'))).netloc
+    domain = urlparse(str(tag.get('src', ''))).netloc
 
     data_attribute = DataAttribute(
         attribute=attribute_src,
-        data_attribute=str(tag.get('src')),
+        data_attribute=str(tag.get('src', '')),
         tag_page_learning_object=tag_page,
-        path_preview=str(tag.get('src')),
+        path_preview=str(tag.get('src', '')),
         source=domain
     )
     data_attribute.save()  # Aplicar bulck create para evitar hacer peticiones constantes a la base de datos
@@ -610,7 +625,7 @@ def generate_new_htmlFile(file_beautiful_soup, path):
     :param file_beautiful_soup: archivo generado por BeautifulSoup
     :param path: directorio en donde se encuentra ubicado el archivo
     """
-    ''' 
+    '''
     html = file_beautiful_soup.prettify('utf-8')
     new_direction = path
     if os.path.exists(new_direction):

@@ -2,7 +2,6 @@ from datetime import datetime
 from django.utils import timezone
 import environ
 from django.db.models import Q, Sum, Count
-from django.views.decorators.http import require_POST, require_GET
 from pytz import utc
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -76,7 +75,7 @@ def create_learning_object(host, user_token, Serializer, areas, method, path, fi
     try:
         directory_origin, directory_adapted = ba.extract_zip_file(path, file, file_name)
     except Exception as e:
-        # print("extract_zip_file", e)
+        print("extract_zip_file", e)
         raise Exception("object_adapted")  # Objeto de Aprendizaje adaptado
 
     path_imsmanisfest = ba.findXmlIMSorSCORM(os.path.join(BASE_DIR, directory_origin))
@@ -285,7 +284,7 @@ class LearningObjectCreateApiView(generics.GenericAPIView):
                                                                  areas,
                                                                  request.data['method'], path, file, file_name)
         except Exception as e:
-            print("error ", e)
+            print("error -- ", e)
             ba.remove_folder(os.path.join(BASE_DIR, path, file._name.split('.')[0]))
             return Response({"status": "error", "message": e.__str__(), "code": e.__str__()},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -451,7 +450,7 @@ class RequestApiEmail(generics.CreateAPIView):
 
 
 # @api_view(['POST'])
-@require_POST
+@api_view(['POST'])
 def email_contact_api_view(request):
     """
     Envío de email de contacto.
@@ -465,7 +464,7 @@ def email_contact_api_view(request):
 
 
 # @api_view(['POST'])
-@require_POST
+@api_view(['POST'])
 def api_upload(request):
     if request.method == 'POST':
         if "file" not in request.FILES:
@@ -508,7 +507,7 @@ def api_upload(request):
 
 
 # @api_view(['GET'])
-@require_GET
+@api_view(['GET'])
 def api_get_files(request):
     if request.method == 'GET':
         try:
@@ -523,7 +522,7 @@ def api_get_files(request):
 
 
 # @api_view(['GET'])
-@require_GET
+@api_view(['GET'])
 def api_get_file(request, pk=None):
     if request.method == 'GET':
         if request.GET.get('api_key', None) is None:
@@ -536,6 +535,39 @@ def api_get_file(request, pk=None):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             # print("error ", e)
+            return Response(
+                {"status": False, "message": "The file does not exist please check the file id",
+                 "code": "file_not_found"},
+                status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def api_get_delete_files(request, pk=None):
+    if request.method == 'GET':
+        try:
+            requ = request.GET["key"]
+            if env("KEY_DELETE") != requ:
+                return Response(
+                    {"status": False, "message": "Not found",
+                     "code": "not_found"},
+                    status=status.HTTP_404_NOT_FOUND)
+
+            current_date = timezone.now()
+            learning_objects = LearningObject.objects.filter(expires_at__lt=current_date)
+            resum = len(learning_objects)
+
+            for object in learning_objects:
+                if os.path.exists(os.path.join(BASE_DIR, object.file_folder)):
+                    ba.remove_folder(os.path.join(BASE_DIR, object.file_folder))
+                    object.delete()
+                else:
+                    object.delete()
+
+            return Response(
+                {"status": True, "message": "Delete files", "code": "ok", "data": resum},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
             return Response(
                 {"status": False, "message": "The file does not exist please check the file id",
                  "code": "file_not_found"},

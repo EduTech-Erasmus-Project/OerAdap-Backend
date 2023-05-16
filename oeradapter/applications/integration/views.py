@@ -21,7 +21,7 @@ environ.Env.read_env(os.path.join(Path(__file__).ancestor(4), '.env'))
 
 
 #@api_view(['POST'])
-@require_POST
+@api_view(['POST'])
 def receive_file(request):
     if request.data["file"] is None:
         return Response({"status": "error", "message": "File is required"}, status=status.HTTP_400_BAD_REQUEST)
