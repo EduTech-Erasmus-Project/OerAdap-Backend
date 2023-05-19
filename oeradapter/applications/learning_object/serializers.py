@@ -113,10 +113,11 @@ class LearningObjectDetailSerializer(serializers.ModelSerializer):
                 page.save();
 
         pages_adapted = PageLearningObject.objects.filter(
-            Q(learning_object_id=instance.id) & Q(disabled=False) & Q(type='adapted'));
+            Q(learning_object_id=instance.id) & Q(type='adapted')); #& Q(disabled=False)
 
         pages_adapted = PagesSerializer(pages_adapted, many=True)
         data['pages_adapted'] = pages_adapted.data
+
         pages_origin = PageLearningObject.objects.filter(type='origin', learning_object=instance.id)
         pages_origin = PagesSerializer(pages_origin, many=True)
         data['pages_origin'] = pages_origin.data
