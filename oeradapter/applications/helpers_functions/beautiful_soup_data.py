@@ -1020,7 +1020,7 @@ def templateAdaptedTextButton(id_class_ref, text, dir_len):
     button_tag_id = getUUID()
     tag_button = """
      <div class="tooltip text-container" id="{0}">
-        <input class="text" type="image" onclick='textAdaptationEvent("{1}", "{2}", this)' src="{3}oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura fácil" />
+        <input class="text" type="image" onclick='textAdaptationEvent(event, "{1}", "{2}", this)' src="{3}oer_resources/text_adaptation/paragraph.svg" aria-label="Lectura fácil" />
         <span class="tooltiptext">Lectura fácil</span>
      </div>
    
@@ -1042,7 +1042,7 @@ def templateAudioTextButton(id_class_ref, text, dir_len):
     button_tag_id = getUUID()
     tag_button = """
     <div class="tooltip text-container" id="{0}">
-        <input class="text" type="image" onclick='textAdaptationEvent("{1}", "{2}", this)' src="{3}oer_resources/text_adaptation/paragraph.svg" aria-label="Convertir a texto" />
+        <input class="text" type="image" onclick='textAdaptationEvent(event, "{1}", "{2}", this)' src="{3}oer_resources/text_adaptation/paragraph.svg" aria-label="Convertir a texto" />
         <span class="tooltiptext">Convertir a texto</span>
      </div>
     """.format(button_tag_id, text, id_class_ref, get_directory_resource(dir_len))
@@ -1097,7 +1097,7 @@ def templateAdaptedAudioButton(id_class_ref, audio_src, dir_len):
     button_tag_id = getUUID()
     tag_audio = """
     <div class="tooltip audio-container" id="{0}">
-        <input class="audio" type="image" onclick='audioAdaptationEvent("{1}", "{2}", this)' src="{3}oer_resources/text_adaptation/audio-on.svg" aria-label="Convertir a audio" />
+        <input class="audio" type="image" onclick='audioAdaptationEvent(event, "{1}", "{2}", this)' src="{3}oer_resources/text_adaptation/audio-on.svg" aria-label="Convertir a audio" />
         <span class="tooltiptext">Convertir a audio</span>
      </div>   
     """.format(button_tag_id, audio_src, id_class_ref, get_directory_resource(dir_len))
@@ -1179,6 +1179,7 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                     }
                                                 };
                                                 fluid.videoPlayer.makeEnhancedInstances(videoOptions, uiOptions.relay);
+                                                let query = document.querySelector(".flc-videoPlayer-main");
                                             </script>
                                         </div>
      """ % video_title

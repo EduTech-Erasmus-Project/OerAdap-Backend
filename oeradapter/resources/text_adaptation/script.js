@@ -1,5 +1,6 @@
 
-function textAdaptationEvent(alternativeText, tagIdentify, elemnt) {
+function textAdaptationEvent(event, alternativeText, tagIdentify, elemnt) {
+  event.preventDefault();
   const container = document.querySelector(`.${tagIdentify}`);
   if(!localStorage.getItem(tagIdentify)){
     localStorage.setItem(tagIdentify, container.innerHTML)
@@ -15,7 +16,8 @@ function textAdaptationEvent(alternativeText, tagIdentify, elemnt) {
   }
 }
 
-function audioAdaptationEvent(audioSrc, tagIdentify, elemnt) {
+function audioAdaptationEvent(event, audioSrc, tagIdentify, elemnt) {
+  event.preventDefault();
   const container = document.querySelector(`.${tagIdentify}`);
   if(!localStorage.getItem(tagIdentify)){
     localStorage.setItem(tagIdentify, container.innerHTML)
