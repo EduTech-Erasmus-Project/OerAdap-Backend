@@ -1182,7 +1182,7 @@ def templateVideoAdaptation(video_src, video_type, video_title, captions, transc
                                                     }
                                                 };
                                                 fluid.videoPlayer.makeEnhancedInstances(videoOptions, uiOptions.relay);
-                                                let query = document.querySelector(".flc-videoPlayer-main")
+                                                let query = document.querySelector(".flc-videoPlayer-main");
                                             </script>
                                         </div>
      """ % video_title

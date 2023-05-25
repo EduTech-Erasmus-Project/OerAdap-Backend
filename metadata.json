@@ -1,7 +1,7 @@
 {
     "audio": [
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "transcript",
             "source": "accesibility"
         },
@@ -11,96 +11,91 @@
             "source": "annotation"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "highContrastAudioSwitchableBackground",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "highContrastAudioReducedBackground",
-            "source": "accesibility"
-        },
-        {
-            "property": "accessibilityFeatures",
-            "type": "higtcontrastaudio",
             "source": "accesibility"
         }
     ],
     "button": [
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "displayTransformability/background-color",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "displayTransformability/font-family",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "displayTransformability/font-size",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "displayTransformability/color",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "displayTransformability/word-spacing",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "displayTransformability/line-height",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "captions",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "synchronizedAudioText",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "highContrastDisplay",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "transcript",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "structuralNavigation",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "readingOrder",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "tableOfContents",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "index",
             "source": "accesibility"
         }
     ],
     "image": [
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "alternativeText",
             "source": "accesibility"
         }
@@ -124,12 +119,12 @@
             "source": "annotation"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "ttsMarkup",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "longdescription",
             "source": "accesibility"
         },
@@ -140,34 +135,34 @@
             "name": "purpose"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "annotations",
             "source": "accesibility"
         }
     ],
     "video": [
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "caption",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "synchronizedAudioText",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "higtcontrastaudio",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "highContrastAudioReducedBackground",
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "highContrastAudioSwitchableBackground",
             "source": "accesibility"
         }
@@ -189,18 +184,8 @@
             "source": "accesibility"
         },
         {
-            "property": "accessModeSufficient",
-            "type": "tactile",
-            "source": "annotation"
-        },
-        {
             "property": "accessMode",
             "type": "textual",
-            "source": "annotation"
-        },
-        {
-            "property": "accessMode",
-            "type": "tactile",
             "source": "annotation"
         },
         {
@@ -224,7 +209,7 @@
             "source": "accesibility"
         },
         {
-            "property": "accessibilityFeatures",
+            "property": "accessibilityFeature",
             "type": "bookmarks",
             "source": "accesibility"
         }
