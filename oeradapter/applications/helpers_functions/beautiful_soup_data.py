@@ -320,45 +320,11 @@ def web_scraping_paragraph(soup_data, page_adapted, file, soup_data_website, pag
     '''
     __find_register_paragraph(soup_data, soup_data_website, page_adapted, page_adapted_website, tag_identify,
                               length_text)
+    """ 
     tag_identify = "span"
-    '''
-    for tag in soup_data.find_all(tag_identify):
-        if tag.string is not None:
-            if len(tag.string) >= length_text:
-                class_uuid = tag_identify + '-' + getUUID()
-
-                parent = tag.find_parent(class_='UDLcontentIdevice')
-                if parent is not None:
-                    udl_facilitada = parent.find(class_='exe-udlContent-content-simplified')
-                    if udl_facilitada is not None:
-                        metadata.save_metadata_paragraph(page_adapted.learning_object.path_xml)
-
-                    else:
-                        # enmetodo a parte
-                        if soup_data_website is not None:
-                            tag_webdata = soup_data_website.find(
-                                lambda
-                                    tag_find: tag_find.name == tag_identify and tag.get_text().strip() in tag_find.get_text().strip())
-
-                            if tag_webdata is not None:
-                                save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
-
-                        save_paragraph(tag_identify, tag, page_adapted, class_uuid)
-                else:
-                    # enmetodo a parte
-                    if soup_data_website is not None:
-                        tag_webdata = soup_data_website.find(
-                            lambda
-                                tag_find: tag_find.name == tag_identify and tag.get_text().strip() in tag_find.get_text().strip())
-
-                        if tag_webdata is not None:
-                            save_paragraph(tag_identify, tag_webdata, page_adapted_website, class_uuid)
-
-                    save_paragraph(tag_identify, tag, page_adapted, class_uuid)
-
-    '''
     __find_register_paragraph(soup_data, soup_data_website, page_adapted, page_adapted_website, tag_identify,
                               length_text)
+    """
     tag_identify = "li"
     '''
     for tag in soup_data.find_all(tag_identify):
