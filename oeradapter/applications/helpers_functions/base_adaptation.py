@@ -638,9 +638,10 @@ def get_index_imsmanisfest(filename):
 
     result = None
     try:
-        # print("filename[:-1]", filename[:-1])
+        #print("filename[:-1]", filename[:-1] != BASE_DIR)
+
         if filename[:-1] != BASE_DIR:
-            with open(filename, "r") as file:
+            with open(filename, "r", encoding='utf-8') as file:
                 content = file.readlines()
                 content = "".join(content)
                 bs_content = bs(content, "lxml")
@@ -649,7 +650,6 @@ def get_index_imsmanisfest(filename):
                     result = resource['href']
                 return result
     except Exception as e:
-        # print("error get_index_imsmanisfest", e)
         return None
 
 
@@ -658,6 +658,7 @@ def findXmlIMSorSCORM(path):
         files_standar_xml = ["imsmanifest.xml", "imsmanifest_nuevo.xml", "catalogacionLomes.xml"]
         os.chdir(path)
         for file in glob.glob("*.xml"):
+            #print("file", file in files_standar_xml)
             if file in files_standar_xml:
                 return get_index_imsmanisfest(os.path.join(path, file))
         return None
