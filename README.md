@@ -265,7 +265,7 @@ Archivos y métodos para la adaptación de Imagenes.
 def templateImageAdaptation(dir_len):
     """
     Archivos y métodos para la adaptación de Imagenes.
-    
+
     :param dir_len: Longitud del directorio "../../"
     :return: Objeto BeautifulSoup del header y body HTML
     """
@@ -281,9 +281,10 @@ def templateImageAdaptation(dir_len):
         <!---------------------------------------Begin script image lightbox------------------------------------------------------->
         
         <script src="%soer_resources/lightbox/lightbox.js"></script>
+        <script src="%soer_resources/lightbox/jquery-ui-1.8.14.js"></script>
         
         <!---------------------------------------End script image lightbox------------------------------------------------------->
-    """ % get_directory_resource(dir_len)
+    """ % (get_directory_resource(dir_len), get_directory_resource(dir_len))
 
     body_adaptation = BeautifulSoup(body_adaptation, 'html.parser')
 
