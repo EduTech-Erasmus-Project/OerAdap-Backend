@@ -1086,7 +1086,7 @@ def comprimeFileZip(request, pk=None):
         """Recibe latitud, longitud y user_agend """
         """generamos le zip del nuevo objeto de aprendizaje adaptado"""
         try:
-            print("post zip", pk)
+            #print("post zip", pk)
             learning_object = LearningObject.objects.get(pk=pk)
 
             ba.save_screenshot(learning_object)
@@ -1096,9 +1096,7 @@ def comprimeFileZip(request, pk=None):
 
             # print(request.data)
             # print("data", request.data)
-
-            if request.data.get('latitude') is not None and request.data.get('longitude') is not None:
-                save_info_download(request, count_paragraphs_count, count_videos_count, count_audios_count,
+            save_info_download(request, count_paragraphs_count, count_videos_count, count_audios_count,
                                    count_images_count,
                                    learning_object)
 
@@ -1115,14 +1113,19 @@ def save_info_download(request, count_paragraphs_count, count_videos_count, coun
                        learning_object):
     try:
         browser = str(request.data.get('browser', "Request Api"))
-        laltitud = str(request.data['latitude'])
-        longitud = str(request.data['longitude'])
-        geolocator = Nominatim(user_agent="geoapiExercises")
-        location = geolocator.reverse(laltitud + "," + longitud)
+        if request.data.get('latitude', None) is not None and request.data.get('longitude', None) is not None:
+            laltitud = str(request.data['latitude'])
+            longitud = str(request.data['longitude'])
+            geolocator = Nominatim(user_agent="geoapiExercises")
+            location = geolocator.reverse(laltitud + "," + longitud)
+            country = str(location.raw['address']['country'])
+        else:
+            country = None
+
         MetadataInfo.objects.update_or_create(id_learning=learning_object.id,
                                               defaults={
                                                   'browser': browser,
-                                                  'country': str(location.raw['address']['country']),
+                                                  'country': country,
                                                   'text_number': count_paragraphs_count,
                                                   'video_number': count_videos_count,
                                                   'audio_number': count_audios_count,

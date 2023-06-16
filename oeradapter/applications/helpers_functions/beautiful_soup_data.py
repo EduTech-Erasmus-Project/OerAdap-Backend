@@ -581,6 +581,15 @@ def save_tag_audio(tag, class_uuid, tag_identify, page_adapted, directory):
     src = tag.get('src', '')
     path_split = split_path(page_adapted.preview_path)
     tag['class'] = tag.get('class', []) + [class_uuid]
+
+    if tag.has_attr('autoplay'):
+        del tag['autoplay']
+
+    class_list = tag.get('class', [])
+    if 'mediaelement' in class_list:
+        class_list.remove('mediaelement')
+        tag['class'] = class_list
+
     tag_page = TagPageLearningObject.objects.create(
         tag=tag_identify,
         html_text=str(tag),
@@ -899,9 +908,10 @@ def templateImageAdaptation(dir_len):
         <!---------------------------------------Begin script image lightbox------------------------------------------------------->
         
         <script src="%soer_resources/lightbox/lightbox.js"></script>
+        <script src="%soer_resources/lightbox/jquery-ui-1.8.14.js"></script>
         
         <!---------------------------------------End script image lightbox------------------------------------------------------->
-    """ % get_directory_resource(dir_len)
+    """ % (get_directory_resource(dir_len), get_directory_resource(dir_len))
 
     body_adaptation = BeautifulSoup(body_adaptation, 'html.parser')
 

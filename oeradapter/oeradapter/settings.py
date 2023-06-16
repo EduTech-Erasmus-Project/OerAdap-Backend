@@ -95,16 +95,14 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
     'oeradap.edutech-project.org',
-    '172.16.42.60',
-    '192.168.137.91',
-    '192.168.137.1',
+    'roa.ups.edu.ec',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
     'https://oeradap.edutech-project.org',
-    'http://192.168.137.91:4200',
-    'http://192.168.137.1:4200',
+    'https://roa.ups.edu.ec',
+
 ]
 
 # CORS_ORIGIN_ALLOW_ALL=False
