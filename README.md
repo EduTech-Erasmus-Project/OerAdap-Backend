@@ -25,6 +25,11 @@ MJ_APIKEY_PUBLIC=mailjet api key public server email
 MJ_APIKEY_PRIVATE=email registered in mailjet server email
 API_EMAIL=email registered in mailjet_server email
 API_NAME=EduTech
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+HOST=http://localhost:8000
+HOST_OER=http://localhost:4200
+KEY_DELETE=ups
 ```
 
 ## Instalación de librerías 🔧
