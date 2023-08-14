@@ -13,8 +13,7 @@ class TagsSerializer(serializers.ModelSerializer):
 class TagsSerializerTagUpdate(serializers.ModelSerializer):
     class Meta:
         model = TagAdapted
-        fields = ('id', 'text', 'html_text', 'tag_page_learning_object', 'id_ref', 'path_src', 'text_table', 'img_fullscreen')
-
+        fields = ('id', 'text', 'html_text', 'tag_page_learning_object', 'id_ref', 'path_src', 'text_table', 'img_fullscreen', 'image_map', 'image_map_reference_data', 'image_map_reference_coordinates')
 
 class DataAttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -51,7 +50,7 @@ class TagAdaptedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TagAdapted
-        fields = ('id', 'text', 'html_text', 'tag_page_learning_object', 'text_table')
+        fields = ('id', 'text', 'html_text', 'tag_page_learning_object', 'text_table', 'image_map', 'image_map_reference_data', 'image_map_reference_coordinates')
 
 
 class TagAdaptedSerializerNew(serializers.ModelSerializer):

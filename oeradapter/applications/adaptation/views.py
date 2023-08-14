@@ -80,13 +80,28 @@ class ImageView(RetrieveAPIView):
                 self.__create_table(request, page_website_learning_object, tag_class_ref,
                                     tag_website_adapted_learning_object)
 
-        elif str(request.data['method'] == 'update-table'):
+        elif str(request.data['method']) == 'update-table':
             self.__update_table(request, page_learning_object, tag_class_ref,
                                 tag_adapted_learning_object)
 
             if page_website_learning_object is not None:
                 self.__update_table(request, page_website_learning_object, tag_class_ref,
                                     tag_website_adapted_learning_object)
+
+        elif str(request.data['method']) == 'image-map-create':
+            self.__create_map_image(request,page_website_learning_object, tag_class_ref,tag_website_adapted_learning_object)
+
+            if page_website_learning_object is not None:
+                self.__create_map_image(request, page_learning_object, tag_class_ref,
+                                        tag_adapted_learning_object)
+
+        elif str(request.data['method']) == 'image-map-update':
+            self.__update_map_image(request, page_website_learning_object, tag_class_ref,
+                                    tag_website_adapted_learning_object)
+
+            if page_website_learning_object is not None:
+                self.__update_map_image(request, page_learning_object, tag_class_ref,
+                                        tag_adapted_learning_object)
 
         adapted_serializer = TagAdaptedSerializer(tag_adapted_learning_object)
         return Response(adapted_serializer.data)
@@ -150,6 +165,36 @@ class ImageView(RetrieveAPIView):
 
         bsd.generate_new_htmlFile(file_html, page_learning_object.path)
 
+    def __create_map_image(self, request, page_learning_object, tag_class_ref, tag_website_adapted_learning_object):
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+        html_change = BeautifulSoup(str(request.data['text_table']), 'html.parser').find("map")
+        html_change["id"] = tag_class_ref + "-map"
+
+        image_update = file_html.find('img', class_=tag_class_ref)
+        image_update["usemap"] = "#" + tag_class_ref + "-map"
+        image_update.insert_after(html_change)
+
+        tag_website_adapted_learning_object.image_map = str(request.data['text_table'])
+        tag_website_adapted_learning_object.image_map_reference_data = str(request.data['image_map_reference_data'])
+        tag_website_adapted_learning_object.image_map_reference_coordinates = str(
+            request.data['image_map_reference_coordinates'])
+        tag_website_adapted_learning_object.save()
+
+        bsd.generate_new_htmlFile(file_html, page_learning_object.path)
+
+    def __update_map_image(self, request, page_learning_object, tag_class_ref, tag_website_adapted_learning_object):
+        file_html = bsd.generateBeautifulSoupFile(page_learning_object.path)
+        html_change = BeautifulSoup(str(request.data['text_table']), 'html.parser').find("map")
+        html_change["id"] = tag_class_ref + "-map"
+        image_update = file_html.find('map', {"id": tag_class_ref + "-map"})
+        image_update.replace_with(html_change)
+        tag_website_adapted_learning_object.image_map = str(request.data['text_table'])
+        tag_website_adapted_learning_object.image_map_reference_data = str(request.data['image_map_reference_data'])
+        tag_website_adapted_learning_object.image_map_reference_coordinates = str(
+            request.data['image_map_reference_coordinates'])
+        tag_website_adapted_learning_object.save()
+
+        bsd.generate_new_htmlFile(file_html, page_learning_object.path)
 
 class AdaptedImagePreviewRetrieveUpdateAPIView(RetrieveUpdateAPIView):
     def put(self, request, pk=None):

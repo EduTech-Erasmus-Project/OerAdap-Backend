@@ -94,6 +94,11 @@ class TagAdapted(models.Model):
     button_audio_id = models.CharField(max_length=20, null=True)
     text_table = models.TextField(null=True, blank=True)
     img_fullscreen = models.BooleanField(default=False)
+
+    image_map = models.TextField(null=True)
+    image_map_reference_data = models.TextField(null=True)
+    image_map_reference_coordinates = models.TextField(null=True)
+
     tag_page_learning_object = models.OneToOneField(
         TagPageLearningObject,
         related_name="tags_adapted",
